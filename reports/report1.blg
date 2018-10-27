@@ -1,0 +1,67 @@
+This is BibTeX, Version 0.99d (TeX Live 2017/Debian)
+Capacity: max_strings=100000, hash_size=100000, hash_prime=85009
+The top-level auxiliary file: report1.aux
+The style file: abntex2-alf.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 9000 items from 6000.
+Database file #1: abntex2-options.bib
+Database file #2: /home/ozeas/Dropbox/Projetos/bibtex/library.bib
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=20001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Warning--campo note vazio em Tinos2018b
++---------------------------------------------------------+
+| Estilo bibliográfico abntex2-alf.bst versão v-1.9.6           |
+| Em caso de dúvidas ou problemas com este estilo procure |
+| http://www.abntex.net.br/                               |
++---------------------------------------------------------+
+You've used 3 entries,
+            6714 wiz_defined-function locations,
+            1212 strings with 9884 characters,
+and the built_in function-call counts, 5309 in all, are:
+= -- 739
+> -- 102
+< -- 132
++ -- 215
+- -- 30
+* -- 333
+:= -- 696
+add.period$ -- 10
+call.type$ -- 3
+change.case$ -- 33
+chr.to.int$ -- 3
+cite$ -- 3
+duplicate$ -- 463
+empty$ -- 160
+format.name$ -- 140
+if$ -- 1058
+int.to.chr$ -- 0
+int.to.str$ -- 0
+missing$ -- 43
+newline$ -- 17
+num.names$ -- 10
+pop$ -- 70
+preamble$ -- 1
+purify$ -- 13
+quote$ -- 0
+skip$ -- 558
+stack$ -- 1
+substring$ -- 246
+swap$ -- 169
+text.length$ -- 2
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 1
+warning$ -- 1
+while$ -- 18
+width$ -- 0
+write$ -- 39
+(There was 1 warning)

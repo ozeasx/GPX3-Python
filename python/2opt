@@ -1,0 +1,10 @@
+i = 2, j = 4
+
+0 1 | 2 3 4 | 5 6
+A B | C D E | F G
+
+BC, EF
+BE, FC
+
+join_a = (i-1,i), (j,j+1)
+join_b = (i-1,j), (i,j+1)

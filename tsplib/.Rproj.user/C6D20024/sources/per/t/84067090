@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1538526051487.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "84067090",
+    "lastKnownWriteTime" : 7956015699236057185,
+    "last_content_update" : 1538526051487,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "A0C3ADC7",
+        "caption" : "tsp",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=tsp&cache_key=A0C3ADC7",
+        "displayedObservations" : "280",
+        "environment" : "",
+        "object" : "tsp",
+        "preview" : "0",
+        "totalObservations" : "280",
+        "variables" : "3"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}

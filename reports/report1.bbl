@@ -1,0 +1,23 @@
+\providecommand{\abntreprintinfo}[1]{%
+ \citeonline{#1}}
+\setlength{\labelsep}{0pt}\begin{thebibliography}{}
+\providecommand{\abntrefinfo}[3]{}
+\providecommand{\abntbstabout}[1]{}
+\abntbstabout{v-1.9.6 }
+
+\bibitem[Tin{\'{o}}s, Whitley e Ochoa 2014]{Tinos2014}
+\abntrefinfo{Tin{\'{o}}s, Whitley e Ochoa}{TIN{\'{O}}S; WHITLEY; OCHOA}{2014}
+{TIN{\'{O}}S, R.; WHITLEY, D.; OCHOA, G. {Generalized asymmetric partition
+  crossover (GAPX) for the asymmetric TSP}. In:  \emph{Proceedings of the 2014
+  conference on Genetic and evolutionary computation - GECCO '14}. New York,
+  New York, USA: ACM Press, 2014. p. 501--508.
+ISBN 9781450326629. Dispon{\'\i}vel em:
+  \url{http://dl.acm.org/citation.cfm?doid=2576768.2598245
+  https://pdfs.semanticscholar.org/1903/914356a95defba088cb3bb906feb45b587cc.pdf}.}
+
+\bibitem[Tin{\'{o}}s, Whitley e Ochoa 2018]{Tinos2018b}
+\abntrefinfo{Tin{\'{o}}s, Whitley e Ochoa}{TIN{\'{O}}S; WHITLEY; OCHOA}{2018}
+{TIN{\'{O}}S, R.; WHITLEY, D.; OCHOA, G. {A New Generalized Partition Crossover
+  for the Traveling Salesman Problem}. 2018.}
+
+\end{thebibliography}
