@@ -2,8 +2,8 @@
 # ozeasx@gmail.com
 
 from itertools import combinations
-import pathos as pa
 import os
+
 
 class TSPLIB(object):
     def __init__(self, instance_path, shell):
@@ -14,12 +14,16 @@ class TSPLIB(object):
         self._best_tour = None
 
         # Set tsp dimension
-        self._dimension = int(shell.run("grep DIMENSION " + instance_path +
-                                       " | cut -d':' -f2").strip())
+        self._dimension = int(shell.run("grep DIMENSION " + instance_path
+                                        + " | cut -d':' -f2").strip())
+
+        # Condensed index mapping
+        # https://stackoverflow.com/questions/13079563/how-does-condensed-distance-matrix-work-pdist/13079806
+        self._cindex = lambda i, j: i*(2*self._dimension - i - 3)/2 + j - 1
 
         # Set best known solution, if exists
-        if os.path.isfile(self._instance_name  + ".opt.tour"):
-            with open(self._instance_name  + ".opt.tour") as best:
+        if os.path.isfile(self._instance_name + ".opt.tour"):
+            with open(self._instance_name + ".opt.tour") as best:
                 do = False
                 self._best_tour = list()
                 for word in best:
@@ -41,20 +45,21 @@ class TSPLIB(object):
             self._tour = tuple(self._best_tour)
 
         # Generate distance matrix file
-        dm_file = self._instance_name + ".tsp.dm"
+        print "Generating distance matrix..."
         if not os.path.isfile(self._instance_name + ".tsp.dm"):
             shell.run("../tsplib/create_dm.r " + instance_path)
+        print "Done..."
 
         # Generate list of lists combination lookup
-        # self._hash = np.empty((self._dimension, self._dimension), dtype=float)
+        # self._hash = np.empty((self._dimension, self._dimension),dtype=float)
         # self._dm = np.empty((self._dimension, self._dimension), dtype=float)
-        self._hash = [[0]*self._dimension for i in range(self._dimension)]
-        self._dm = [[0]*self._dimension for i in range(self._dimension)]
+        self._hash = dict()
+        self._dm = list()
         line_number = 1
         with open(self._instance_name + ".tsp.dm") as dm:
-            for i, dist in zip(combinations(xrange(self._dimension), 2), dm):
-                self._hash[i[0]][i[1]] = line_number
-                self._dm[i[0]][i[1]] = float(dist)
+            for t, dist in zip(combinations(xrange(self._dimension), 2), dm):
+                self._hash[t] = line_number
+                self._dm.append(float(dist))
                 line_number += 1
 
     # Get instance dimension
@@ -76,7 +81,7 @@ class TSPLIB(object):
         # Distance lookup
         for i, j in zip(aux[0::2], aux[1::2]):
             t = sorted([abs(i)-1, abs(j)-1])
-            dist += self._dm[t[0]][t[1]]
+            dist += self._dm[self._cindex(*t)]
         # Return result
         return dist
 
@@ -88,11 +93,11 @@ class TSPLIB(object):
         # Distance matrix lookup
         for i, j in zip(tour[:-1], tour[1:]):
             t = sorted([i-1, j-1])
-            dist += self._dm[t[0]][t[1]]
+            dist += self._dm[self._cindex(*t)]
 
         # Close path
         t = sorted([tour[0]-1, tour[-1]-1])
-        dist += self._dm[t[0]][t[1]]
+        dist += self._dm[self._cindex(*t)]
 
         return dist
 
@@ -121,7 +126,7 @@ class TSPLIB(object):
         return float(self._shell.run(cmd))
 
     # Calc tour distance using file
-    def tour_dist_2(self, tour, closed = False):
+    def tour_dist_2(self, tour):
         # List to store line numbers to be used by sed
         lines = list()
         # Hash lookup to fill line numbers list

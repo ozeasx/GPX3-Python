@@ -79,7 +79,8 @@ class GPX(object):
             ab_cycles['B'][index] = deque(ab_cycles['A'][index])
             # Fork AB_cycles
             if ab_cycles['A'][index][0] in graph_b:
-                if ab_cycles['A'][index][1] in graph_b[ab_cycles['A'][index][0]]:
+                if ab_cycles['A'][index][1] \
+                   in graph_b[ab_cycles['A'][index][0]]:
                     ab_cycles['A'][index].rotate(1)
                 else:
                     ab_cycles['B'][index].rotate(1)

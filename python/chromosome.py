@@ -17,7 +17,7 @@ class Chromosome(object):
             self._tour.insert(0, 1)
             self._tour = tuple(self._tour)
         # User defined tour
-        elif (isinstance(tour, list), isinstance(tour, deque)):
+        elif isinstance(tour, list) or isinstance(tour, deque):
             self._tour = tuple(tour)
 
         # Tour distance

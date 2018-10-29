@@ -26,8 +26,7 @@ parser.add_argument("-m", help="mutation probability", type=float, default=0)
 parser.add_argument("-k", help="tournament size", type=int, default=0)
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("i", help="TSPLIB instance file", type=str)
-parser.add_argument("-M", help="Multiprocessing", choices=['True', 'False'],
-                    default='False')
+# Parser
 args = parser.parse_args()
 
 # Assert arguments
@@ -74,10 +73,7 @@ while ga.generation < args.g:
         ga.recombine(args.c)
     # Mutation
     if args.m:
-        if args.M == 'False':
-            ga.mutate(args.m)
-        else:
-            ga.mutate_2(args.m)
+        ga.mutate(args.m)
     # Population restart
     if args.r:
         ga.restart_pop(args.r)

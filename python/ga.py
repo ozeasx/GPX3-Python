@@ -3,7 +3,6 @@
 
 import time
 import random
-import pp
 from collections import defaultdict
 from operator import attrgetter
 from chromosome import Chromosome
@@ -23,7 +22,7 @@ class GA(object):
         # Statitics
         # Population size
         self._pop_size = 0
-        # Generations
+        # Generation count
         self._generation = 0
         # Average fitness of the current generation
         self._avg_fitness = 0
@@ -40,7 +39,7 @@ class GA(object):
 
         # List to store current population
         self._population = list()
-        # Best and worst solutions found
+        # Best solution found
         self._best_solution = None
 
     # Get current generation number
@@ -54,7 +53,6 @@ class GA(object):
         return self._best_solution
 
     # Generate inicial population
-    # N = Number of individuals
     def gen_pop(self, size, method='random'):
         # Need even population
         assert not (size % 2), "Invalid population size. " \
@@ -75,6 +73,7 @@ class GA(object):
         if method == 'two_opt':
             while len(self._population) < size:
                 c = Chromosome(self._data.dimension)
+                c.dist = self._data.tour_dist(c.tour)
                 c = mut.two_opt(c, self._data)
                 if c not in self._population:
                     self._population.append(c)
@@ -147,8 +146,8 @@ class GA(object):
                 c1, c2 = self._gpx.recombine(self._population[i],
                                              self._population[i+1])
                 # Replace p1 and p2 only if c1 or c2 are different from parents
-                if (c1 not in [self._population[i], self._population[i+1]]
-                    or c2 not in [self._population[i], self._population[i+1]]):
+                if c1 not in [self._population[i], self._population[i+1]] \
+                   or c2 not in [self._population[i], self._population[i+1]]:
                     self._population[i], self._population[i+1] = c1, c2
                     self._cross += 1
 
