@@ -17,7 +17,7 @@ class GPX(object):
         self._data = data
         # Infeasible value compared to feasible partitions
         self._infeasible_weight = 0.4
-        # Limit fusion trys
+        # Limit fusion trys (unused)
         self._fusion_limit = False
         # Dict with lists containing execution time of each step
         self._exec_time = defaultdict(list)
@@ -26,6 +26,8 @@ class GPX(object):
         # Tours created for partitioning
         self._tour_a = None
         self._tour_b = None
+        # Count failed and suceeded partitioning
+        self._failed = 0
 
     @property
     def infeasible_weight(self):
@@ -52,6 +54,10 @@ class GPX(object):
     @property
     def partitions(self):
         return self._partitions
+
+    @property
+    def failed(self):
+        return self._failed
 
     @infeasible_weight.setter
     def infeasible_weight(self, value):
@@ -385,6 +391,7 @@ class GPX(object):
 
         # If exists one or no partition, return parents
         if len(vertices_m) <= 1 and len(vertices_n) <= 1:
+            self._failed += 1
             return parent_1, parent_2
 
         # Generate simple graphs for each partitioning scheme for each tour
@@ -437,6 +444,7 @@ class GPX(object):
 
         # After fusion, if exists one or no partition, return parents
         if len(partitions['feasible_1']) + len(partitions['feasible_2']) <= 1:
+            self._failed += 1
             return parent_1, parent_2
 
         # Store partitioning data

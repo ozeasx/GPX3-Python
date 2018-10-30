@@ -38,7 +38,7 @@ class GA(object):
         # Timers
         self._exec_time = defaultdict(list)
 
-        # List to store current population
+        # Current population
         self._population = list()
         # Best solution found
         self._best_solution = None
@@ -60,31 +60,29 @@ class GA(object):
                                "Must be even and greater than 0"
         # Print step
         print "Generating initial population..."
-        # Regiter start time
-        start_time = time.time()
+        # Regiter local and global start time
+        self._start_time = start_time = time.time()
+        # Population set to ensure unicity
+        self._population = set()
         # Random generation
         if method == 'random':
             while len(self._population) < size:
-                c = Chromosome(self._data.dimension)
-                if c not in self._population:
-                    c.dist = self._data.tour_dist(c.tour)
-                    self._population.append(c)
-                    # print '\r', len(self._population),
+                self._population.add(Chromosome(self._data.dimension))
+            for c in self._population:
+                c.dist = self._data.tour_dist(c.tour)
         # two_opt
         if method == 'two_opt':
             while len(self._population) < size:
                 c = Chromosome(self._data.dimension)
                 c.dist = self._data.tour_dist(c.tour)
                 c = mut.two_opt(c, self._data)
-                if c not in self._population:
-                    self._population.append(c)
-                    # print '\r', len(self._population),
+                self._population.add(c)
+        # Go back to list
+        self._population = set(self._population)
         # Done
         print "Done..."
         # Store execution time
         self._exec_time['population'].append(time.time() - start_time)
-        # Global start time
-        self._start_time = time.time()
 
     # Evaluate the entire population
     def evaluate(self):
@@ -115,12 +113,11 @@ class GA(object):
         start_time = time.time()
         # Tournament winners
         selected = list()
-
         # Elitism
         if self._elite:
-            for _ in xrange(self._elite):
-                selected.append(max(self._population,
-                                    key=attrgetter('fitness')))
+            # Sort to get n better individuals
+            selected.extend(sorted(set(self._population),
+                                   key=attrgetter('fitness'))[:self._elite])
 
         # Tournament
         for i in xrange(self._pop_size - self._elite):
@@ -136,14 +133,32 @@ class GA(object):
 
         # assert len(self._population) == self._pop_size
 
-    def recombine(self, p_cross):
+    def recombine(self, p_cross, test=False):
         # Register start time
         start_time = time.time()
+        # Auxiliar list
+        aux = list()
+
+        # Try to form couples?
+        if test:
+            couple = True
+            while couple:
+                couple = False
+                for i in xrange(len(self._population)):
+                    for j in xrange(i + 1, len(self._population)):
+                        if self._population[i] != self._population[j]:
+                            i, j = sorted([i, j])
+                            aux.append(self._population.pop(j))
+                            aux.append(self._population.pop(i))
+                            couple = True
+                            break
+                    if couple:
+                        break
+            self._population += aux
 
         # Recombination
         for i in xrange(0, self._pop_size, 2):
-            if (random.random() < p_cross
-                    and self._population[i] != self._population[i+1]):
+            if random.random() < p_cross:
                 c1, c2 = self._gpx.recombine(self._population[i],
                                              self._population[i+1])
                 # Replace p1 and p2 only if c1 or c2 are different from parents
@@ -155,7 +170,7 @@ class GA(object):
         # Register execution time
         self._exec_time['recombination'].append(time.time() - start_time)
 
-        # assert len(self._population) == self._pop_size
+        assert len(self._population) == self._pop_size
 
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut):
@@ -170,6 +185,8 @@ class GA(object):
 
         # Register execution time
         self._exec_time['mutation'].append(time.time() - start_time)
+
+        # assert len(self._population) == self._pop_size
 
     # Reset population
     def restart_pop(self, ratio):
@@ -190,6 +207,8 @@ class GA(object):
         # Register execution time
         self._exec_time['pop restart'].append(time.time() - start_time)
 
+        # assert len(self._population) == self._pop_size
+
     # Generation info
     def print_info(self):
         cross = self._cross - self._last_cross
@@ -206,6 +225,7 @@ class GA(object):
     def report(self):
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
+        log.info("Failed crossovers: %i", self._gpx.failed)
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", time.time() - self._start_time)

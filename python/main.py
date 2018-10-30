@@ -10,9 +10,13 @@ from ga import GA
 from tsp import TSPLIB
 from shell import Shell
 
+
 # http://code.activestate.com/recipes/577074-logging-asserts/
 def excepthook(*args):
     log.getLogger().error('Uncaught exception:', exc_info=args)
+
+
+# Redefine sys.excepthook
 sys.excepthook = excepthook
 
 # Arguments parser
@@ -40,11 +44,11 @@ parser.add_argument("-o", help="Generate report output file", default="False",
 args = parser.parse_args()
 
 # Logging
-if args.o:
+if args.o == 'True':
     # Create directory with timestamp
     dir = time.strftime("../results/%Y%m%d%H%M%S")
     if not os.path.exists(dir):
-         os.makedirs(dir)
+        os.makedirs(dir)
     # Log file
     log.basicConfig(filename=dir + "/result.log", format='%(message)s',
                     level=log.INFO)
@@ -67,7 +71,7 @@ assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
 # Summary
-log.info("------------------------------GA Settings---------------------------")
+log.info("------------------------------GA Settings--------------------------")
 log.info("Initial population: %i", args.p)
 log.info("Population restart percentage: %f", args.r)
 log.info("Elitism: %i", args.e)
@@ -86,7 +90,7 @@ tsp = TSPLIB(args.I, cmd)
 loop = args.n
 while loop:
     # Logging
-    log.info("\nIteration %i -------------------------------------------", loop)
+    log.info("\nIteration %i ------------------------------------------", loop)
     # Genetic algorithm
     ga = GA(tsp, args.e)
     # Generate inicial population
