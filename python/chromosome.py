@@ -17,7 +17,7 @@ class Chromosome(object):
             self._tour.insert(0, 1)
             self._tour = tuple(self._tour)
         # User defined tour
-        elif isinstance(tour, list) or isinstance(tour, deque):
+        elif isinstance(tour, (list, tuple, deque)):
             self._tour = tuple(tour)
 
         # Tour distance
@@ -89,10 +89,3 @@ class Chromosome(object):
     @fitness.setter
     def fitness(self, value):
         self._fitness = value
-
-    # Calculate solutions dissimilarity
-    def __sub__(self, other):
-        # edges_1 = Graph.gen_undirected_edges(self.tour)
-        # edges_2 = Graph.gen_undirected_edges(other.tour)
-        # return 1 - len(edges_1 & edges_2)/float(len(edges_1 | edges_2))
-        return 1 - abs(self.dist - other.dist)/(self.dist + other.dist)

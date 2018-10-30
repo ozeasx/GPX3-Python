@@ -5,22 +5,22 @@ from shell import Shell
 from tsp import TSPLIB
 from chromosome import Chromosome
 from gpx import GPX
-import mut
 
 # Snipet code to test a lot of random cases
-cmd = Shell()
-tsp = TSPLIB("../tsplib/ulysses16.tsp", cmd)
-gpx = GPX(tsp)
+#cmd = Shell()
+#tsp = TSPLIB("../tsplib/eil51.tsp", cmd)
+# gpx = GPX(tsp)
+gpx = GPX()
 
-p1 = Chromosome(16)
-p1.dist = tsp.tour_dist(p1.tour)
+# p1 = Chromosome(16)
+# p1.dist = tsp.tour_dist(p1.tour)
 
-r1 = mut.two_opt(p1, tsp)
+# r1 = mut.two_opt(p1, tsp)
 
-print p1.tour
-print p1.dist
-print r1.tour
-print r1.dist
+# print p1.tour
+# print p1.dist
+# print r1.tour
+# print r1.dist
 
 # def test(data, limit, dimension = None):
 #     for x in xrange(limit):
@@ -55,10 +55,10 @@ print r1.dist
 # p2 = Chromosome([1,14,11,12,10,13,9,15,8,7,5,6,3,4,2])
 
 # Tinos2018b-F5
-# p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,
-#                 24,25,26,27,28,29,30,31,32])
-# p2 = Chromosome([1,32,31,11,12,28,27,26,25,20,19,17,18,15,16,14,13,29,30,10,
-#                  9,7,8,5,6,4,3,22,21,24,23,2])
+p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
+                 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
+p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16, 14,
+                 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
 # p2 = Chromosome([1,2,23,24,21,22,3,4,6,5,8,7,9,10,30,29,13,14,16,15,18,17,19,
 #                 20,25,26,27,28,12,11,31,32])
 
@@ -140,42 +140,44 @@ print r1.dist
 # p1 = Chromosome(tsp, [1, 3, 2, 4, 8, 16, 15, 14, 13, 12, 10, 9, 11, 5, 6, 7])
 # p2 = Chromosome(tsp, [1, 15, 3, 11, 5, 9, 7, 16, 12, 13, 14, 6, 10, 4, 2, 8])
 
-# p1.dist = tsp.route_dist(p1.tour)
-# p2.dist = tsp.route_dist(p2.tour)
-# r = gpx.recombine(p1, p2)
+# p1.dist = tsp.tour_dist(p1.tour)
+# p2.dist = tsp.tour_dist(p2.tour)
+p1 = Chromosome(1000)
+p2 = Chromosome(1000)
+r = gpx.recombine(p1, p2)
 
-# print "Results -------------------------------------------------------------"
+print "Results -------------------------------------------------------------"
 # print
-# print "Tour 1: ", p1.tour, ", Distance: ", # p1.dist
-# print "Tour 2: ", p2.tour, ", Distance: ", # p2.dist
+# print "Tour 1: ", p1.tour, ", Distance: "  # , p1.dist
+# print "Tour 2: ", p2.tour, ", Distance: "  # , p2.dist
 # print
 # print "Internal tour a: ", gpx.tour_a
 # print "Internal tour b: ", gpx.tour_b
 # print
-# print "Execution Time ------------------------------------------------------"
+print "Execution Time ------------------------------------------------------"
+print
+print "Partitioning: ", sum(gpx.exec_time['partition'])
+print "simple graphs: ", sum(gpx.exec_time['simple graph'])
+print "Classification: ", sum(gpx.exec_time['classify'])
+print "Fusion: ", sum(gpx.exec_time['fusion'])
+print "Build: ", sum(gpx.exec_time['build'])
+print "Recombination: ", sum(gpx.exec_time['recombination'])
+print
+# print "Partitions ------------------------------------------------------"
 # print
-# print "Partitioning: ", sum(gpx.execution_time['partition'])
-# print "simple graphs: ", sum(gpx.execution_time['gen_simple_graph'])
-# print "Classification: ", sum(gpx.execution_time['classify'])
-# print "Fusion: ", sum(gpx.execution_time['fusion'])
-# print "Build: ", sum(gpx.execution_time['build'])
-# print "Recombination: ", sum(gpx.execution_time['recombine'])
+# print "Vertices: ", gpx.partitions['vertices']
 # print
-# if r and p1 != r[0]:
-#     print "Partitions ------------------------------------------------------"
-#     print
-#     print "Vertices: ", gpx.partitions['vertices']
-#     print
-#     print "AB_cycles: ", gpx.partitions['ab_cycles']
-#     print
-#     print "simple graph a: ", gpx.partitions['simple_graph_a']
-#     print "simple graph b: ", gpx.partitions['simple_graph_b']
-#     print
-#     print "Feasible 1: ", gpx.partitions['feasible_1']
-#     print "Feasible 2: ", gpx.partitions['feasible_2']
-#     print
-#     print "Solutions -------------------------------------------------------"
-#     print
-#     print "Solution 1: ", r[0].tour, ", Distance: ", # r[0].dist
-#     print
-#     print "Solution 2: ", r[1].tour, ", Distance: ", # r[1].dist
+# print "AB_cycles: ", gpx.partitions['ab_cycles']
+# print
+# print "simple graph a: ", gpx.partitions['simple_graph_a']
+# print "simple graph b: ", gpx.partitions['simple_graph_b']
+print
+print "Feasible 1: ", gpx.partitions['feasible_1']
+print "Feasible 2: ", gpx.partitions['feasible_2']
+if r and p1 != r[0]:
+    print
+    print "Solutions -------------------------------------------------------"
+    print
+    print "Solution 1: ", r[0].tour, ", Distance: "  # , r[0].dist
+    print
+    print "Solution 2: ", r[1].tour, ", Distance: "  # , r[1].dist

@@ -9,6 +9,7 @@ from graph import Graph
 from chromosome import Chromosome
 
 
+# Generalized partition crossover operator
 class GPX(object):
     # Class initialization
     def __init__(self, data=None):
@@ -19,7 +20,7 @@ class GPX(object):
         # Limit fusion trys
         self._fusion_limit = False
         # Dict with lists containing execution time of each step
-        self._execution_time = defaultdict(list)
+        self._exec_time = defaultdict(list)
         # Partitioning data
         self._partitions = dict()
         # Tours created for partitioning
@@ -35,8 +36,8 @@ class GPX(object):
         return self._fusion_limit
 
     @property
-    def execution_time(self):
-        return self._execution_time
+    def exec_time(self):
+        return self._exec_time
 
     @property
     def tour_a(self):
@@ -89,7 +90,7 @@ class GPX(object):
             # Increment index
             index += 1
         # Store execution time and return
-        self._execution_time['partition'].append(time.time() - start_time)
+        self._exec_time['partition'].append(time.time() - start_time)
         return vertices, ab_cycles
 
     # Create the simple graph for all partions for given tour
@@ -129,10 +130,10 @@ class GPX(object):
                 if not (i == 'c' or j == 'c'):
                     simple_graph[key][i].add(j)
                     simple_graph[key][j].add(i)
-            # simple_graph[key] = dict(simple_graph[key])
+            simple_graph[key] = dict(simple_graph[key])
 
         # Store execution time and return
-        self._execution_time['gen_simple_graph'].append(time.time()-start_time)
+        self._exec_time['simple graph'].append(time.time() - start_time)
         return dict(simple_graph)
 
     # Classify partitions feasibility by simple graph comparison
@@ -152,7 +153,7 @@ class GPX(object):
                 infeasible.add(key)
 
         # Store execution time
-        self._execution_time['classify'].append(time.time() - start_time)
+        self._exec_time['classify'].append(time.time() - start_time)
 
         return feasible_1, feasible_2, infeasible
 
@@ -178,20 +179,20 @@ class GPX(object):
                                  & Graph(partitions['simple_graph_a'][j]))
 
                 # Create element with (fusion, count)
-                fusion = list(fusion)
-                fusion.append(count)
-                candidates.append(fusion)
+                if count:
+                    fusion = list(fusion)
+                    fusion.append(count)
+                    candidates.append(fusion)
 
             # Sort by common edges count
             candidates.sort(key=lambda fusion: fusion[n], reverse=True)
-            # Increment fusion size
-            n += 1
             # Discard common edges count
             for fusion in candidates:
                 fusion.pop(-1)
             # Convert elements to tuples
             candidates = map(tuple, candidates)
-
+            # Increment fusion size
+            n += 1
             # Try fusions
             for fusion in candidates:
                 union = defaultdict(set)
@@ -207,11 +208,7 @@ class GPX(object):
                                                             union)
                     simple_graph_2 = self._gen_simple_graph(self._tour_b,
                                                             union)
-                    # Resume time count
-                    start_time = time.time() - start_time
 
-                    # Pause time count
-                    start_time = time.time() - start_time
                     # Check if fusion is feasible
                     f1, f2, _ = self._classify(simple_graph_1, simple_graph_2)
                     # Resume time count
@@ -249,7 +246,7 @@ class GPX(object):
             partitions['infeasible'].clear()
 
         # Store execution time
-        self._execution_time['fusion'].append(time.time() - start_time)
+        self._exec_time['fusion'].append(time.time() - start_time)
 
     # Build solutions
     def _build(self, partitions, tour_dist, common_graph):
@@ -257,7 +254,7 @@ class GPX(object):
         start_time = time.time()
 
         # Reset time
-        # self._execution_time = defaultdict(list)
+        # self._exec_time = defaultdict(list)
 
         # dists of each partition in each solution
         dists = dict()
@@ -341,7 +338,7 @@ class GPX(object):
         assert len(vertices_2) == self._data.dimension
 
         # Store execution time
-        self._execution_time['build'].append(time.time() - start_time)
+        self._exec_time['build'].append(time.time() - start_time)
 
         # Create solutions
         return (tour_1, common_dist + sum_1), \
@@ -452,9 +449,9 @@ class GPX(object):
                             & parent_2.undirected_graph)
             inf_1, inf_2 = self._build(partitions, parent_1.dist, common_graph)
             # Measure time
-            self._execution_time['recombine'].append(time.time() - start_time)
+            self._exec_time['recombine'].append(time.time() - start_time)
             # Return created solutions
             return Chromosome(*inf_1), Chromosome(*inf_2)
 
         # Store total execution time
-        self._execution_time['recombine'].append(time.time() - start_time)
+        self._exec_time['recombine'].append(time.time() - start_time)
