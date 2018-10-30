@@ -200,14 +200,22 @@ class GPX(object):
                     for i in fusion:
                         union[fusion] |= partitions['vertices'][i]
 
+                    # Pause time count
+                    start_time = time.time() - start_time
                     # Create simple graphs for fusion
                     simple_graph_1 = self._gen_simple_graph(self._tour_a,
                                                             union)
                     simple_graph_2 = self._gen_simple_graph(self._tour_b,
                                                             union)
+                    # Resume time count
+                    start_time = time.time() - start_time
 
+                    # Pause time count
+                    start_time = time.time() - start_time
                     # Check if fusion is feasible
                     f1, f2, _ = self._classify(simple_graph_1, simple_graph_2)
+                    # Resume time count
+                    start_time = time.time() - start_time
 
                     # Update information
                     if fusion in f1 or fusion in f2:
@@ -248,8 +256,8 @@ class GPX(object):
         # Mark start time
         start_time = time.time()
 
-        # Resete time
-        self._execution_time = defaultdict(list)
+        # Reset time
+        # self._execution_time = defaultdict(list)
 
         # dists of each partition in each solution
         dists = dict()
@@ -333,7 +341,7 @@ class GPX(object):
         assert len(vertices_2) == self._data.dimension
 
         # Store execution time
-        self._execution_time['buil'].append(time.time() - start_time)
+        self._execution_time['build'].append(time.time() - start_time)
 
         # Create solutions
         return (tour_1, common_dist + sum_1), \

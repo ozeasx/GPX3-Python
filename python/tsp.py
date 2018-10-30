@@ -3,6 +3,7 @@
 
 from itertools import combinations
 import os
+import logging as log
 
 
 class TSPLIB(object):

@@ -3,6 +3,7 @@
 
 import time
 import random
+import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from chromosome import Chromosome
@@ -68,7 +69,7 @@ class GA(object):
                 if c not in self._population:
                     c.dist = self._data.tour_dist(c.tour)
                     self._population.append(c)
-                    print '\r', len(self._population),
+                    # print '\r', len(self._population),
         # two_opt
         if method == 'two_opt':
             while len(self._population) < size:
@@ -77,11 +78,11 @@ class GA(object):
                 c = mut.two_opt(c, self._data)
                 if c not in self._population:
                     self._population.append(c)
-                    print '\r', len(self._population),
+                    # print '\r', len(self._population),
         # Done
         print "Done..."
         # Store execution time
-        self._execution_time['gen_pop'].append(time.time() - start_time)
+        self._execution_time['population'].append(time.time() - start_time)
         # Global start time
         self._start_time = time.time()
 
@@ -106,7 +107,7 @@ class GA(object):
         self._best_solution = max(self._population, key=attrgetter('fitness'))
 
         # Register execution Timers
-        self._execution_time['evaluate'].append(time.time() - start_time)
+        self._execution_time['evaluation'].append(time.time() - start_time)
 
     # Tournament selection
     def select_tournament(self, k):
@@ -131,8 +132,7 @@ class GA(object):
         # Update population
         self._population = selected
         # Regiter execution time
-        self._execution_time['select_tournament'].append(time.time()
-                                                         - start_time)
+        self._execution_time['tournament'].append(time.time() - start_time)
 
         # assert len(self._population) == self._pop_size
 
@@ -152,7 +152,7 @@ class GA(object):
                     self._cross += 1
 
         # Register execution time
-        self._execution_time['recombine'].append(time.time() - start_time)
+        self._execution_time['recombination'].append(time.time() - start_time)
 
         # assert len(self._population) == self._pop_size
 
@@ -168,7 +168,7 @@ class GA(object):
                 self._mut += 1
 
         # Register execution time
-        self._execution_time['mutate'].append(time.time() - start_time)
+        self._execution_time['mutation'].append(time.time() - start_time)
 
     # Reset population
     def restart_pop(self, ratio):
@@ -187,15 +187,15 @@ class GA(object):
                 self._population[i] = c
 
         # Register execution time
-        self._execution_time['restart_pop'].append(time.time() - start_time)
+        self._execution_time['pop restart'].append(time.time() - start_time)
 
     # Generation info
     def print_info(self):
         cross = self._cross - self._last_cross
         mut = self._mut - self._last_mut
-        print "T: %i\tCross: %i\tMut: %i\tAverage: %f\tBest: %f\tRestart: %s" \
-              % (self._generation, cross, mut, self._avg_fitness,
-                 self._best_solution.fitness, self._pop_restart)
+        log.info("T: %i\tC: %i\tM: %i\tAvg: %f\tBest: %f\tRestart: %s",
+                  self._generation, cross, mut, self._avg_fitness,
+                  self._best_solution.fitness, self._pop_restart)
         self._last_cross = self._cross
         self._last_mut = self._mut
         # set pop restart flag
@@ -203,25 +203,38 @@ class GA(object):
 
     # Final report
     def report(self):
-        print "------------------------ Statitics ----------------------------"
-        print "Total Crossover:", self._cross
-        print "Total mutations:", self._mut
-        print "---------------------- Time statistics-------------------------"
-        print "Execution time:", time.time() - self._start_time
-        print "Inicial population:", sum(self._execution_time['gen_pop'])
-        print "Evaluation:", sum(self._execution_time['evaluate'])
-        print "Selection:", sum(self._execution_time['select_tournament'])
-        print "Recombination:", sum(self._execution_time['recombine'])
-        print "Mutation:", sum(self._execution_time['mutate'])
-        print "Population restart:", sum(self._execution_time['restart_pop'])
+        log.info("------------------------ Statitics -------------------------")
+        log.info("Total Crossover: %i", self._cross)
+        log.info("Total mutations: %i", self._mut)
+        log.info("---------------------- Time statistics----------------------")
+        log.info("Total execution time: %f", time.time() - self._start_time)
+        log.info("Inicial population: %f",
+                  sum(self._execution_time['population']))
+        log.info("Evaluation: %f", sum(self._execution_time['evaluation']))
+        log.info("Selection: %f", sum(self._execution_time['tournament']))
+        log.info("Recombination: %f",
+                  sum(self._execution_time['recombination']))
+        log.info("\tPartitioning: %f",
+                  sum(self._gpx.execution_time['partition']))
+        log.info("\tSimplified graph: %f",
+                  sum(self._gpx.execution_time['gen_simple_graph']))
+        log.info("\tClassification: %f",
+                  sum(self._gpx.execution_time['classify']))
+        log.info("\tFusion: %f",
+                  sum(self._gpx.execution_time['fusion']))
+        log.info("\tBuild: %f",
+                  sum(self._gpx.execution_time['build']))
+        log.info("Mutation: %f", sum(self._execution_time['mutation']))
+        log.info("Population restart: %f",
+                  sum(self._execution_time['pop restart']))
         if self._data.best_tour:
-            print "----------------- Best known solution ---------------------"
-            print "Tour:", self._data.best_tour
-            print "Distance:", self._data.tour_dist(self._data.best_tour)
-        print "-------------------- Best individual found --------------------"
-        print "Tour:", self._best_solution.tour
-        print "Distance:", self._best_solution.dist
-        print "---------------------------------------------------------------"
+            log.info("----------------- Best known solution ------------------")
+            log.info("Tour: %s", (self._data.best_tour,))
+            log.info("Distance: %f", self._data.tour_dist(self._data.best_tour))
+        log.info("-------------------- Best individual found -----------------")
+        log.info("Tour: %s", (self._best_solution.tour,))
+        log.info("Distance: %f", self._best_solution.dist)
+        log.info("------------------------------------------------------------")
 
     # Calculate the individual fitness
     def _evaluate(self, c):
