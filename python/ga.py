@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+from multiprocessing import Process
 import time
 import random
 import logging as log
@@ -20,9 +21,6 @@ class GA(object):
         self._gpx = GPX(data)
         self._elite = elite
 
-        # Statitics
-        # Population size
-        self._pop_size = 0
         # Generation count
         self._generation = 0
         # Average fitness of the current generation
@@ -48,10 +46,25 @@ class GA(object):
     def generation(self):
         return self._generation
 
+    # Return total crossovers
+    @property
+    def cross(self):
+        return self._cross
+
+    # Return total mutations
+    @property
+    def mut(self):
+        return self._mut
+
     # return best individuals
     @property
     def best_solution(self):
         return self._best_solution
+
+    # Return timers
+    @property
+    def exec_time(self):
+        return self._exec_time
 
     # Generate inicial population
     def gen_pop(self, size, method='random'):
