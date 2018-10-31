@@ -1,14 +1,14 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from shell import Shell
-from tsp import TSPLIB
+# from shell import Shell
+# from tsp import TSPLIB
 from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-#cmd = Shell()
-#tsp = TSPLIB("../tsplib/eil51.tsp", cmd)
+# cmd = Shell()
+# tsp = TSPLIB("../tsplib/eil51.tsp", cmd)
 # gpx = GPX(tsp)
 gpx = GPX()
 
@@ -142,8 +142,8 @@ p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16, 14,
 
 # p1.dist = tsp.tour_dist(p1.tour)
 # p2.dist = tsp.tour_dist(p2.tour)
-p1 = Chromosome(1000)
-p2 = Chromosome(1000)
+#p1 = Chromosome(1000)
+# p2 = Chromosome(1000)
 r = gpx.recombine(p1, p2)
 
 print "Results -------------------------------------------------------------"
@@ -163,14 +163,14 @@ print "Fusion: ", sum(gpx.exec_time['fusion'])
 print "Build: ", sum(gpx.exec_time['build'])
 print "Recombination: ", sum(gpx.exec_time['recombination'])
 print
-# print "Partitions ------------------------------------------------------"
-# print
-# print "Vertices: ", gpx.partitions['vertices']
-# print
-# print "AB_cycles: ", gpx.partitions['ab_cycles']
-# print
-# print "simple graph a: ", gpx.partitions['simple_graph_a']
-# print "simple graph b: ", gpx.partitions['simple_graph_b']
+print "Partitions ------------------------------------------------------"
+print
+print "Vertices: ", gpx.partitions['vertices']
+print
+print "AB_cycles: ", gpx.partitions['ab_cycles']
+print
+print "simple graph a: ", gpx.partitions['simple_graph_a']
+print "simple graph b: ", gpx.partitions['simple_graph_b']
 print
 print "Feasible 1: ", gpx.partitions['feasible_1']
 print "Feasible 2: ", gpx.partitions['feasible_2']

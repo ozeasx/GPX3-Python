@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from multiprocessing import Process
 import time
 import random
 import logging as log

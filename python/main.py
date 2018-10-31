@@ -30,6 +30,7 @@ parser.add_argument("-r", help="Percentage of population to be restarted",
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
                     type=int, default=0)
 parser.add_argument("-c", help="Crossover probability", type=float, default=0)
+parser.add_argument("-C", help="Couple formation test", default='True')
 parser.add_argument("-x", help="Crossover operator", choices=['gpx'],
                     default='gpx')
 parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
@@ -38,8 +39,8 @@ parser.add_argument("-k", help="Tournament size", type=int, default=0)
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("I", help="TSPLIB instance file", type=str)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
-parser.add_argument("-o", help="Generate report output file", default="False",
-                    choices=["True", "False"])
+parser.add_argument("-o", help="Generate report output file", default='False',
+                    choices=['True', 'False'])
 
 # Parser
 args = parser.parse_args()
@@ -76,10 +77,11 @@ log.info("------------------------------GA Settings--------------------------")
 log.info("Initial population: %i", args.p)
 log.info("Population restart percentage: %f", args.r)
 log.info("Elitism: %i", args.e)
+log.info("Tournament size: %i", args.k)
+log.info("Couple formation: %f", args.C)
 log.info("Crossover probability: %f", args.c)
 log.info("Crossover operator: %s", args.x)
 log.info("Mutation probability: %f", args.m)
-log.info("Tournament size: %i", args.k)
 log.info("Generation limit: %i", args.g)
 log.info("TSPLIB instance: %s", args.I)
 log.info("Iterations: %i", args.n)
@@ -106,7 +108,7 @@ while loop:
             ga.select_tournament(args.k)
         # Recombination
         if args.c:
-            ga.recombine(args.c)
+            ga.recombine(args.c, True)
         # Mutation
         if args.m:
             ga.mutate(args.m)
