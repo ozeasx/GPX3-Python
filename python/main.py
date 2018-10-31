@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # Ozeas - ozeasx@gmail.com
 
+from __future__ import print_function
 import time
 import os
 import sys
@@ -81,6 +82,7 @@ log.info("Mutation probability: %f", args.m)
 log.info("Tournament size: %i", args.k)
 log.info("Generation limit: %i", args.g)
 log.info("TSPLIB instance: %s", args.I)
+log.info("Iterations: %i", args.n)
 
 # Needed objects
 cmd = Shell()

@@ -133,7 +133,7 @@ class GA(object):
 
         # assert len(self._population) == self._pop_size
 
-    def recombine(self, p_cross, test=False):
+    def recombine(self, operator, p_cross, test=False):
         # Register start time
         start_time = time.time()
         # Auxiliar list
