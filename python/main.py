@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # Ozeas - ozeasx@gmail.com
 
-from __future__ import print_function
 import time
 import os
 import sys
@@ -108,7 +107,7 @@ while loop:
             ga.select_tournament(args.k)
         # Recombination
         if args.c:
-            ga.recombine(args.c, True)
+            ga.recombine(args.c, args.C)
         # Mutation
         if args.m:
             ga.mutate(args.m)
