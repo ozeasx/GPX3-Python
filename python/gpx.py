@@ -108,34 +108,40 @@ class GPX(object):
         # simple_tour = defaultdict(deque)
         simple_g = defaultdict(dict)
 
-        # Identify entrance and exit vertices
+        # Create in, outer and common graphs
         for key in vertices:
             simple_g[key]['in'] = set()
             simple_g[key]['out'] = set()
             simple_g[key]['common'] = set()
             last = None
-            size = len(tour)
-            for i in xrange(size + 1):
-                previous = tour[(i-1) % size]
-                current = tour[i % size]
-                next = tour[(i+1) % size]
-                # Entrance
-                if previous not in vertices[key] and current in vertices[key]:
-                    if not last:
-                        last = current
-                        continue
+            first = None
+            for i, current in enumerate(tour):
+                if current not in vertices[key]:
+                    continue
+                prev = tour[i-1]
+                next = tour[(i+1) % len(tour)]
+                if not first and current in vertices[key]:
+                    first = prev, current, next
+                    last = current
+                    continue
+                # Entrance vertice
+                if prev not in vertices[key] and current in vertices[key]:
                     simple_g[key]['out'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([previous, current]))
-                # Exit
+                    simple_g[key]['common'].add(frozenset([prev, current]))
+                    last = current
+                    continue
+                # Exit vertice
                 if current in vertices[key] and next not in vertices[key]:
-                    if not last:
-                        last = current
-                        continue
                     simple_g[key]['in'].add(frozenset([last, current]))
                     simple_g[key]['common'].add(frozenset([current, next]))
-                print previous, current, next, last
-                print simple_g[key]
-                last = current
+                    last = current
+            # Final
+            if first[0] not in vertices[key]:
+                simple_g[key]['out'].add(frozenset([last, first[1]]))
+                simple_g[key]['common'].add(frozenset([first[0], first[1]]))
+            if first[2] not in vertices[key]:
+                simple_g[key]['in'].add(frozenset([last, first[1]]))
+                simple_g[key]['common'].add(frozenset([first[2], first[1]]))
 
         # Store execution time and return
         self._exec_time['simple graph'].append(time.time() - start_time)
@@ -158,10 +164,9 @@ class GPX(object):
         infeasible = set()
 
         for key in simple_graph_a:
-            if len(simple_graph_a[key]['in']) == 2:
+            if len(simple_graph_a[key]['in']) == 1:
                 feasible.add(key)
-            elif (simple_graph_a[key]['in'] == simple_graph_b[key]['out']
-                  or simple_graph_a[key]['out'] == simple_graph_b[key]['in']):
+            elif simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
                 feasible.add(key)
             else:
                 infeasible.add(key)
