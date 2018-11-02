@@ -16,7 +16,7 @@ class GPX(object):
         # dataset to compute distances
         self._data = data
         # Infeasible value compared to feasible partitions
-        self._infeasible_weight = 0.4
+        self._infeasible_weight = 0.6
         # Limit fusion trys (unused)
         self._fusion_limit = False
         # Dict with lists containing execution time of each step
@@ -109,6 +109,7 @@ class GPX(object):
         simple_g = defaultdict(dict)
 
         # Create in, outer and common graphs
+        size = len(tour)
         for key in vertices:
             simple_g[key]['in'] = set()
             simple_g[key]['out'] = set()
@@ -119,7 +120,7 @@ class GPX(object):
                 if current not in vertices[key]:
                     continue
                 prev = tour[i-1]
-                next = tour[(i+1) % len(tour)]
+                next = tour[(i+1) % size]
                 if not first and current in vertices[key]:
                     first = prev, current, next
                     last = current
@@ -149,13 +150,6 @@ class GPX(object):
 
     # Classify partitions feasibility by simple graph comparison
     def _classify(self, simple_graph_a, simple_graph_b):
-        #        	Azul			Vermelho
-        # In	(2,3),  (22,23)		(2,23), (3,22)
-        # Out	(2,23), (3,22)		(2,3), (22,23)
-        # In	(10,11), (30,31)	(10,30), (11,31)
-        # Out	(10,31), (11,30) 	(10,31), (11,30)
-        # (2,3),(22,23),(2,23),(3,22) & (2,23),(3,22),(2,3),(22,23)
-        # (10,11),(30,31),(10,31),(11,30) & (10,30),(11,31),(10,31),(11,30)
         # Mark start time
         start_time = time.time()
 
@@ -164,12 +158,13 @@ class GPX(object):
         infeasible = set()
 
         for key in simple_graph_a:
-            if len(simple_graph_a[key]['in']) == 1:
+            if simple_graph_a[key]['in'] == simple_graph_b[key]['in']:
                 feasible.add(key)
-            elif simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
+                continue
+            if simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
                 feasible.add(key)
-            else:
-                infeasible.add(key)
+                continue
+            infeasible.add(key)
 
         # Store execution time
         self._exec_time['classify'].append(time.time() - start_time)
@@ -184,67 +179,65 @@ class GPX(object):
         start_time = time.time()
 
         # Fused partitions
-        #fused = set()
+        fused = set()
 
         # Start fusion try with 2 partitions
-        #n = 2
-        #while n < len(partitions['infeasible']):
+        n = 2
+        while n < len(partitions['infeasible']):
             # Create all combinations of n size
-        #    candidates = list()
-        #    for fusion in combinations(partitions['infeasible'], n):
+            candidates = list()
+            for fusion in combinations(partitions['infeasible'], n):
                 # Count common edges
-        #        count = 0
-        #        for i, j in zip(fusion[:-1], fusion[1:]):
-        #            count += len(partitions['simple_graph_a'][i]
-        #                         & partitions['simple_graph_a'][j])
+                count = 0
+                for i, j in zip(fusion[:-1], fusion[1:]):
+                    count += len(partitions['simple_graph_a'][i]['common']
+                                 & partitions['simple_graph_a'][j]['common'])
 
                 # Create element with (fusion, count)
-        #        if count:
-        #            candidates.append(list(fusion) + [count])
+                if count:
+                    candidates.append(list(fusion) + [count])
 
             # Sort by common edges count
-        #    candidates.sort(key=lambda fusion: fusion[n], reverse=True)
+            candidates.sort(key=lambda fusion: fusion[n], reverse=True)
             # Discard common edges count
-        #    for fusion in candidates:
-        #        fusion.pop(-1)
+            for fusion in candidates:
+                fusion.pop(-1)
             # Convert elements to tuples
-        #    candidates = map(tuple, candidates)
+            candidates = map(tuple, candidates)
             # Increment fusion size
-        #    n += 1
+            n += 1
             # Try fusions
-        #    for fusion in candidates[:len(partitions['infeasible'])]:
+            for fusion in candidates[:len(partitions['infeasible'])]:
                 # print len(candidates[:len(partitions['infeasible'])])
-        #        union = defaultdict(set)
+                union = defaultdict(set)
                 # Test to determine if partition is fused already
-        #        if not any(i in fused for i in fusion):
-        #            for i in fusion:
-        #                union[fusion] |= partitions['vertices'][i]
+                if not any(i in fused for i in fusion):
+                    for i in fusion:
+                        union[fusion] |= partitions['vertices'][i]
 
                     # Pause time count
-        #            start_time = time.time() - start_time
+                    start_time = time.time() - start_time
                     # Create simple graphs for fusion
-        #            simple_graph_1 = self._gen_simple_graph(self._tour_a,
-        #                                                    union)
-        #            simple_graph_2 = self._gen_simple_graph(self._tour_b,
-        #                                                    union)
+                    simple_g_a = self._gen_simple_graph(self._tour_a, union)
+                    simple_g_b = self._gen_simple_graph(self._tour_b, union)
 
                     # Check if fusion is feasible
-        #            f1, _ = self._classify(simple_graph_1, simple_graph_2)
+                    f1, _ = self._classify(simple_g_a, simple_g_b)
                     # Resume time count
-        #            start_time = time.time() - start_time
+                    start_time = time.time() - start_time
 
                     # Update information
-        #            if fusion in f1 or fusion in f2:
-        #                partitions['ab_cycles']['A'][fusion] = deque()
-        #                partitions['ab_cycles']['B'][fusion] = deque()
-        #                for i in fusion:
-        #                    partitions['ab_cycles']['A'][fusion].extend(
-        #                                       partitions['ab_cycles']['A'][i])
-        #                    partitions['ab_cycles']['B'][fusion].extend(
-        #                                       partitions['ab_cycles']['B'][i])
-        #                    fused.add(i)
-        #                    partitions['feasible'].update(f1)
-        #                    partitions['infeasible'].remove(i)
+                    if fusion in f1:
+                        partitions['ab_cycles']['A'][fusion] = deque()
+                        partitions['ab_cycles']['B'][fusion] = deque()
+                        for i in fusion:
+                            partitions['ab_cycles']['A'][fusion].extend(
+                                               partitions['ab_cycles']['A'][i])
+                            partitions['ab_cycles']['B'][fusion].extend(
+                                               partitions['ab_cycles']['B'][i])
+                            fused.add(i)
+                            partitions['infeasible'].remove(i)
+                        partitions['feasible'].update(f1)
 
         # Fuse all remaining partitions
         if len(partitions['infeasible']) > 1:
@@ -257,10 +250,6 @@ class GPX(object):
                 partitions['ab_cycles']['B'][fusion].extend(
                                                partitions['ab_cycles']['B'][i])
             partitions['feasible'].add(fusion)
-        # Remaining partition is feasilbe 2?
-        elif len(partitions['infeasible']) == 1:
-            partitions['feasible'].update(partitions['infeasible'])
-            # Clear infeasible
             partitions['infeasible'].clear()
 
         # Store execution time
@@ -286,7 +275,7 @@ class GPX(object):
         minor = {'key': None, 'value': None}
 
         # Get distance of all partitions tours
-        for key in partitions['feasible']:
+        for key in partitions['feasible'] | partitions['infeasible']:
             dists['A'][key] += self._data.ab_cycle_dist(
                                              partitions['ab_cycles']['A'][key])
             dists['B'][key] += self._data.ab_cycle_dist(
@@ -312,6 +301,7 @@ class GPX(object):
         # Create each solution
         solution_1 = list()
         solution_2 = list()
+        solution_3 = list()
         sum_1 = 0
 
         for cycle, key in solution:
@@ -352,8 +342,8 @@ class GPX(object):
         vertices_2, tour_2 = Graph.dfs(graph_2, 1)
 
         # Verify infeasible tours
-        assert len(vertices_1) == self._data.dimension
-        assert len(vertices_2) == self._data.dimension
+        assert len(vertices_1) == self._data.dimension, (partitions['tour_a'], partitions['tour_b'])
+        assert len(vertices_2) == self._data.dimension, partitions
 
         # Store execution time
         self._exec_time['build'].append(time.time() - start_time)
@@ -443,6 +433,8 @@ class GPX(object):
             partitions['simple_graph_b'] = simple_graph_c_n
             tour_b = tour_c
 
+        partitions['tour_a'] = tour_a
+        partitions['tour_b'] = tour_b
         # Constructed tours
         self._tour_a = tour_a
         self._tour_b = tour_b
