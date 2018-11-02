@@ -106,29 +106,50 @@ class GPX(object):
         start_time = time.time()
         # Variables
         # simple_tour = defaultdict(deque)
-        simple_graph = defaultdict(set)
+        simple_g = defaultdict(dict)
 
         # Identify entrance and exit vertices
         for key in vertices:
-            first = None
+            simple_g[key]['in'] = set()
+            simple_g[key]['out'] = set()
+            simple_g[key]['common'] = set()
             last = None
-            for i in tour:
-                if i in vertices[key]:
-                    if not first:
-                        first = i
-                        last = i
+            size = len(tour)
+            for i in xrange(size + 1):
+                previous = tour[(i-1) % size]
+                current = tour[i % size]
+                next = tour[(i+1) % size]
+                # Entrance
+                if previous not in vertices[key] and current in vertices[key]:
+                    if not last:
+                        last = current
                         continue
-                    simple_graph[key].add(frozenset([last, i]))
-                    last = i
-
-            simple_graph[key].add(frozenset([last, first]))
+                    simple_g[key]['out'].add(frozenset([last, current]))
+                    simple_g[key]['common'].add(frozenset([previous, current]))
+                # Exit
+                if current in vertices[key] and next not in vertices[key]:
+                    if not last:
+                        last = current
+                        continue
+                    simple_g[key]['in'].add(frozenset([last, current]))
+                    simple_g[key]['common'].add(frozenset([current, next]))
+                print previous, current, next, last
+                print simple_g[key]
+                last = current
 
         # Store execution time and return
         self._exec_time['simple graph'].append(time.time() - start_time)
-        return dict(simple_graph)
+        return dict(simple_g)
 
     # Classify partitions feasibility by simple graph comparison
     def _classify(self, simple_graph_a, simple_graph_b):
+        #        	Azul			Vermelho
+        # In	(2,3),  (22,23)		(2,23), (3,22)
+        # Out	(2,23), (3,22)		(2,3), (22,23)
+        # In	(10,11), (30,31)	(10,30), (11,31)
+        # Out	(10,31), (11,30) 	(10,31), (11,30)
+        # (2,3),(22,23),(2,23),(3,22) & (2,23),(3,22),(2,3),(22,23)
+        # (10,11),(30,31),(10,31),(11,30) & (10,30),(11,31),(10,31),(11,30)
         # Mark start time
         start_time = time.time()
 
@@ -137,7 +158,10 @@ class GPX(object):
         infeasible = set()
 
         for key in simple_graph_a:
-            if len(simple_graph_a[key] ^ si0mple_graph_b[key]) == len(simple_graph_a[key]):
+            if len(simple_graph_a[key]['in']) == 2:
+                feasible.add(key)
+            elif (simple_graph_a[key]['in'] == simple_graph_b[key]['out']
+                  or simple_graph_a[key]['out'] == simple_graph_b[key]['in']):
                 feasible.add(key)
             else:
                 infeasible.add(key)
@@ -227,7 +251,7 @@ class GPX(object):
                                                partitions['ab_cycles']['A'][i])
                 partitions['ab_cycles']['B'][fusion].extend(
                                                partitions['ab_cycles']['B'][i])
-            partitions['feasible_1'].add(fusion)
+            partitions['feasible'].add(fusion)
         # Remaining partition is feasilbe 2?
         elif len(partitions['infeasible']) == 1:
             partitions['feasible'].update(partitions['infeasible'])
@@ -257,7 +281,7 @@ class GPX(object):
         minor = {'key': None, 'value': None}
 
         # Get distance of all partitions tours
-        for key in partitions['feasible_1']:
+        for key in partitions['feasible']:
             dists['A'][key] += self._data.ab_cycle_dist(
                                              partitions['ab_cycles']['A'][key])
             dists['B'][key] += self._data.ab_cycle_dist(
