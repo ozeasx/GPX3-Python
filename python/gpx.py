@@ -100,20 +100,19 @@ class GPX(object):
         # Return vertice set and ab_cycles
         return vertices, ab_cycles
 
-    # Create the simple graph for all partions for given tour
+    # Create the simple graph for all partitions for given tour
     def _gen_simple_graph(self, tour, vertices):
         # Mark start time
         start_time = time.time()
-        # Variables
-        # simple_tour = defaultdict(deque)
+        # Simplified graph
         simple_g = defaultdict(dict)
 
-        # Create in, outer and common graphs
+        # Create inner, outer and common graphs
         size = len(tour)
         for key in vertices:
-            simple_g[key]['in'] = set()
-            simple_g[key]['out'] = set()
-            simple_g[key]['common'] = set()
+            simple_g[key]['in'] = set()  # inner simplified graph
+            simple_g[key]['out'] = set()  # outter simplified graph
+            simple_g[key]['common'] = set()  # common graph
             last = None
             first = None
             for i, current in enumerate(tour):
@@ -121,30 +120,30 @@ class GPX(object):
                     continue
                 prev = tour[i-1]
                 next = tour[(i+1) % size]
-                if not first and current in vertices[key]:
+                if not first:
                     first = prev, current, next
                     last = current
                     continue
                 # Entrance vertice
-                if prev not in vertices[key] and current in vertices[key]:
+                if prev not in vertices[key]:
                     simple_g[key]['out'].add(frozenset([last, current]))
                     simple_g[key]['common'].add(frozenset([prev, current]))
                     last = current
                     continue
                 # Exit vertice
-                if current in vertices[key] and next not in vertices[key]:
+                if next not in vertices[key]:
                     simple_g[key]['in'].add(frozenset([last, current]))
                     simple_g[key]['common'].add(frozenset([current, next]))
                     last = current
-            # Final
-            if first[0] not in vertices[key]:
+            # Close graphs
+            if first[0] not in vertices[key]:  # previous not in
                 simple_g[key]['out'].add(frozenset([last, first[1]]))
                 simple_g[key]['common'].add(frozenset([first[0], first[1]]))
-            if first[2] not in vertices[key]:
+            if first[2] not in vertices[key]:  # next not in
                 simple_g[key]['in'].add(frozenset([last, first[1]]))
                 simple_g[key]['common'].add(frozenset([first[2], first[1]]))
 
-        # Store execution time and return
+        # Store execution time and return constructed graphs
         self._exec_time['simple graph'].append(time.time() - start_time)
         return dict(simple_g)
 
@@ -215,13 +214,13 @@ class GPX(object):
             # Discard common edges count
             for fusion in candidates:
                 fusion.pop(-1)
-            # Convert elements to tuples
+            # Convert elements to tuples to be used as dict keys
             candidates = map(tuple, candidates)
             # Increment fusion size
             n += 1
             # Try fusions
             for fusion in candidates:
-                # print len(candidates[:len(partitions['infeasible'])])
+                # Partitions vertices union
                 union = defaultdict(set)
                 # Test to determine if partition is fused already
                 if not any(i in fused for i in fusion):
@@ -238,11 +237,12 @@ class GPX(object):
                     # Resume time count
                     start_time = time.time() - start_time
 
-                    # Update information
+                    # Update information if successfull fusion
                     if fusion in feasible:
                         fuse(fusion)
 
-        # Fuse all remaining partitions
+        # Fuse all remaining partitions in one infeasible partition to be
+        # handled by build method. The last of the mohicans stays infeasible.
         if len(partitions['infeasible']) > 1:
             fuse(tuple(partitions['infeasible']), 'infeasible')
 
@@ -450,7 +450,7 @@ class GPX(object):
             self._fusion(partitions)
 
         # After fusion, if exists one or no partition, return parents
-        if len(partitions['feasible']) <= 1:
+        if len(partitions['feasible']) + len(partitions['infeasible']) <= 1:
             self._failed += 1
             return parent_1, parent_2
 
