@@ -45,6 +45,17 @@ class Graph(dict):
 
         return Graph(graph)
 
+    # Generate graph of ab_cycles
+    @staticmethod
+    def gen_undirected_ab_graph(ab_cycle):
+        result = defaultdict(set)
+        ab_cycle = list(ab_cycle)
+        for i, j in zip(ab_cycle[0::2], ab_cycle[1::2]):
+            result[abs(i)].add(abs(j))
+            result[abs(j)].add(abs(i))
+
+        return Graph(result)
+
     # Graph union
     def __or__(self, other):
         result = dict.fromkeys(self.viewkeys() | other.viewkeys())

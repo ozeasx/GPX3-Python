@@ -7,10 +7,10 @@ from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-# cmd = Shell()
-# tsp = TSPLIB("../tsplib/ulysses16.tsp", cmd)
+cmd = Shell()
+tsp = TSPLIB("../tsplib/ulysses16.tsp", cmd)
 # gpx = GPX(tsp)
-gpx = GPX()
+gpx = GPX(tsp)
 
 # p1 = Chromosome(16)
 # p1.dist = tsp.tour_dist(p1.tour)
@@ -159,20 +159,20 @@ p1 = Chromosome((1, 12, 7, 15, 4, 5, 11, 6, 13, 14, 3, 2, 10, 16, 8, 9))
 p2 = Chromosome((1, 5, 12, 10, 16, 13, 9, 11, 3, 7, 2, 15, 14, 6, 8, 4))
 
 # F20
-p1 = Chromosome((1, -1, 4, -4, 11, -11, 10, -10, 16, -16, 13, -13, 3, -3, 9, -9, 6, -6, 8, -8, 2, -2, 14, 15, 12, -12, 7, -7, 5, -5))
-p2 = Chromosome((-1, 1, -7, 7, -6, 6, -5, 5, -11, 11, -9, 9, -10, 10, -12, 12, -13, 13, 14, 15, -16, 16, -8, 8, -4, 4, -2, 2, -3, 3))
+# p1 = Chromosome((1, 4, 11, 10, 16, 13, 3, 9, 6, 8, 2, 14, 15, 12, 7, 5))
+# p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
 
 
-# p1.dist = tsp.tour_dist(p1.tour)
-# p2.dist = tsp.tour_dist(p2.tour)
+p1.dist = tsp.tour_dist(p1.tour)
+p2.dist = tsp.tour_dist(p2.tour)
 # p1 = Chromosome(1000)
 # p2 = Chromosome(1000)
 r = gpx.recombine(p1, p2)
 
 print "Results -------------------------------------------------------------"
 # print
-# print "Tour 1: ", p1.tour, ", Distance: "  # , p1.dist
-# print "Tour 2: ", p2.tour, ", Distance: "  # , p2.dist
+print "Tour 1: ", p1.tour, ", Distance: ", p1.dist
+print "Tour 2: ", p2.tour, ", Distance: ", p2.dist
 # print
 # print "Internal tour a: ", gpx.tour_a
 # print "Internal tour b: ", gpx.tour_b

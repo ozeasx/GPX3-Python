@@ -262,8 +262,10 @@ class GPX(object):
         # Set to store partial solution (cycle, key)s
         solution = set()
 
-        # Partition with minor diff
-        minor = {'key': None, 'diff': None}
+        # Partition with minor inside diff
+        minor_key = None
+        minor_diff = None
+        inf_key = None
 
         # Get distance of all partitions tours
         for key in partitions['feasible'] | partitions['infeasible']:
@@ -275,74 +277,88 @@ class GPX(object):
             # Distance diference inside AB_cycle
             diff = abs(dists['A'][key] - dists['B'][key])
 
-            # Store AB_cycle with minor diference
-            if not minor['key']:
-                minor['key'] = key
-                minor['diff'] = diff
-            elif diff < minor['diff']:
-                minor['key'] = key
-                minor['diff'] = diff
-
-            # Chose best edges in each partition
-            if dists['A'][key] <= dists['B'][key]:
-                solution.add(tuple(['A', key]))
+            if key in partitions['infeasible']:
+                inf_key = key
+                inf_cycle_a = partitions['ab_cycles']['A'][key]
+                inf_cycle_b = partitions['ab_cycles']['B'][key]
             else:
-                solution.add(tuple(['B', key]))
+                # Store AB_cycle with minor diference
+                if not minor_key:
+                    minor_key = key
+                    minor_diff = diff
+                elif diff < minor_diff:
+                    minor_key = key
+                    minor_diff = diff
 
-        # Create each solution
-        solution_1 = list()
-        solution_2 = list()
-        sum_1 = 0
+                # Chose best edges in each partition
+                if dists['A'][key] <= dists['B'][key]:
+                    solution.add(tuple(['A', key]))
+                else:
+                    solution.add(tuple(['B', key]))
+
+        # Create base solutions without infeasible part
+        base_1 = list()
+        base_2 = list()
+        base_1_dist = 0
 
         # Feasible part
         for cycle, key in solution:
-            solution_1.extend(partitions['ab_cycles'][cycle][key])
-            sum_1 += dists[cycle][key]
-            if key != minor['key']:
-                solution_2.extend(partitions['ab_cycles'][cycle][key])
+            base_1.extend(partitions['ab_cycles'][cycle][key])
+            base_1_dist += dists[cycle][key]
+            if key != minor_key:
+                base_2.extend(partitions['ab_cycles'][cycle][key])
             elif cycle == 'A':
-                solution_2.extend(partitions['ab_cycles']['B'][minor['key']])
+                base_2.extend(partitions['ab_cycles']['B'][minor_key])
             else:
-                solution_2.extend(partitions['ab_cycles']['A'][minor['key']])
+                base_2.extend(partitions['ab_cycles']['A'][minor_key])
 
-        # Total sum of one partial solution
-        sum_A = sum(dists['A'].values())
+        # Calc base2 and common edges distances
+        base_2_dist = base_1_dist + minor_diff
+        common_dist = tour_dist - sum(dists['A'].values())
 
-        # Calc common edges distance
-        common_dist = tour_dist - sum_A
+        # Create base graphs
+        graph_1 = Graph.gen_undirected_ab_graph(base_1) | common_graph
+        graph_2 = Graph.gen_undirected_ab_graph(base_2) | common_graph
 
-        # Create solutions graphs
-        graph_1 = defaultdict(set)
-        graph_2 = defaultdict(set)
+        # [[ab_cycles, graphs, vertices, tours]]
+        if inf_key:
+            inf_graph_a = Graph.gen_undirected_ab_graph(inf_cycle_a)
+            inf_graph_b = Graph.gen_undirected_ab_graph(inf_cycle_b)
 
-        # Create solution 1 undirected graph
-        for i, j in zip(solution_1[0::2], solution_1[1::2]):
-            graph_1[abs(i)].add(abs(j))
-            graph_1[abs(j)].add(abs(i))
-
-        # Create solution 2 undirected graph
-        for i, j in zip(solution_2[0::2], solution_2[1::2]):
-            graph_2[abs(i)].add(abs(j))
-            graph_2[abs(j)].add(abs(i))
-
-        graph_1 = Graph(graph_1) | Graph(common_graph)
-        graph_2 = Graph(graph_2) | Graph(common_graph)
-
-        # Create tours from solutions graph
-        vertices_1, tour_1 = Graph.dfs(graph_1, 1)
-        vertices_2, tour_2 = Graph.dfs(graph_2, 1)
+            candidates = list()
+            i = 0
+            for graph, base_dist in zip([graph_1, graph_2], [base_1_dist,
+                                                             base_2_dist]):
+                for inf_graph, inf_dist in zip([inf_graph_a, inf_graph_b],
+                                               [dists['A'][inf_key],
+                                                dists['B'][inf_key]]):
+                    vertices, tour = Graph.dfs(graph | inf_graph, 1)
+                    if len(vertices) == self._data.dimension:
+                        candidates.append(list())
+                        candidates[i] = [base_dist + inf_dist, vertices, tour]
+                        i += 1
+            assert len(candidates) >= 2, len(candidates)
+            candidates.sort(key=lambda s: s[0])
+            dist_1, vertices_1, tour_1 = candidates[0]
+            dist_2, vertices_2, tour_2 = candidates[1]
+        else:
+            # Create tours from solutions graph
+            dist_1 = base_1_dist
+            dist_2 = base_2_dist
+            vertices_1, tour_1 = Graph.dfs(graph_1, 1)
+            vertices_2, tour_2 = Graph.dfs(graph_2, 1)
 
         # Verify infeasible tours
         assert len(vertices_1) == self._data.dimension, (self._tour_a,
                                                          self._tour_b)
         assert len(vertices_2) == self._data.dimension, (self._tour_a,
                                                          self._tour_b)
+
         # Store execution time
         self._exec_time['build'].append(time.time() - start_time)
 
-        # Create solutions
-        return (tour_1, common_dist + sum_1), \
-               (tour_2, common_dist + sum_1 + minor['diff'])
+        # Return created solutions
+        return (tour_1, dist_1 + common_dist), (tour_2, dist_2 + common_dist)
 
     # Partition Crossover
     def recombine(self, parent_1, parent_2):
