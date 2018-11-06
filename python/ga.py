@@ -6,6 +6,7 @@ import random
 import logging as log
 from collections import defaultdict
 from operator import attrgetter
+from itertools import combinations
 from chromosome import Chromosome
 from gpx import GPX
 import mut
@@ -105,9 +106,6 @@ class GA(object):
     def evaluate(self):
         # Register star time
         start_time = time.time()
-        # Set population size and increment generation
-        self._pop_size = len(self._population)
-        self._generation += 1
 
         # Update fitness of all population
         total_fitness = 0
@@ -116,10 +114,21 @@ class GA(object):
             total_fitness += c.fitness
 
         # Calc average fitness
+        self._pop_size = len(self._population)
         self._avg_fitness = total_fitness/float(self._pop_size)
+
+        if self._generation:
+            last_best_fitness = self._best_solution.fitness
 
         # Store best solution found
         self._best_solution = max(self._population, key=attrgetter('fitness'))
+
+        # Make sure elitism is doing its job
+        if self._generation and self._elite:
+            assert self._best_solution.fitness >= last_best_fitness
+
+        # Increment generaion
+        self._generation += 1
 
         # Register execution Timers
         self._exec_time['evaluation'].append(time.time() - start_time)
@@ -148,30 +157,17 @@ class GA(object):
         # Regiter execution time
         self._exec_time['tournament'].append(time.time() - start_time)
 
-        # assert len(self._population) == self._pop_size
+        # Assure population size remains the same
+        assert len(self._population) == self._pop_size
 
-    def recombine(self, p_cross, test=False):
+    # Generate all possible combinations
+    def select_pairwise(self):
+        self._population = combinations(self._population, 2)
+
+    # Recombination
+    def recombine(self, p_cross, pairwise=False):
         # Register start time
         start_time = time.time()
-        # Auxiliar list
-        aux = list()
-
-        # Try to form pairs with different parents
-        if test:
-            pair = True
-            while pair:
-                pair = False
-                for i in xrange(len(self._population)):
-                    for j in xrange(i + 1, len(self._population)):
-                        if self._population[i] != self._population[j]:
-                            i, j = sorted([i, j])
-                            aux.append(self._population.pop(j))
-                            aux.append(self._population.pop(i))
-                            pair = True
-                            break
-                    if pair:
-                        break
-            self._population += aux
 
         # Recombination
         for i in xrange(0, self._pop_size, 2):
@@ -181,12 +177,21 @@ class GA(object):
                 # Replace p1 and p2 only if c1 or c2 are different from parents
                 if c1 not in [self._population[i], self._population[i+1]] \
                    or c2 not in [self._population[i], self._population[i+1]]:
+                    # Assure GPX is doing its job.
+                    assert (c1.dist + c2.dist < self._population[i].dist
+                            + self._population[i+1].dist), "Something wrong..."
                     self._population[i], self._population[i+1] = c1, c2
                     self._cross += 1
 
         # Register execution time
         self._exec_time['recombination'].append(time.time() - start_time)
 
+        # Reduce population in case of pairwise selection
+        if pairwise:
+            self._population.sort(key=attrgetter('fitness'))
+            self._population = self._population[:self._pop_size]
+
+        # Assure population size remains the same
         assert len(self._population) == self._pop_size
 
     # Mutate individuals according to p_mut probability
@@ -202,8 +207,6 @@ class GA(object):
 
         # Register execution time
         self._exec_time['mutation'].append(time.time() - start_time)
-
-        # assert len(self._population) == self._pop_size
 
     # Reset population
     def restart_pop(self, ratio):
@@ -224,7 +227,8 @@ class GA(object):
         # Register execution time
         self._exec_time['pop restart'].append(time.time() - start_time)
 
-        # assert len(self._population) == self._pop_size
+        # Assure population size remains the same
+        assert len(self._population) == self._pop_size
 
     # Generation info
     def print_info(self):
@@ -242,6 +246,10 @@ class GA(object):
     def report(self):
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
+        log.info("Feasible type 1: %i", self._gpx.feasible_1)
+        log.info("Feasible type 2: %i", self._gpx.feasible_2)
+        log.info("Feasible type 2 ratio: %f", float(self._gpx.feasible_2)/(
+                                  self._gpx.feasible_1 + self._gpx.feasible_2))
         log.info("Failed crossovers: %i", self._gpx.failed)
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
@@ -258,11 +266,10 @@ class GA(object):
         log.info("  Build: %f", sum(self._gpx.exec_time['build']))
         log.info("Mutation: %f", sum(self._exec_time['mutation']))
         log.info("Population restart: %f", sum(self._exec_time['pop restart']))
-        if self._data.best_tour:
+        if self._data.best_solution:
             log.info("---------------- Best known solution ------------------")
-            log.info("Tour: %s", (self._data.best_tour,))
-            log.info("Distance: %f",
-                     self._data.tour_dist(self._data.best_tour))
+            log.info("Tour: %s", (self._data.best_solution.tour,))
+            log.info("Distance: %f", self._data.best_solution.dist)
         log.info("------------------- Best individual found -----------------")
         log.info("Tour: %s", (self._best_solution.tour,))
         log.info("Distance: %f", self._best_solution.dist)

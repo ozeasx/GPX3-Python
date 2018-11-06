@@ -65,8 +65,9 @@ def two_opt(chromosome, data):
                     best_dist = best_dist - join_a_dist + join_b_dist
                     improved = True
 
+    # Make sure 2opt is doing its job
+    assert best_dist <= chromosome.dist, "Something wrong..."
     # Rotate solution to begin with 1
-    # assert len(set(best_tour)) == data.dimension
     p = best_tour.index(1)
     best_tour = deque(best_tour)
     best_tour.rotate(-p)

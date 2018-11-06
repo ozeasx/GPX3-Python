@@ -19,15 +19,18 @@ class GPX(object):
         self._infeasible_weight = 0.4
         # Limit fusion trys (unused)
         self._fusion_limit = False
-        # Dict with lists containing execution time of each step
-        self._exec_time = defaultdict(list)
         # Partitioning data
         self._partitions = dict()
         # Tours created for partitioning
         self._tour_a = None
         self._tour_b = None
+        # Count feasible types 1 and 2 partitions
+        self._feasible_1 = 0
+        self._feasible_2 = 0
         # Count failed and suceeded partitioning
         self._failed = 0
+        # Dict with lists containing execution time of each step
+        self._exec_time = defaultdict(list)
 
     @property
     def infeasible_weight(self):
@@ -38,8 +41,8 @@ class GPX(object):
         return self._fusion_limit
 
     @property
-    def exec_time(self):
-        return self._exec_time
+    def partitions(self):
+        return self._partitions
 
     @property
     def tour_a(self):
@@ -52,16 +55,24 @@ class GPX(object):
             return tuple(self._tour_b)
 
     @property
-    def partitions(self):
-        return self._partitions
-
-    @property
     def failed(self):
         return self._failed
 
+    @property
+    def feasible_1(self):
+        return self._feasible_1
+
+    @property
+    def feasible_2(self):
+        return self._feasible_2
+
+    @property
+    def exec_time(self):
+        return self._exec_time
+
     @infeasible_weight.setter
     def infeasible_weight(self, value):
-        assert 0 < value < 1, "Infeasible weight must be in ]0,1[] interval"
+        assert 0 < value <= 1, "Infeasible weight must be in ]0,1] interval"
         self._infeasible_weight = value
 
     @fusion_limit.setter
@@ -107,7 +118,7 @@ class GPX(object):
         # Simplified graph
         simple_g = defaultdict(dict)
 
-        # Create inner, outer and common graphs
+        # Create inner, outter and common graphs
         size = len(tour)
         for key in vertices:
             simple_g[key]['in'] = set()  # inner simplified graph
@@ -118,16 +129,16 @@ class GPX(object):
             for i, current in enumerate(tour):
                 if current not in vertices[key]:
                     continue
-                prev = tour[i-1]
+                previous = tour[i-1]
                 next = tour[(i+1) % size]
                 if not first:
-                    first = prev, current, next
+                    first = previous, current, next
                     last = current
                     continue
                 # Entrance vertice
-                if prev not in vertices[key]:
+                if previous not in vertices[key]:
                     simple_g[key]['out'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([prev, current]))
+                    simple_g[key]['common'].add(frozenset([previous, current]))
                     last = current
                     continue
                 # Exit vertice
@@ -135,10 +146,11 @@ class GPX(object):
                     simple_g[key]['in'].add(frozenset([last, current]))
                     simple_g[key]['common'].add(frozenset([current, next]))
                     last = current
-            # Close graphs
+            # Close outter graph
             if first[0] not in vertices[key]:  # previous not in
                 simple_g[key]['out'].add(frozenset([last, first[1]]))
                 simple_g[key]['common'].add(frozenset([first[0], first[1]]))
+            # Close inner graph
             if first[2] not in vertices[key]:  # next not in
                 simple_g[key]['in'].add(frozenset([last, first[1]]))
                 simple_g[key]['common'].add(frozenset([first[2], first[1]]))
@@ -157,15 +169,16 @@ class GPX(object):
         infeasible = set()
 
         for key in simple_graph_a:
-            # Inner graph
+            # Inner graph test
             if simple_graph_a[key]['in'] == simple_graph_b[key]['in']:
                 feasible.add(key)
-                continue
-            # Outter graph
-            if simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
+                self._feasible_1 += 1
+            # Outter graph test
+            elif simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
                 feasible.add(key)
-                continue
-            infeasible.add(key)
+                self._feasible_2 += 1
+            else:
+                infeasible.add(key)
 
         # Store execution time
         self._exec_time['classify'].append(time.time() - start_time)

@@ -47,6 +47,7 @@ class Chromosome(object):
     def __hash__(self):
         return hash(self._undirected_edges)
 
+    # String representaition
     def __str__(self):
         return str(self.fitness)
 
@@ -85,7 +86,7 @@ class Chromosome(object):
     def dist(self, value):
         self._dist = value
 
-    # Set fitness
+    # Fitness setter
     @fitness.setter
     def fitness(self, value):
         self._fitness = value

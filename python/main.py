@@ -4,6 +4,7 @@
 import time
 import os
 import sys
+import multiprocessing
 import argparse
 from collections import defaultdict
 import logging
@@ -13,6 +14,7 @@ from tsp import TSPLIB
 from shell import Shell
 
 
+# Redefine function to log assertion erros
 # http://code.activestate.com/recipes/577074-logging-asserts/
 def excepthook(*args):
     logging.getLogger().error('Uncaught exception:', exc_info=args)
@@ -31,7 +33,7 @@ parser.add_argument("-r", help="Percentage of population to be restarted",
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
                     type=int, default=0)
 parser.add_argument("-c", help="Crossover probability", type=float, default=0)
-parser.add_argument("-C", help="Couple formation test", default='True')
+parser.add_argument("-P", help="Pairwise Recombination", default='False')
 parser.add_argument("-x", help="Crossover operator", choices=['gpx'],
                     default='gpx')
 parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
@@ -43,8 +45,21 @@ parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Generate file reports", default='False',
                     choices=['True', 'False'])
 
+
 # Parser
 args = parser.parse_args()
+
+# Assert arguments
+assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
+                                      " and greater than 0"
+assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
+assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
+assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
+assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
+assert 0 <= args.k <= args.p - args.e, "Invalid tournament size"
+assert args.g > 0, "Invalid generation limit"
+assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
+assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
 # Logging
 if args.o == 'True':
@@ -64,25 +79,13 @@ else:
 # Dict to store fitness evolution
 fitness_out = defaultdict(list)
 
-# Assert arguments
-assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
-                                      " and greater than 0"
-assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
-assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
-assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
-assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
-assert 0 <= args.k <= args.p - args.e, "Invalid tournament size"
-assert args.g > 0, "Invalid generation limit"
-assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
-assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
-
 # Summary
 logging.info("------------------------------GA Settings----------------------")
 logging.info("Initial population: %i", args.p)
 logging.info("Population restart percentage: %f", args.r)
 logging.info("Elitism: %i", args.e)
 logging.info("Tournament size: %i", args.k)
-logging.info("Couple formation: %s", args.C)
+logging.info("Pairs formation: %s", args.P)
 logging.info("Crossover probability: %f", args.c)
 logging.info("Crossover operator: %s", args.x)
 logging.info("Mutation probability: %f", args.m)
@@ -120,7 +123,10 @@ while loop:
             ga.select_tournament(args.k)
         # Recombination
         if args.c:
-            ga.recombine(args.c, args.C)
+            if args.P == 'False':
+                ga.recombine(args.c)
+            else:
+                ga.recombine(args.c, True)
         # Mutation
         if args.m:
             ga.mutate(args.m)
@@ -129,8 +135,10 @@ while loop:
             ga.restart_pop(args.r)
         # Generation info
         ga.print_info()
-        # Final report
+    # Final report
     ga.report()
+    # If better solution found, store in tsp and write to file
+    tsp.best_solution = best_solution
     # Decrease iteration
     loop -= 1
 

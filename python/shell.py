@@ -1,3 +1,4 @@
+#!/usr/bin/python
 # Ozeas - ozeasx@gmail.com
 import subprocess
 
@@ -9,7 +10,7 @@ class Shell(object):
         # print cmd
         return str(subprocess.check_output([cmd], shell=True))
 
-    # Call script in background
+    # Call script
     @staticmethod
-    def call(script, args):
-        subprocess.call(['./test.sh'])
+    def call(args):
+        subprocess.call(args, shell=True)

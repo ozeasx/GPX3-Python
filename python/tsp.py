@@ -1,8 +1,9 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from itertools import combinations
 import os
+from itertools import combinations
+from chromosome import Chromosome
 
 
 class TSPLIB(object):
@@ -11,8 +12,7 @@ class TSPLIB(object):
         self._instance_path = instance_path
         self._instance_name = instance_path[:-4]
         self._shell = shell
-        self._best_tour = None
-        self._best_tour_length = None
+        self._best_solution = None
 
         # Set tsp dimension
         self._dimension = int(shell.run("grep DIMENSION " + instance_path
@@ -22,42 +22,15 @@ class TSPLIB(object):
         # https://stackoverflow.com/questions/13079563/how-does-condensed-distance-matrix-work-pdist/13079806
         self._cindex = lambda i, j: i*(2*self._dimension - i - 3)/2 + j - 1
 
-        # Set best known solution, if exists
-        if os.path.isfile(self._instance_name + ".opt.tour"):
-            with open(self._instance_name + ".opt.tour") as best:
-                do = False
-                self._best_tour = list()
-                for word in best:
-                    # End loop if EOF
-                    if word.strip() == "EOF":
-                        break
-                    # If do, store tour
-                    if do:
-                        self._best_tour.append(int(word))
-                    # If TOUR_SECTION, set do to store solution
-                    if word.strip() == "TOUR_SECTION":
-                        do = True
-            # Try to remove cycle close
-            try:
-                self._best_tour.remove(-1)
-            except ValueError:
-                pass
-            # Converto to tuple
-            self._tour = tuple(self._best_tour)
-            # Store length
-            self._best_tour_length = self.tour_dist(self._best_tour)
-
         # Generate distance matrix file
         if not os.path.isfile(self._instance_name + ".tsp.dm"):
             print "Generating distance matrix..."
-            shell.run("../R/create_dm.r " + instance_path)
+            shell.call("../R/create_dm.r " + instance_path)
             print "Done..."
         else:
             print "Distance matrix file already exists"
 
         # Generate list of lists combination lookup
-        # self._hash = np.empty((self._dimension, self._dimension),dtype=float)
-        # self._dm = np.empty((self._dimension, self._dimension), dtype=float)
         self._hash = dict()
         self._dm = list()
         line_number = 1
@@ -67,6 +40,35 @@ class TSPLIB(object):
                 self._dm.append(float(dist))
                 line_number += 1
 
+        # Set best known solution, if exists
+        tour_file = None
+        if os.path.isfile(self._instance_name + ".opt.tour.new"):
+            tour_file = self._instance_name + ".opt.tour.new"
+        elif os.path.isfile(self._instance_name + ".opt.tour"):
+            tour_file = self._instance_name + ".opt.tour"
+        if tour_file:
+            with open(tour_file) as best:
+                do = False
+                best_tour = list()
+                for word in best:
+                    # End loop if EOF
+                    if word.strip() == "EOF":
+                        break
+                    # If do, store tour
+                    if do:
+                        best_tour.append(int(word))
+                    # If TOUR_SECTION, set do to store solution
+                    if word.strip() == "TOUR_SECTION":
+                        do = True
+            # Try to remove cycle close
+            try:
+                best_tour.remove(-1)
+            except ValueError:
+                pass
+            # Store best solution
+            self._best_solution = Chromosome(best_tour,
+                                             self.tour_dist(best_tour))
+
     # Get instance dimension
     @property
     def dimension(self):
@@ -74,35 +76,27 @@ class TSPLIB(object):
 
     # Get best known tour
     @property
-    def best_tour(self):
-        return self._best_tour
+    def best_solution(self):
+        return self._best_solution
 
-    # Get best tour length
-    @property
-    def best_tour_length(self):
-        return self._best_tour_length
-
-    # Set a new best tour
-    @best_tour.setter
-    def best_tour(self, tour):
-        self._best_tour = tour
-
-    # Write a new best tour found
-    def write_tour(self, tour):
-        with open(self._instance_name + ".opt.tour.new", 'w') as best:
-            best.write("NAME : " + self._instance_name + ".opt.tour")
-            if self._best_tour_length:
-                best.write("COMMENT : Length " + str(self._best_tour_length)
-                           + ", ozeasx@gmail.com")
-            else:
-                best.write("COMMENT : ozeasx@gmail.com")
-            best.write("TYPE : TOUR")
-            best.write("DIMENSION : " + self._dimension)
-            best.write("TOUR_SECTION")
-            for node in self._best_tour:
-                best.write(node)
-            best.write("-1")
-            best.write("EOF")
+    # Set a new best tour and write to file
+    @best_solution.setter
+    def best_solution(self, solution):
+        # Change if new solution is best
+        if solution.dist < self._best_solution.dist:
+            self._best_solution = solution
+            # Write new solution to file
+            with open(self._instance_name + ".opt.tour.new", 'w') as best:
+                best.write("NAME : " + self._instance_name + ".opt.tour\n")
+                best.write("COMMENT : Length " + str(solution.dist)
+                                               + ", ozeasx@gmail.com\n")
+                best.write("TYPE : TOUR\n")
+                best.write("DIMENSION : " + str(self._dimension) + "\n")
+                best.write("TOUR_SECTION\n")
+                for node in solution.tour:
+                    best.write(str(node) + "\n")
+                best.write("-1\n")
+                best.write("EOF\n")
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):
