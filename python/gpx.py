@@ -147,7 +147,7 @@ class GPX(object):
         self._exec_time['simple graph'].append(time.time() - start_time)
         return dict(simple_g)
 
-    # Classify partitions feasibility by simple graph comparison
+    # Classify partitions feasibility by inner and outter graph comparison
     def _classify(self, simple_graph_a, simple_graph_b):
         # Mark start time
         start_time = time.time()
@@ -157,9 +157,11 @@ class GPX(object):
         infeasible = set()
 
         for key in simple_graph_a:
+            # Inner graph
             if simple_graph_a[key]['in'] == simple_graph_b[key]['in']:
                 feasible.add(key)
                 continue
+            # Outter graph
             if simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
                 feasible.add(key)
                 continue
@@ -195,7 +197,7 @@ class GPX(object):
 
         # Start fusion try with 2 partitions
         n = 2
-        while n < len(partitions['infeasible']):
+        while n <= len(partitions['infeasible']):
             # Create all combinations of n size
             candidates = list()
             for fusion in combinations(partitions['infeasible'], n):
@@ -242,7 +244,7 @@ class GPX(object):
                         fuse(fusion)
 
         # Fuse all remaining partitions in one infeasible partition to be
-        # handled by build method. The last of the mohicans stays infeasible.
+        # handled by build method. The last of the mohicans remains infeasible.
         if len(partitions['infeasible']) > 1:
             fuse(tuple(partitions['infeasible']), 'infeasible')
 
@@ -274,14 +276,13 @@ class GPX(object):
             dists['B'][key] += self._data.ab_cycle_dist(
                                              partitions['ab_cycles']['B'][key])
 
-            # Distance diference inside AB_cycle
-            diff = abs(dists['A'][key] - dists['B'][key])
-
             if key in partitions['infeasible']:
                 inf_key = key
                 inf_cycle_a = partitions['ab_cycles']['A'][key]
                 inf_cycle_b = partitions['ab_cycles']['B'][key]
             else:
+                # Distance diference inside AB_cycle
+                diff = abs(dists['A'][key] - dists['B'][key])
                 # Store AB_cycle with minor diference
                 if not minor_key:
                     minor_key = key
@@ -337,6 +338,7 @@ class GPX(object):
                         candidates.append(list())
                         candidates[i] = [base_dist + inf_dist, vertices, tour]
                         i += 1
+            # Two solutions should be feasible at least
             assert len(candidates) >= 2, len(candidates)
             candidates.sort(key=lambda s: s[0])
             dist_1, vertices_1, tour_1 = candidates[0]

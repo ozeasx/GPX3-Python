@@ -45,6 +45,11 @@ class GA(object):
     def generation(self):
         return self._generation
 
+    # Average fitness of current generation
+    @property
+    def avg_fitness(self):
+        return self._avg_fitness
+
     # Return total crossovers
     @property
     def cross(self):
@@ -151,20 +156,20 @@ class GA(object):
         # Auxiliar list
         aux = list()
 
-        # Try to form couples?
+        # Try to form pairs with different parents
         if test:
-            couple = True
-            while couple:
-                couple = False
+            pair = True
+            while pair:
+                pair = False
                 for i in xrange(len(self._population)):
                     for j in xrange(i + 1, len(self._population)):
                         if self._population[i] != self._population[j]:
                             i, j = sorted([i, j])
                             aux.append(self._population.pop(j))
                             aux.append(self._population.pop(i))
-                            couple = True
+                            pair = True
                             break
-                    if couple:
+                    if pair:
                         break
             self._population += aux
 

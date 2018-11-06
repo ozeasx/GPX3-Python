@@ -12,6 +12,7 @@ class TSPLIB(object):
         self._instance_name = instance_path[:-4]
         self._shell = shell
         self._best_tour = None
+        self._best_tour_length = None
 
         # Set tsp dimension
         self._dimension = int(shell.run("grep DIMENSION " + instance_path
@@ -43,12 +44,16 @@ class TSPLIB(object):
                 pass
             # Converto to tuple
             self._tour = tuple(self._best_tour)
+            # Store length
+            self._best_tour_length = self.tour_dist(self._best_tour)
 
         # Generate distance matrix file
-        print "Generating distance matrix..."
         if not os.path.isfile(self._instance_name + ".tsp.dm"):
-            shell.run("../tsplib/create_dm.r " + instance_path)
-        print "Done..."
+            print "Generating distance matrix..."
+            shell.run("../R/create_dm.r " + instance_path)
+            print "Done..."
+        else:
+            print "Distance matrix file already exists"
 
         # Generate list of lists combination lookup
         # self._hash = np.empty((self._dimension, self._dimension),dtype=float)
@@ -67,10 +72,37 @@ class TSPLIB(object):
     def dimension(self):
         return self._dimension
 
-    # Get best tour found
+    # Get best known tour
     @property
     def best_tour(self):
         return self._best_tour
+
+    # Get best tour length
+    @property
+    def best_tour_length(self):
+        return self._best_tour_length
+
+    # Set a new best tour
+    @best_tour.setter
+    def best_tour(self, tour):
+        self._best_tour = tour
+
+    # Write a new best tour found
+    def write_tour(self, tour):
+        with open(self._instance_name + ".opt.tour.new", 'w') as best:
+            best.write("NAME : " + self._instance_name + ".opt.tour")
+            if self._best_tour_length:
+                best.write("COMMENT : Length " + str(self._best_tour_length)
+                           + ", ozeasx@gmail.com")
+            else:
+                best.write("COMMENT : ozeasx@gmail.com")
+            best.write("TYPE : TOUR")
+            best.write("DIMENSION : " + self._dimension)
+            best.write("TOUR_SECTION")
+            for node in self._best_tour:
+                best.write(node)
+            best.write("-1")
+            best.write("EOF")
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

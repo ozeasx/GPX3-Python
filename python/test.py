@@ -8,9 +8,8 @@ from gpx import GPX
 
 # Snipet code to test a lot of random cases
 cmd = Shell()
-tsp = TSPLIB("../tsplib/ulysses16.tsp", cmd)
-# gpx = GPX(tsp)
-gpx = GPX(tsp)
+tsp = TSPLIB("../tsplib/ulysses12.tsp", cmd)
+gpx = GPX()
 
 # p1 = Chromosome(16)
 # p1.dist = tsp.tour_dist(p1.tour)
@@ -55,10 +54,10 @@ gpx = GPX(tsp)
 # p2 = Chromosome([1,14,11,12,10,13,9,15,8,7,5,6,3,4,2])
 
 # Tinos2018b-F5
-# p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18,
-#                 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
-# p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16, 14,
-#                 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
+# p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+#                  18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
+# p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16,
+#                  14, 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
 # p2 = Chromosome([1,2,23,24,21,22,3,4,6,5,8,7,9,10,30,29,13,14,16,15,18,17,19,
 #                 20,25,26,27,28,12,11,31,32])
 
@@ -105,8 +104,8 @@ gpx = GPX(tsp)
 # p2 = Chromosome([1,5,12,11,9,3,10,8,7,6,2,4])
 
 # F12 5i (one fusion)
-# p1 = Chromosome([1,3,10,8,11,2,5,7,6,4,9,12])
-# p2 = Chromosome([1,4,2,8,12,6,3,9,11,10,5,7])
+p1 = Chromosome([1, 3, 10, 8, 11, 2, 5, 7, 6, 4, 9, 12])
+p2 = Chromosome([1, 4, 2, 8, 12, 6, 3, 9, 11, 10, 5, 7])
 
 # F13 1f1, 2if
 # p1 = Chromosome([1,4,3,9,6,2,8,7,10,5])
@@ -155,24 +154,24 @@ gpx = GPX(tsp)
 #                   15, -15))
 
 # F19
-p1 = Chromosome((1, 12, 7, 15, 4, 5, 11, 6, 13, 14, 3, 2, 10, 16, 8, 9))
-p2 = Chromosome((1, 5, 12, 10, 16, 13, 9, 11, 3, 7, 2, 15, 14, 6, 8, 4))
+# p1 = Chromosome((1, 12, 7, 15, 4, 5, 11, 6, 13, 14, 3, 2, 10, 16, 8, 9))
+# p2 = Chromosome((1, 5, 12, 10, 16, 13, 9, 11, 3, 7, 2, 15, 14, 6, 8, 4))
 
 # F20
-# p1 = Chromosome((1, 4, 11, 10, 16, 13, 3, 9, 6, 8, 2, 14, 15, 12, 7, 5))
-# p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
+p1 = Chromosome((1, 4, 11, 10, 16, 13, 3, 9, 6, 8, 2, 14, 15, 12, 7, 5))
+p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
 
 
-p1.dist = tsp.tour_dist(p1.tour)
-p2.dist = tsp.tour_dist(p2.tour)
+# p1.dist = tsp.tour_dist(p1.tour)
+# p2.dist = tsp.tour_dist(p2.tour)
 # p1 = Chromosome(1000)
 # p2 = Chromosome(1000)
 r = gpx.recombine(p1, p2)
 
 print "Results -------------------------------------------------------------"
 # print
-print "Tour 1: ", p1.tour, ", Distance: ", p1.dist
-print "Tour 2: ", p2.tour, ", Distance: ", p2.dist
+print "Tour 1: ", p1.tour, ", Distance: "  # , p1.dist
+print "Tour 2: ", p2.tour, ", Distance: "  # , p2.dist
 # print
 # print "Internal tour a: ", gpx.tour_a
 # print "Internal tour b: ", gpx.tour_b
