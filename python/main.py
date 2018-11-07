@@ -61,49 +61,46 @@ assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
-# Logging
+
+# Create directory with timestamp
 if args.o == 'True':
-    # Create directory with timestamp
     log_dir = time.strftime("../results/%Y%m%d%H%M%S")
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-    # Log file
-    logging.basicConfig(filename=log_dir + "/report.log", format='%(message)s',
-                        level=logging.INFO)
-    # stdout
-    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-else:
-    # Only stdout
-    logging.basicConfig(format='%(message)s', level=logging.INFO)
 
-# Dict to store fitness evolution
-fitness_out = defaultdict(list)
 
-# Summary
-logging.info("------------------------------GA Settings----------------------")
-logging.info("Initial population: %i", args.p)
-logging.info("Population restart percentage: %f", args.r)
-logging.info("Elitism: %i", args.e)
-logging.info("Tournament size: %i", args.k)
-logging.info("Pairs formation: %s", args.P)
-logging.info("Crossover probability: %f", args.c)
-logging.info("Crossover operator: %s", args.x)
-logging.info("Mutation probability: %f", args.m)
-logging.info("Generation limit: %i", args.g)
-logging.info("TSPLIB instance: %s", args.I)
-logging.info("Iterations: %i", args.n)
+# Function to call each ga run
+def run_ga(id):
+    # File logging
+    if args.o == 'True':
+        # Log file
+        logging.basicConfig(filename=log_dir + "/report%i.log" % (id + 1),
+                            format='%(message)s', level=logging.INFO)
+        # Stdout
+        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
+    else:
+        # Only stdout
+        logging.basicConfig(format='%(message)s', level=logging.INFO)
 
-# Needed objects
-cmd = Shell()
-tsp = TSPLIB(args.I, cmd)
-best_solution = None
+    # Summary
+    logging.info("------------------------------GA Settings------------------")
+    logging.info("Initial population: %i", args.p)
+    logging.info("Population restart percentage: %f", args.r)
+    logging.info("Elitism: %i", args.e)
+    logging.info("Tournament size: %i", args.k)
+    logging.info("Pairs formation: %s", args.P)
+    logging.info("Crossover probability: %f", args.c)
+    logging.info("Crossover operator: %s", args.x)
+    logging.info("Mutation probability: %f", args.m)
+    logging.info("Generation limit: %i", args.g)
+    logging.info("TSPLIB instance: %s", args.I)
+    logging.info("Iteration: %i/%i", id, args.n)
 
-# Loop over iteration limit
-loop = args.n
-while loop:
-    # Logging
-    logging.info("\nIteration %i --------------------------------------", loop)
-    # Genetic algorithm
+    # Fitness evolution
+    result = defaultdict(list)
+    # Needed objects
+    cmd = Shell()
+    tsp = TSPLIB(args.I, cmd)
     ga = GA(tsp, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M)
@@ -111,22 +108,15 @@ while loop:
     while ga.generation < args.g:
         # Evaluation
         ga.evaluate()
-        fitness_out[ga.generation].extend([ga.avg_fitness,
-                                           ga.best_solution.fitness])
-        if not best_solution:
-            best_solution = ga.best_solution
-        else:
-            if ga.best_solution.fitness > best_solution.fitness:
-                best_solution = ga.best_solution
+        # Store fitness evolution
+        result[ga.generation].append(ga.avg_fitness)
+        result[ga.generation].append(ga.best_solution.fitness)
         # Selection
         if args.k:
             ga.select_tournament(args.k)
         # Recombination
         if args.c:
-            if args.P == 'False':
-                ga.recombine(args.c)
-            else:
-                ga.recombine(args.c, True)
+            ga.recombine(args.c)
         # Mutation
         if args.m:
             ga.mutate(args.m)
@@ -137,19 +127,12 @@ while loop:
         ga.print_info()
     # Final report
     ga.report()
-    # If better solution found, store in tsp and write to file
-    tsp.best_solution = best_solution
-    # Decrease iteration
-    loop -= 1
+    # Return evolution fitness
+    return result
 
-# File reporting
-if args.o == 'True':
-    with open(log_dir + '/avg_fitness.out', 'wb') as file:
-        wr = csv.writer(file)
-        for key in sorted(fitness_out.keys()):
-            wr.writerow(fitness_out[key])
 
-    with open(log_dir + '/best_tour.out', 'wb') as file:
-        wr = csv.writer(file)
-        wr.writerow(best_solution.tour)
-        wr.writerow([-best_solution.fitness])
+# Execute all runs
+pool = multiprocessing.Pool(multiprocessing.cpu_count())
+result = pool.map(run_ga, xrange(args.n))
+pool.close()
+pool.join()

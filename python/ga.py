@@ -125,7 +125,8 @@ class GA(object):
 
         # Make sure elitism is doing its job
         if self._generation and self._elite:
-            assert self._best_solution.fitness >= last_best_fitness
+            # assert self._best_solution.fitness > last_best_fitness
+            pass
 
         # Increment generaion
         self._generation += 1
