@@ -95,8 +95,8 @@ class GA(object):
                 c.dist = self._data.tour_dist(c.tour)
                 c = mut.two_opt(c, self._data)
                 self._population.add(c)
-        # Go back to list
-        self._population = set(self._population)
+        # Converto population to list
+        self._population = list(self._population)
         # Done
         print "Done..."
         # Store execution time
@@ -117,16 +117,15 @@ class GA(object):
         self._pop_size = len(self._population)
         self._avg_fitness = total_fitness/float(self._pop_size)
 
-        if self._generation:
-            last_best_fitness = self._best_solution.fitness
+        # if self._generation:
+        #    last_best_fitness = self._best_solution.fitness
 
         # Store best solution found
         self._best_solution = max(self._population, key=attrgetter('fitness'))
 
         # Make sure elitism is doing its job
-        if self._generation and self._elite:
-            # assert self._best_solution.fitness > last_best_fitness
-            pass
+        # if self._generation and self._elite:
+        #    assert self._best_solution.fitness > last_best_fitness
 
         # Increment generaion
         self._generation += 1
@@ -163,34 +162,38 @@ class GA(object):
 
     # Generate all possible combinations
     def select_pairwise(self):
-        self._population = combinations(self._population, 2)
+        selected = list()
+        for pair in combinations(set(self._population), 2):
+            selected.extend([pair[0], pair[1]])
+        self._population = selected
 
     # Recombination
-    def recombine(self, p_cross, pairwise=False):
+    def recombine(self, p_cross, pairwise=None):
         # Register start time
         start_time = time.time()
 
+        # New generation
+        children = list()
+
         # Recombination
-        for i in xrange(0, self._pop_size, 2):
+        for p1, p2 in zip(self._population[0::2], self._population[1::2]):
+            # print p1.dist
             if random.random() < p_cross:
-                c1, c2 = self._gpx.recombine(self._population[i],
-                                             self._population[i+1])
-                # Replace p1 and p2 only if c1 or c2 are different from parents
-                if c1 not in [self._population[i], self._population[i+1]] \
-                   or c2 not in [self._population[i], self._population[i+1]]:
-                    # Assure GPX is doing its job.
-                    assert (c1.dist + c2.dist < self._population[i].dist
-                            + self._population[i+1].dist), "Something wrong..."
-                    self._population[i], self._population[i+1] = c1, c2
+                c1, c2 = self._gpx.recombine(p1, p2)
+                children.extend([c1, c2])
+                # Count cross only if there is at least one different child
+                if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     self._cross += 1
+
+        # Reduce population in case of pairwise selection
+        if pairwise == 'True':
+            children.sort(key=attrgetter('fitness'))
+            self._population = children[:self._pop_size]
+        else:
+            self._population = children
 
         # Register execution time
         self._exec_time['recombination'].append(time.time() - start_time)
-
-        # Reduce population in case of pairwise selection
-        if pairwise:
-            self._population.sort(key=attrgetter('fitness'))
-            self._population = self._population[:self._pop_size]
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size

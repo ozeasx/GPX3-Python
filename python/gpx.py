@@ -19,7 +19,10 @@ class GPX(object):
         self._infeasible_weight = 0.4
         # Limit fusion trys (unused)
         self._fusion_limit = False
-        # Partitioning data
+        # Parents tours
+        self._parent_1_tour = None
+        self._parent_2_tour = None
+        # Partitioning information
         self._partitions = dict()
         # Tours created for partitioning
         self._tour_a = None
@@ -349,25 +352,25 @@ class GPX(object):
                     vertices, tour = Graph.dfs(graph | inf_graph, 1)
                     if len(vertices) == self._data.dimension:
                         candidates.append(list())
-                        candidates[i] = [base_dist + inf_dist, vertices, tour]
+                        candidates[i] = [vertices, tour, base_dist + inf_dist]
                         i += 1
             # Two solutions should be feasible at least
             assert len(candidates) >= 2, len(candidates)
             candidates.sort(key=lambda s: s[0])
-            dist_1, vertices_1, tour_1 = candidates[0]
-            dist_2, vertices_2, tour_2 = candidates[1]
+            vertices_1, tour_1, dist_1 = candidates[0]
+            vertices_2, tour_2, dist_2 = candidates[1]
         else:
             # Create tours from solutions graph
-            dist_1 = base_1_dist
-            dist_2 = base_2_dist
             vertices_1, tour_1 = Graph.dfs(graph_1, 1)
             vertices_2, tour_2 = Graph.dfs(graph_2, 1)
+            dist_1 = base_1_dist
+            dist_2 = base_2_dist
 
-        # Verify infeasible tours
-        assert len(vertices_1) == self._data.dimension, (self._tour_a,
-                                                         self._tour_b)
-        assert len(vertices_2) == self._data.dimension, (self._tour_a,
-                                                         self._tour_b)
+        # Make sure tours are valid
+        assert len(vertices_1) == self._data.dimension, (self._parent_1_tour,
+                                                         self._parent_2_tour)
+        assert len(vertices_2) == self._data.dimension, (self._parent_1_tour,
+                                                         self._parent_2_tour)
 
         # Store execution time
         self._exec_time['build'].append(time.time() - start_time)
@@ -379,6 +382,10 @@ class GPX(object):
     def recombine(self, parent_1, parent_2):
         # Mark start time
         start_time = time.time()
+
+        # For debuggin purposes
+        self._parent_1_tour = parent_1.tour
+        self._parent_2_tour = parent_2.tour
 
         # Duplicated solutions
         if parent_1 == parent_2:
@@ -460,6 +467,10 @@ class GPX(object):
         self._tour_a = tour_a
         self._tour_b = tour_b
 
+        # Debug
+        # print tour_a
+        # print tour_b
+
         # Try to fuse infeasible partitions
         if len(partitions['infeasible']):
             self._fusion(partitions)
@@ -478,6 +489,9 @@ class GPX(object):
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
             inf_1, inf_2 = self._build(partitions, common_graph, parent_1.dist)
+            # Make sure GPX is doing its job
+            assert inf_1[1] + inf_2[1] < parent_1.dist + parent_2.dist, (
+                self._parent_1_tour, self._parent_2_tour)
             # Measure time
             self._exec_time['recombine'].append(time.time() - start_time)
             # Return created solutions

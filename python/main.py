@@ -14,17 +14,15 @@ from tsp import TSPLIB
 from shell import Shell
 
 
-# Redefine function to log assertion erros
-# http://code.activestate.com/recipes/577074-logging-asserts/
-def excepthook(*args):
-    logging.getLogger().error('Uncaught exception:', exc_info=args)
-
-
-# Redefine sys.excepthook
-sys.excepthook = excepthook
-
-# Arguments parser
+# Argument parser
 parser = argparse.ArgumentParser(description="Genetic algorithm + GPX + 2opt")
+
+# Multual exclusive arguments
+multual = parser.add_mutually_exclusive_group()
+multual.add_argument("-k", help="Tournament size", type=int, default=0)
+multual.add_argument("-P", help="Pairwise Recombination", default='False',
+                     choices=['True', 'False'])
+# Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
 parser.add_argument("-M", help="Method to generate inicial population",
                     choices=['random', 'two_opt'], default='random')
@@ -33,17 +31,16 @@ parser.add_argument("-r", help="Percentage of population to be restarted",
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
                     type=int, default=0)
 parser.add_argument("-c", help="Crossover probability", type=float, default=0)
-parser.add_argument("-P", help="Pairwise Recombination", default='False')
-parser.add_argument("-x", help="Crossover operator", choices=['gpx'],
-                    default='gpx')
+parser.add_argument("-x", help="Crossover operator", choices=['GPX'],
+                    default='GPX')
 parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
                     default=0)
-parser.add_argument("-k", help="Tournament size", type=int, default=0)
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
-parser.add_argument("I", help="TSPLIB instance file", type=str)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Generate file reports", default='False',
                     choices=['True', 'False'])
+# Mandatory argument
+parser.add_argument("I", help="TSPLIB instance file", type=str)
 
 
 # Parser
@@ -68,6 +65,14 @@ if args.o == 'True':
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
+    # Redefine function to log assertion erros
+    # http://code.activestate.com/recipes/577074-logging-asserts/
+    def excepthook(*args):
+        logging.getLogger().error('Uncaught exception:', exc_info=args)
+
+    # Redefine sys.excepthook
+    sys.excepthook = excepthook
+
 
 # Function to call each ga run
 def run_ga(id):
@@ -88,7 +93,7 @@ def run_ga(id):
     logging.info("Population restart percentage: %f", args.r)
     logging.info("Elitism: %i", args.e)
     logging.info("Tournament size: %i", args.k)
-    logging.info("Pairs formation: %s", args.P)
+    logging.info("Pairwise formation: %s", args.P)
     logging.info("Crossover probability: %f", args.c)
     logging.info("Crossover operator: %s", args.x)
     logging.info("Mutation probability: %f", args.m)
@@ -114,9 +119,11 @@ def run_ga(id):
         # Selection
         if args.k:
             ga.select_tournament(args.k)
+        elif args.P == 'True':
+            ga.select_pairwise()
         # Recombination
         if args.c:
-            ga.recombine(args.c)
+            ga.recombine(args.c, args.P)
         # Mutation
         if args.m:
             ga.mutate(args.m)
@@ -131,8 +138,11 @@ def run_ga(id):
     return result
 
 
-# Execute all runs
-pool = multiprocessing.Pool(multiprocessing.cpu_count())
-result = pool.map(run_ga, xrange(args.n))
-pool.close()
-pool.join()
+if args.n > 1:
+    # Execute all runs
+    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    result = pool.map(run_ga, xrange(args.n))
+    pool.close()
+    pool.join()
+else:
+    run_ga(1)
