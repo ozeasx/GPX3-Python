@@ -11,10 +11,9 @@ class Chromosome(object):
     def __init__(self, tour=None, dist=None):
         # Create random tour based on given dimension
         if isinstance(tour, int):
-            nodes = range(2, tour + 1)
+            nodes = xrange(1, tour + 1)
             self._tour = list(np.random.choice(nodes, len(nodes),
                                                replace=False))
-            self._tour.insert(0, 1)
             self._tour = tuple(self._tour)
         # User defined tour
         elif isinstance(tour, (list, tuple, deque)):
@@ -24,13 +23,10 @@ class Chromosome(object):
         if dist:
             self._dist = dist
 
-        # Fitness
-        self._fitness = None
-
         # Number of cities
         self._dimension = len(self.tour)
 
-        # undirected graph representaition
+        # undirected graph and edges representaition
         if self.tour:
             self._undirected_graph = Graph.gen_undirected_graph(self._tour)
             self._undirected_edges = Graph.gen_undirected_edges(self._tour)
@@ -46,10 +42,6 @@ class Chromosome(object):
     # Identity
     def __hash__(self):
         return hash(self._undirected_edges)
-
-    # String representaition
-    def __str__(self):
-        return str(self.fitness)
 
     # Get tour
     @property

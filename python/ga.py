@@ -187,7 +187,7 @@ class GA(object):
 
         # Reduce population in case of pairwise selection
         if pairwise == 'True':
-            children.sort(key=attrgetter('fitness'))
+            children.sort(key=attrgetter('dist'))
             self._population = children[:self._pop_size]
         else:
             self._population = children
@@ -255,6 +255,7 @@ class GA(object):
         log.info("Feasible type 2 ratio: %f", float(self._gpx.feasible_2)/(
                                   self._gpx.feasible_1 + self._gpx.feasible_2))
         log.info("Failed crossovers: %i", self._gpx.failed)
+        log.info("Overall improvement: %i", self._gpx.improvement)
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", time.time() - self._start_time)

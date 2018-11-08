@@ -5,6 +5,7 @@ import time
 from collections import defaultdict
 from collections import deque
 from itertools import combinations
+from operator import attrgetter
 from graph import Graph
 from chromosome import Chromosome
 
@@ -32,6 +33,8 @@ class GPX(object):
         self._feasible_2 = 0
         # Count failed and suceeded partitioning
         self._failed = 0
+        # Measure cumulative improvement over parents
+        self._improvement = 0
         # Dict with lists containing execution time of each step
         self._exec_time = defaultdict(list)
 
@@ -60,6 +63,10 @@ class GPX(object):
     @property
     def failed(self):
         return self._failed
+
+    @property
+    def improvement(self):
+        return self._improvement
 
     @property
     def feasible_1(self):
@@ -292,14 +299,15 @@ class GPX(object):
             dists['B'][key] += self._data.ab_cycle_dist(
                                              partitions['ab_cycles']['B'][key])
 
+            # Infeasible partitions
             if key in partitions['infeasible']:
                 inf_key = key
                 inf_cycle_a = partitions['ab_cycles']['A'][key]
                 inf_cycle_b = partitions['ab_cycles']['B'][key]
             else:
-                # Distance diference inside AB_cycle
+                # Distance diference inside AB_cycle fo feasible partitions
                 diff = abs(dists['A'][key] - dists['B'][key])
-                # Store AB_cycle with minor diference
+                # Store AB_cycle with minor diference for each feasible part
                 if not minor_key:
                     minor_key = key
                     minor_diff = diff
@@ -307,7 +315,7 @@ class GPX(object):
                     minor_key = key
                     minor_diff = diff
 
-                # Chose best edges in each partition
+                # Chose best edges in each feasible partition
                 if dists['A'][key] <= dists['B'][key]:
                     solution.add(tuple(['A', key]))
                 else:
@@ -338,12 +346,12 @@ class GPX(object):
         graph_2 = Graph.gen_undirected_ab_graph(base_2) | common_graph
 
         # [[ab_cycles, graphs, vertices, tours]]
+        # Infeasible partition solver
         if inf_key:
             inf_graph_a = Graph.gen_undirected_ab_graph(inf_cycle_a)
             inf_graph_b = Graph.gen_undirected_ab_graph(inf_cycle_b)
 
             candidates = list()
-            i = 0
             for graph, base_dist in zip([graph_1, graph_2], [base_1_dist,
                                                              base_2_dist]):
                 for inf_graph, inf_dist in zip([inf_graph_a, inf_graph_b],
@@ -351,12 +359,11 @@ class GPX(object):
                                                 dists['B'][inf_key]]):
                     vertices, tour = Graph.dfs(graph | inf_graph, 1)
                     if len(vertices) == self._data.dimension:
-                        candidates.append(list())
-                        candidates[i] = [vertices, tour, base_dist + inf_dist]
-                        i += 1
+                        candidates.append([vertices, tour, base_dist
+                                           + inf_dist])
             # Two solutions should be feasible at least
             assert len(candidates) >= 2, len(candidates)
-            candidates.sort(key=lambda s: s[0])
+            candidates.sort(key=lambda s: s[2])
             vertices_1, tour_1, dist_1 = candidates[0]
             vertices_2, tour_2, dist_2 = candidates[1]
         else:
@@ -489,13 +496,18 @@ class GPX(object):
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
             inf_1, inf_2 = self._build(partitions, common_graph, parent_1.dist)
-            # Make sure GPX is doing its job
-            assert inf_1[1] + inf_2[1] < parent_1.dist + parent_2.dist, (
-                self._parent_1_tour, self._parent_2_tour)
-            # Measure time
+            # Create final solutions
+            solutions = set()
+            solutions.update([parent_1, parent_2, Chromosome(*inf_1),
+                              Chromosome(*inf_2)])
+            solutions = list(solutions)
+            solutions.sort(key=attrgetter('dist'))
+            self._improvement += ((parent_1.dist + parent_2.dist)
+                                  - (solutions[0].dist + solutions[1].dist))
+            # Measure execution time
             self._exec_time['recombine'].append(time.time() - start_time)
             # Return created solutions
-            return Chromosome(*inf_1), Chromosome(*inf_2)
+            return solutions[0], solutions[1]
 
         # Store total execution time
         self._exec_time['recombine'].append(time.time() - start_time)
