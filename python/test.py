@@ -162,8 +162,8 @@ gpx = GPX(tsp)
 # p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
 
 # F21
-p1 = Chromosome((10, 6, 2, 7, 5, 12, 4, 9, 1, 8, 3, 11))
-p2 = Chromosome((1, 6, 12, 7, 3, 9, 2, 4, 11, 5, 8, 10))
+p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
+p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
 
 p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
@@ -206,3 +206,5 @@ if r:
     print "Solution 1: ", r[0].tour, ", Distance: ", r[0].dist
     print
     print "Solution 2: ", r[1].tour, ", Distance: ", r[1].dist
+    print
+    print "Improvment: ", gpx.improvement

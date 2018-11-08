@@ -22,7 +22,7 @@ class GA(object):
         self._elite = elite
 
         # Generation count
-        self._generation = 0
+        self._generation = -1
         # Average fitness of the current generation
         self._avg_fitness = 0
         # Numbers of crossover
@@ -187,7 +187,10 @@ class GA(object):
 
         # Reduce population in case of pairwise selection
         if pairwise == 'True':
-            children.sort(key=attrgetter('dist'))
+            # Reevaluate population
+            for c in children:
+                c.fitness = self._evaluate(c)
+            children.sort(key=attrgetter('fitness'))
             self._population = children[:self._pop_size]
         else:
             self._population = children
@@ -218,6 +221,9 @@ class GA(object):
         start_time = time.time()
 
         if not (self._cross - self._last_cross):
+            # Reevaluate population
+            for c in self._population:
+                c.fitness = self._evaluate(c)
             # Population restarted flag
             self._pop_restart = True
             self._population.sort(key=attrgetter('fitness'))

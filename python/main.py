@@ -109,13 +109,15 @@ def run_ga(id):
     ga = GA(tsp, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M)
+    # Fisrt population evaluation
+    ga.evaluate()
     # Begin GA
     while ga.generation < args.g:
-        # Evaluation
-        ga.evaluate()
         # Store fitness evolution
         result[ga.generation].append(ga.avg_fitness)
         result[ga.generation].append(ga.best_solution.fitness)
+        # Generation info
+        ga.print_info()
         # Selection
         if args.k:
             ga.select_tournament(args.k)
@@ -130,8 +132,8 @@ def run_ga(id):
         # Population restart
         if args.r:
             ga.restart_pop(args.r)
-        # Generation info
-        ga.print_info()
+        # Evaluation
+        ga.evaluate()
     # Final report
     ga.report()
     # Return evolution fitness

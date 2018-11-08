@@ -290,6 +290,7 @@ class GPX(object):
         # Partition with minor inside diff
         minor_key = None
         minor_diff = None
+        # Infeasible partition
         inf_key = None
 
         # Get distance of all partitions tours
@@ -299,27 +300,27 @@ class GPX(object):
             dists['B'][key] += self._data.ab_cycle_dist(
                                              partitions['ab_cycles']['B'][key])
 
-            # Infeasible partitions
-            if key in partitions['infeasible']:
-                inf_key = key
-                inf_cycle_a = partitions['ab_cycles']['A'][key]
-                inf_cycle_b = partitions['ab_cycles']['B'][key]
-            else:
-                # Distance diference inside AB_cycle fo feasible partitions
+            # Feasible partitions
+            if key in partitions['feasible']:
+                # Distance diference inside AB_cycle
                 diff = abs(dists['A'][key] - dists['B'][key])
-                # Store AB_cycle with minor diference for each feasible part
+                # Save AB_cycle with minor diference
                 if not minor_key:
                     minor_key = key
                     minor_diff = diff
                 elif diff < minor_diff:
                     minor_key = key
                     minor_diff = diff
-
                 # Chose best edges in each feasible partition
                 if dists['A'][key] <= dists['B'][key]:
                     solution.add(tuple(['A', key]))
                 else:
                     solution.add(tuple(['B', key]))
+            # Infeasible partitions
+            else:
+                inf_key = key
+                inf_cycle_a = partitions['ab_cycles']['A'][key]
+                inf_cycle_b = partitions['ab_cycles']['B'][key]
 
         # Create base solutions without infeasible part
         base_1 = list()
@@ -363,6 +364,7 @@ class GPX(object):
                                            + inf_dist])
             # Two solutions should be feasible at least
             assert len(candidates) >= 2, len(candidates)
+            # Sort and chose by distance
             candidates.sort(key=lambda s: s[2])
             vertices_1, tour_1, dist_1 = candidates[0]
             vertices_2, tour_2, dist_2 = candidates[1]
@@ -370,20 +372,21 @@ class GPX(object):
             # Create tours from solutions graph
             vertices_1, tour_1 = Graph.dfs(graph_1, 1)
             vertices_2, tour_2 = Graph.dfs(graph_2, 1)
+            print tour_2
             dist_1 = base_1_dist
             dist_2 = base_2_dist
 
         # Make sure tours are valid
         assert len(vertices_1) == self._data.dimension, (self._parent_1_tour,
                                                          self._parent_2_tour)
-        assert len(vertices_2) == self._data.dimension, (self._parent_1_tour,
-                                                         self._parent_2_tour)
+        # assert len(vertices_2) == self._data.dimension, (self._parent_1_tour,
+        #                                                 self._parent_2_tour)
 
         # Store execution time
         self._exec_time['build'].append(time.time() - start_time)
 
-        # Return created solutions
-        return (tour_1, dist_1 + common_dist), (tour_2, dist_2 + common_dist)
+        # Return created tours information
+        return tour_1, dist_1 + common_dist, tour_2, dist_2 + common_dist
 
     # Partition Crossover
     def recombine(self, parent_1, parent_2):
@@ -474,10 +477,6 @@ class GPX(object):
         self._tour_a = tour_a
         self._tour_b = tour_b
 
-        # Debug
-        # print tour_a
-        # print tour_b
-
         # Try to fuse infeasible partitions
         if len(partitions['infeasible']):
             self._fusion(partitions)
@@ -490,24 +489,33 @@ class GPX(object):
         # Store partitioning data
         self._partitions = partitions
 
-        # Common graph
+        # Build solutions if there is instance data
         if self._data:
-            # Create solutions
+            # Common graph
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
-            inf_1, inf_2 = self._build(partitions, common_graph, parent_1.dist)
-            # Create final solutions
-            solutions = set()
-            solutions.update([parent_1, parent_2, Chromosome(*inf_1),
-                              Chromosome(*inf_2)])
-            solutions = list(solutions)
-            solutions.sort(key=attrgetter('dist'))
+            # Build solutions
+            tour_1, dist_1, tour_2, dist_2 = self._build(partitions,
+                                                         common_graph,
+                                                         parent_1.dist)
+            # Make sure GPX return best solutions
+            if len(partitions['infeasible']):
+                res = set()
+                res.update([parent_1, parent_2, Chromosome(tour_1, dist_1),
+                            Chromosome(tour_2, dist_2)])
+                res = list(res)
+            else:
+                res = [Chromosome(tour_1, dist_1), Chromosome(tour_2, dist_2)]
+            # Sort by distance
+            res.sort(key=attrgetter('dist'))
+            # Improvment assertion
+            assert res[0].dist + res[1].dist < parent_1.dist + parent_2.dist
             self._improvement += ((parent_1.dist + parent_2.dist)
-                                  - (solutions[0].dist + solutions[1].dist))
+                                  - (res[0].dist + res[1].dist))
             # Measure execution time
             self._exec_time['recombine'].append(time.time() - start_time)
             # Return created solutions
-            return solutions[0], solutions[1]
+            return res[0], res[1]
 
         # Store total execution time
         self._exec_time['recombine'].append(time.time() - start_time)
