@@ -34,9 +34,9 @@ class GA(object):
         # Population was restarted
         self._pop_restart = False
         # Timers
-        self._exec_time = defaultdict(list)
+        self._timers = defaultdict(list)
 
-        # Current population
+        # Current and next population
         self._population = list()
         # Best solution found
         self._best_solution = None
@@ -69,7 +69,7 @@ class GA(object):
     # Return timers
     @property
     def exec_time(self):
-        return self._exec_time
+        return self._timers
 
     # Generate inicial population
     def gen_pop(self, size, method='random'):
@@ -100,7 +100,7 @@ class GA(object):
         # Done
         print "Done..."
         # Store execution time
-        self._exec_time['population'].append(time.time() - start_time)
+        self._timers['population'].append(time.time() - start_time)
 
     # Evaluate the entire population
     def evaluate(self):
@@ -117,6 +117,11 @@ class GA(object):
         self._pop_size = len(self._population)
         self._avg_fitness = total_fitness/float(self._pop_size)
 
+        # Elitism
+        if self._elite:
+            self._population.sort(key=attrgetter('fitness'), reversed=True)
+            self._elite_pop = self._population[:self.elite]
+
         # if self._generation:
         #    last_best_fitness = self._best_solution.fitness
 
@@ -131,7 +136,7 @@ class GA(object):
         self._generation += 1
 
         # Register execution Timers
-        self._exec_time['evaluation'].append(time.time() - start_time)
+        self._timers['evaluation'].append(time.time() - start_time)
 
     # Tournament selection
     def select_tournament(self, k):
@@ -139,11 +144,6 @@ class GA(object):
         start_time = time.time()
         # Tournament winners
         selected = list()
-        # Elitism
-        if self._elite:
-            # Sort to get n better individuals
-            selected.extend(sorted(set(self._population),
-                                   key=attrgetter('fitness'))[:self._elite])
 
         # Tournament
         for i in xrange(self._pop_size - self._elite):
@@ -155,7 +155,7 @@ class GA(object):
         # Update population
         self._population = selected
         # Regiter execution time
-        self._exec_time['tournament'].append(time.time() - start_time)
+        self._timers['tournament'].append(time.time() - start_time)
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size
@@ -196,7 +196,7 @@ class GA(object):
             self._population = children
 
         # Register execution time
-        self._exec_time['recombination'].append(time.time() - start_time)
+        self._timers['recombination'].append(time.time() - start_time)
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size
@@ -213,7 +213,7 @@ class GA(object):
                 self._mut += 1
 
         # Register execution time
-        self._exec_time['mutation'].append(time.time() - start_time)
+        self._timers['mutation'].append(time.time() - start_time)
 
     # Reset population
     def restart_pop(self, ratio):
@@ -235,7 +235,7 @@ class GA(object):
                 self._population[i] = c
 
         # Register execution time
-        self._exec_time['pop restart'].append(time.time() - start_time)
+        self._timers['pop restart'].append(time.time() - start_time)
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size
@@ -256,27 +256,32 @@ class GA(object):
     def report(self):
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
-        log.info("Feasible type 1: %i", self._gpx.feasible_1)
-        log.info("Feasible type 2: %i", self._gpx.feasible_2)
-        log.info("Feasible type 2 ratio: %f", float(self._gpx.feasible_2)/(
-                                  self._gpx.feasible_1 + self._gpx.feasible_2))
-        log.info("Failed crossovers: %i", self._gpx.failed)
-        log.info("Overall improvement: %i", self._gpx.improvement)
+        log.info("Failed: %i", self._gpx.counters['failed'])
+        log.info("Partitions")
+        log.info("  Feasible type 1: %i", self._gpx.counters['feasible_1'])
+        log.info("  Feasible type 2: %i", self._gpx.counters['feasible_2'])
+        log.info("  Feasible type 3: %i", self._gpx.counters['feasible_3'])
+        log.info("  Infeasible: %i", self._gpx.counters['infeasible'])
+        log.info("  Fusions: %i", self._gpx.counters['fusions'])
+        log.info("  Unsolved: %i", self._gpx.counters['unsolved'])
+        log.info("Tours")
+        log.info("  Improved tours: %i", self._gpx.counters['improved_tours'])
+        log.info("  Infeasible tours: %i", self._gpx.counters['inf_tours'])
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", time.time() - self._start_time)
-        log.info("Inicial population: %f", sum(self._exec_time['population']))
-        log.info("Evaluation: %f", sum(self._exec_time['evaluation']))
-        log.info("Selection: %f", sum(self._exec_time['tournament']))
-        log.info("Recombination: %f", sum(self._exec_time['recombination']))
-        log.info("  Partitioning: %f", sum(self._gpx.exec_time['partition']))
+        log.info("Inicial population: %f", sum(self._timers['population']))
+        log.info("Evaluation: %f", sum(self._timers['evaluation']))
+        log.info("Selection: %f", sum(self._timers['tournament']))
+        log.info("Recombination: %f", sum(self._timers['recombination']))
+        log.info("  Partitioning: %f", sum(self._gpx.timers['partition']))
         log.info("  Simplified graph: %f",
-                 sum(self._gpx.exec_time['simple graph']))
-        log.info("  Classification: %f", sum(self._gpx.exec_time['classify']))
-        log.info("  Fusion: %f", sum(self._gpx.exec_time['fusion']))
-        log.info("  Build: %f", sum(self._gpx.exec_time['build']))
-        log.info("Mutation: %f", sum(self._exec_time['mutation']))
-        log.info("Population restart: %f", sum(self._exec_time['pop restart']))
+                 sum(self._gpx.timers['simple graph']))
+        log.info("  Classification: %f", sum(self._gpx.timers['classify']))
+        log.info("  Fusion: %f", sum(self._gpx.timers['fusion']))
+        log.info("  Build: %f", sum(self._gpx.timers['build']))
+        log.info("Mutation: %f", sum(self._timers['mutation']))
+        log.info("Population restart: %f", sum(self._timers['pop restart']))
         if self._data.best_solution:
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))

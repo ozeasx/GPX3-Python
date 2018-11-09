@@ -9,7 +9,7 @@ from gpx import GPX
 # Snipet code to test a lot of random cases
 cmd = Shell()
 tsp = TSPLIB("../tsplib/ulysses12.tsp", cmd)
-gpx = GPX(tsp)
+gpx = GPX()
 
 # p1 = Chromosome(16)
 # p1.dist = tsp.tour_dist(p1.tour)
@@ -72,8 +72,8 @@ gpx = GPX(tsp)
 #                  25,24,27,26,28])
 
 # F1 2i
-# p1 = Chromosome([1, 7, 5, 6, 2, 10, 9, 3, 8, 4])
-# p2 = Chromosome([1, 3, 8, 9, 7, 10, 2, 4, 5, 6])
+p1 = Chromosome([1, 7, 5, 6, 2, 10, 9, 3, 8, 4])
+p2 = Chromosome([1, 3, 8, 9, 7, 10, 2, 4, 5, 6])
 
 # F2 3i (2f1)
 # p1 = Chromosome([1,10,4,6,2,8,5,9,3,7])
@@ -162,49 +162,53 @@ gpx = GPX(tsp)
 # p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
 
 # F21
-p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
-p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
+# p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
+# p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
 
-p1.dist = tsp.tour_dist(p1.tour)
-p2.dist = tsp.tour_dist(p2.tour)
+# p1.dist = tsp.tour_dist(p1.tour)
+# p2.dist = tsp.tour_dist(p2.tour)
 # p1 = Chromosome(1000)
 # p2 = Chromosome(1000)
 r = gpx.recombine(p1, p2)
 
-print "Results -------------------------------------------------------------"
+print "Results ---------------------------------------------------------------"
 print
-print "Tour 1: ", p1.tour, ", Distance: ", p1.dist
-print "Tour 2: ", p2.tour, ", Distance: ", p2.dist
+print "Tour 1: ", p1.tour, ", Distance: "  # , p1.dist
+print "Tour 2: ", p2.tour, ", Distance: "  # , p2.dist
 print
-print "Internal tour a: ", gpx.tour_a
-print "Internal tour b: ", gpx.tour_b
+print "Internal tour a: ", gpx.partitions['tour_a']
+print "Internal tour b: ", gpx.partitions['tour_b']
 print
-print "Execution Time ------------------------------------------------------"
+print "Execution Time --------------------------------------------------------"
 print
-print "Partitioning: ", sum(gpx.exec_time['partition'])
-print "simple graphs: ", sum(gpx.exec_time['simple graph'])
-print "Classification: ", sum(gpx.exec_time['classify'])
-print "Fusion: ", sum(gpx.exec_time['fusion'])
-print "Build: ", sum(gpx.exec_time['build'])
-print "Recombination: ", sum(gpx.exec_time['recombination'])
+print "Partitioning: ", sum(gpx.timers['partition'])
+print "simple graphs: ", sum(gpx.timers['simple graph'])
+print "Classification: ", sum(gpx.timers['classify'])
+print "Fusion: ", sum(gpx.timers['fusion'])
+print "Build: ", sum(gpx.timers['build'])
+print "Recombination: ", sum(gpx.timers['recombination'])
 print
-print "Partitions ------------------------------------------------------"
+print "Partitions ------------------------------------------------------------"
 print
 print "Vertices: ", gpx.partitions['vertices']
 print
 print "AB_cycles: ", gpx.partitions['ab_cycles']
 print
-print "simple graph a: ", gpx.partitions['simple_graph_a']
-print "simple graph b: ", gpx.partitions['simple_graph_b']
+print "simple graph a"
+for value in gpx.partitions['simple_graph_a'].values():
+    print value
+print "simple graph b"
+for value in gpx.partitions['simple_graph_b'].values():
+    print value
 print
 print "Feasible: ", gpx.partitions['feasible']
 print "Infeasible: ", gpx.partitions['infeasible']
 if r:
     print
-    print "Solutions -------------------------------------------------------"
+    print "Solutions ---------------------------------------------------------"
     print
     print "Solution 1: ", r[0].tour, ", Distance: ", r[0].dist
     print
     print "Solution 2: ", r[1].tour, ", Distance: ", r[1].dist
     print
-    print "Improvment: ", gpx.improvement
+    print "Improvment: ", (p1.dist + p2.dist) - (r[0].dist + r[1].dist)
