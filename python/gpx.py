@@ -165,7 +165,7 @@ class GPX(object):
                 feasible.add(key)
                 self._counters['feasible_2'] += 1
             # All graphs test
-            #elif (len(simple_graph_a[key]['in']
+            # elif (len(simple_graph_a[key]['in']
             #          & simple_graph_b[key]['out']) == 0
             #      and len(simple_graph_a[key]['out']
             #              & simple_graph_b[key]['in']) == 0):
@@ -362,10 +362,10 @@ class GPX(object):
                 candidates.append([tour, dist])
             elif not inf_key:
                 self._counters['inf_tours'] += 1
-            # Two solutions should be feasible at least
+        # For infeasible handling, Two solutions should be feasible at least
         if inf_key:
             assert len(candidates) >= 2, len(candidates)
-        # Sort and chose by distance
+        # Sort by distance
         candidates.sort(key=lambda s: s[1])
         # Store execution time
         self._timers['build'].append(time.time() - start_time)
@@ -439,8 +439,6 @@ class GPX(object):
 
         score_n = len(feasible_n) + len(infeasible_n) * self._infeasible_weight
 
-        print score_m, score_n
-
         # Store better partitioning scheme
         partitions = dict()
         if score_m >= score_n:
@@ -465,11 +463,11 @@ class GPX(object):
         # Try to fuse infeasible partitions
         if len(partitions['infeasible']) > 1:
             self._fusion(partitions)
-            # After fusion, if exists one or no partition, return parents
-            if (len(partitions['feasible'])
-                    + len(partitions['infeasible']) <= 1):
-                self._counters['failed'] += 1
-                return parent_1, parent_2
+
+        # After fusion, if exists one or no partition, return parents
+        if (len(partitions['feasible']) + len(partitions['infeasible']) <= 1):
+            self._counters['failed'] += 1
+            return parent_1, parent_2
 
         # Save partitioning data
         self._partitions = partitions
@@ -480,23 +478,21 @@ class GPX(object):
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
             # Build solutions
-            candidates = self._build(partitions, common_graph, parent_1.dist)
+            constructed = self._build(partitions, common_graph, parent_1.dist)
             # Make sure GPX return best solutions
-            aux = list([parent_1, parent_2])
-            for tour, dist in candidates:
-                aux.append(Chromosome(tour, dist))
+            candidates = list([parent_1, parent_2])
+            for tour, dist in constructed:
+                candidates.append(Chromosome(tour, dist))
             # Sort by distance
-            aux.sort(key=attrgetter('dist'))
+            candidates.sort(key=attrgetter('dist'))
             # Improvment assertion
-            p_sum = parent_1.dist + parent_2.dist
-            c_sum = aux[0].dist + aux[1].dist
-            assert c_sum <= p_sum
-            if c_sum < p_sum:
-                self._counters['improved_tours'] += 1
+            parents_sum = parent_1.dist + parent_2.dist
+            children_sum = candidates[0].dist + candidates[1].dist
+            assert children_sum < parents_sum
             # Measure execution time
             self._timers['recombine'].append(time.time() - start_time)
             # Return created solutions
-            return aux[0], aux[1]
+            return candidates[0], candidates[1]
 
         # Store total execution time
         self._timers['recombine'].append(time.time() - start_time)

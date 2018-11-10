@@ -15,11 +15,11 @@ import mut
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization
-    def __init__(self, data, elite=0):
+    def __init__(self, data, elitism=0):
         # Parametrization
         self._data = data
         self._gpx = GPX(data)
-        self._elite = elite
+        self._elitism = elitism
 
         # Generation count
         self._generation = -1
@@ -40,6 +40,8 @@ class GA(object):
         self._population = list()
         # Best solution found
         self._best_solution = None
+        # Elite population
+        self._elite = list()
 
     # Get current generation number
     @property
@@ -89,7 +91,7 @@ class GA(object):
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
         # two_opt
-        if method == 'two_opt':
+        if method == '2opt':
             while len(self._population) < size:
                 c = Chromosome(self._data.dimension)
                 c.dist = self._data.tour_dist(c.tour)
@@ -118,19 +120,24 @@ class GA(object):
         self._avg_fitness = total_fitness/float(self._pop_size)
 
         # Elitism
-        if self._elite:
-            self._population.sort(key=attrgetter('fitness'), reversed=True)
-            self._elite_pop = self._population[:self.elite]
-
-        # if self._generation:
-        #    last_best_fitness = self._best_solution.fitness
+        if self._elitism:
+            # Insert previous elite population
+            self._population += self._elite
+            # Sort
+            self._population.sort(key=attrgetter('fitness'), reverse=True)
+            # Save new elite
+            self._elite = self._population[:self._elitism]
+            # Adjust population size
+            self._population = self._population[:self._pop_size]
 
         # Store best solution found
-        self._best_solution = max(self._population, key=attrgetter('fitness'))
-
-        # Make sure elitism is doing its job
-        # if self._generation and self._elite:
-        #    assert self._best_solution.fitness > last_best_fitness
+        if not self._best_solution:
+            self._best_solution = max(self._population,
+                                      key=attrgetter('fitness'))
+        else:
+            current_best = max(self._population, key=attrgetter('fitness'))
+            if current_best.fitness > self._best_solution.fitness:
+                self._best_solution = current_best
 
         # Increment generaion
         self._generation += 1
@@ -146,7 +153,7 @@ class GA(object):
         selected = list()
 
         # Tournament
-        for i in xrange(self._pop_size - self._elite):
+        for i in xrange(self._pop_size):
             # Retrieve k-sized sample
             tournament = random.sample(self._population, k)
             # Get best solution
@@ -160,17 +167,17 @@ class GA(object):
         # Assure population size remains the same
         assert len(self._population) == self._pop_size
 
-    # Generate all possible combinations
-    def select_pairwise(self):
-        selected = list()
-        for pair in combinations(set(self._population), 2):
-            selected.extend([pair[0], pair[1]])
-        self._population = selected
-
     # Recombination
     def recombine(self, p_cross, pairwise=None):
         # Register start time
         start_time = time.time()
+
+        # Pairwise recombination
+        if pairwise == 'True':
+            selected = list()
+            for pair in combinations(set(self._population), 2):
+                selected.extend([pair[0], pair[1]])
+            self._population = selected
 
         # New generation
         children = list()
@@ -185,7 +192,7 @@ class GA(object):
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     self._cross += 1
 
-        # Reduce population in case of pairwise selection
+        # Reduce population in case of pairwise recombination
         if pairwise == 'True':
             # Reevaluate population
             for c in children:
@@ -199,7 +206,7 @@ class GA(object):
         self._timers['recombination'].append(time.time() - start_time)
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size
+        assert len(self._population) == self._pop_size, len(self._population)
 
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut):
@@ -216,11 +223,11 @@ class GA(object):
         self._timers['mutation'].append(time.time() - start_time)
 
     # Reset population
-    def restart_pop(self, ratio):
+    def restart_pop(self, ratio, pairwise):
         # Register start time
         start_time = time.time()
 
-        if not (self._cross - self._last_cross):
+        if not (self._cross - self._last_cross) or pairwise == 'True':
             # Reevaluate population
             for c in self._population:
                 c.fitness = self._evaluate(c)
@@ -264,9 +271,7 @@ class GA(object):
         log.info("  Infeasible: %i", self._gpx.counters['infeasible'])
         log.info("  Fusions: %i", self._gpx.counters['fusions'])
         log.info("  Unsolved: %i", self._gpx.counters['unsolved'])
-        log.info("Tours")
-        log.info("  Improved tours: %i", self._gpx.counters['improved_tours'])
-        log.info("  Infeasible tours: %i", self._gpx.counters['inf_tours'])
+        log.info("Infeasible tours: %i", self._gpx.counters['inf_tours'])
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", time.time() - self._start_time)

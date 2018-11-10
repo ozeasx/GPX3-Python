@@ -25,7 +25,7 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
 parser.add_argument("-M", help="Method to generate inicial population",
-                    choices=['random', 'two_opt'], default='random')
+                    choices=['random', '2opt'], default='random')
 parser.add_argument("-r", help="Percentage of population to be restarted",
                     type=float, default=0)
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
@@ -121,8 +121,6 @@ def run_ga(id):
         # Selection
         if args.k:
             ga.select_tournament(args.k)
-        elif args.P == 'True':
-            ga.select_pairwise()
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
@@ -131,7 +129,7 @@ def run_ga(id):
             ga.mutate(args.m)
         # Population restart
         if args.r:
-            ga.restart_pop(args.r)
+            ga.restart_pop(args.r, args.P)
         # Evaluation
         ga.evaluate()
     # Final report
