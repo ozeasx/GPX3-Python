@@ -20,6 +20,10 @@ class GPX(object):
         self._infeasible_weight = 0.4
         # Limit fusion trys (unused)
         self._fusion_limit = False
+        # F1, F2 and F3 tests
+        self._f1_test = True
+        self._f2_test = True
+        self._f3_test = False
         # Parents tours
         self._parent_1_tour = None
         self._parent_2_tour = None
@@ -39,6 +43,18 @@ class GPX(object):
     @property
     def fusion_limit(self):
         return self._fusion_limit
+
+    @property
+    def f1_test(self):
+        return self._f1_test
+
+    @property
+    def f2_test(self):
+        return self._f2_test
+
+    @property
+    def f3_test(self):
+        return self._f3_test
 
     @property
     def partitions(self):
@@ -65,6 +81,21 @@ class GPX(object):
     def fusion_limit(self, value):
         assert value in [True, False], "Fusion limit must be True/False value"
         self._fusion_limit = value
+
+    @f1_test.setter
+    def f1_test(self, value):
+        assert value in [True, False]
+        self._f1_test = value
+
+    @f2_test.setter
+    def f2_test(self, value):
+        assert value in [True, False]
+        self._f2_test = value
+
+    @f3_test.setter
+    def f3_test(self, value):
+        assert value in [True, False]
+        self._f3_test = value
 
     # Find partitions using dfs
     def _partition(self, graph_a, graph_b):
@@ -157,20 +188,22 @@ class GPX(object):
 
         for key in simple_graph_a:
             # Inner graph test
-            if simple_graph_a[key]['in'] == simple_graph_b[key]['in']:
+            if self._f1_test and (simple_graph_a[key]['in']
+                                  == simple_graph_b[key]['in']):
                 feasible.add(key)
                 self._counters['feasible_1'] += 1
             # Outter graph test
-            elif simple_graph_a[key]['out'] == simple_graph_b[key]['out']:
+            elif self._f2_test and (simple_graph_a[key]['out']
+                                    == simple_graph_b[key]['out']):
                 feasible.add(key)
                 self._counters['feasible_2'] += 1
             # All graphs test
-            # elif (len(simple_graph_a[key]['in']
-            #          & simple_graph_b[key]['out']) == 0
-            #      and len(simple_graph_a[key]['out']
-            #              & simple_graph_b[key]['in']) == 0):
-            #    feasible.add(key)
-            #    self._counters['feasible_3'] += 1
+            elif self._f3_test and (len(simple_graph_a[key]['in']
+                                        & simple_graph_b[key]['out']) == 0
+                                    and len(simple_graph_a[key]['out']
+                                            & simple_graph_b[key]['in']) == 0):
+                feasible.add(key)
+                self._counters['feasible_3'] += 1
             else:
                 infeasible.add(key)
                 self._counters['infeasible'] += 1
@@ -363,8 +396,8 @@ class GPX(object):
             elif not inf_key:
                 self._counters['inf_tours'] += 1
         # For infeasible handling, Two solutions should be feasible at least
-        if inf_key:
-            assert len(candidates) >= 2, len(candidates)
+        # if inf_key:
+        #    assert len(candidates) >= 2, len(candidates)
         # Sort by distance
         candidates.sort(key=lambda s: s[1])
         # Store execution time
@@ -488,7 +521,7 @@ class GPX(object):
             # Improvment assertion
             parents_sum = parent_1.dist + parent_2.dist
             children_sum = candidates[0].dist + candidates[1].dist
-            assert children_sum < parents_sum
+            assert children_sum <= parents_sum
             # Measure execution time
             self._timers['recombine'].append(time.time() - start_time)
             # Return created solutions

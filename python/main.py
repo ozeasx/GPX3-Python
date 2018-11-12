@@ -11,6 +11,7 @@ import logging
 import csv
 from ga import GA
 from tsp import TSPLIB
+from gpx import GPX
 from shell import Shell
 
 
@@ -38,6 +39,12 @@ parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Generate file reports", default='False',
+                    choices=['True', 'False'])
+parser.add_argument("-f1", help="Feasible 1 test", default='True',
+                    choices=['True', 'False'])
+parser.add_argument("-f2", help="Feasible 2 test", default='True',
+                    choices=['True', 'False'])
+parser.add_argument("-f3", help="Feasible 3 test", default='False',
                     choices=['True', 'False'])
 # Mandatory argument
 parser.add_argument("I", help="TSPLIB instance file", type=str)
@@ -81,6 +88,10 @@ def run_ga(id):
         # Log file
         logging.basicConfig(filename=log_dir + "/report%i.log" % (id + 1),
                             format='%(message)s', level=logging.INFO)
+        # Statistics
+        fitness = defaultdict(list)
+        counters = defaultdict(list)
+        timers = defaultdict(list)
         # Stdout
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     else:
@@ -101,12 +112,21 @@ def run_ga(id):
     logging.info("TSPLIB instance: %s", args.I)
     logging.info("Iteration: %i/%i", id, args.n)
 
-    # Fitness evolution
-    result = defaultdict(list)
     # Needed objects
     cmd = Shell()
     tsp = TSPLIB(args.I, cmd)
-    ga = GA(tsp, args.e)
+    gpx = GPX(tsp)
+
+    # Define which tests will be applied
+    if args.f1 == 'False':
+        gpx.f1_test = False
+    if args.f2 == 'False':
+        gpx.f2_test = False
+    if args.f3 == 'True':
+        gpx.f3_test = True
+
+    # GA instance
+    ga = GA(tsp, gpx, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M)
     # Fisrt population evaluation
@@ -114,8 +134,9 @@ def run_ga(id):
     # Begin GA
     while ga.generation < args.g:
         # Store fitness evolution
-        result[ga.generation].append(ga.avg_fitness)
-        result[ga.generation].append(ga.best_solution.fitness)
+        if args.o == 'True':
+            fitness[ga.generation].append(ga.avg_fitness)
+            fitness[ga.generation].append(ga.best_solution.fitness)
         # Generation info
         ga.print_info()
         # Selection
@@ -134,10 +155,31 @@ def run_ga(id):
         ga.evaluate()
     # Final report
     ga.report()
-    # Return evolution fitness
-    return result
+    if args.o == 'True':
+        counters[id].extend([ga.cross, gpx.counters['failed'],
+                             gpx.counters['feasible_1'],
+                             gpx.counters['feasible_2'],
+                             gpx.counters['feasible_3'],
+                             gpx.counters['infeasible'],
+                             gpx.counters['fusions'],
+                             gpx.counters['unsolved'],
+                             gpx.counters['inf_tours'], ga.mut])
+        timers[id].extend([sum(ga.timers['total']),
+                           sum(ga.timers['population']),
+                           sum(ga.timers['evaluation']),
+                           sum(ga.timers['selection']),
+                           sum(ga.timers['recombination']),
+                           sum(gpx.timers['partition']),
+                           sum(gpx.timers['simple graph']),
+                           sum(gpx.timers['classify']),
+                           sum(gpx.timers['fusion']),
+                           sum(gpx.timers['build']),
+                           sum(ga.timers['mutation']),
+                           sum(ga.timers['pop restart'])])
+        return fitness, counters, timers
 
 
+# Execution decision
 if args.n > 1:
     # Execute all runs
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
@@ -145,4 +187,43 @@ if args.n > 1:
     pool.close()
     pool.join()
 else:
-    run_ga(1)
+    result = run_ga(0)
+
+# Statistics files
+if args.o == 'True' and args.n > 1:
+    # Consolidate data
+    fitness = defaultdict(list)
+    counters = defaultdict(list)
+    timers = defaultdict(list)
+
+    for f, c, t in result:
+        for key, values in f.items():
+            fitness[key].extend(values)
+        for key, values in c.items():
+            counters[key].extend(values)
+        for key, values in t.items():
+            timers[key].extend(values)
+
+    # Write data
+    with open(log_dir + "/fitness.out", 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key in sorted(fitness):
+            writer.writerow([key, ','.join(map(str, fitness[key]))])
+
+    with open(log_dir + "/counters.out", 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        for key in sorted(counters):
+            writer.writerow(["run", "crossovers", "failed", "feasible 1",
+                             "feasible 2", "feasible 3",
+                             "infeasible", "fusions", "unsolved",
+                             "infeasible tours", "mutations"])
+            writer.writerow([key, ','.join(map(str, counters[key]))])
+
+    with open(log_dir + "/timers.out", 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(["run", "total", "population", "evaluation",
+                         "selection", "recombination", "partition",
+                         "simple graph", "classify", "fusion", "build",
+                         "mutation", "pop restart"])
+        for key in sorted(timers):
+            writer.writerow([key, ','.join(map(str, timers[key]))])

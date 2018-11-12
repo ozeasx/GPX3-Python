@@ -8,17 +8,16 @@ from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
 from chromosome import Chromosome
-from gpx import GPX
 import mut
 
 
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization
-    def __init__(self, data, elitism=0):
+    def __init__(self, data, cross_op, elitism=0):
         # Parametrization
         self._data = data
-        self._gpx = GPX(data)
+        self._cross_op = cross_op
         self._elitism = elitism
 
         # Generation count
@@ -70,7 +69,7 @@ class GA(object):
 
     # Return timers
     @property
-    def exec_time(self):
+    def timers(self):
         return self._timers
 
     # Generate inicial population
@@ -172,6 +171,9 @@ class GA(object):
         # Register start time
         start_time = time.time()
 
+        # Shuffle population
+        # random.shuffle(self._population)
+
         # Pairwise recombination
         if pairwise == 'True':
             selected = list()
@@ -186,7 +188,7 @@ class GA(object):
         for p1, p2 in zip(self._population[0::2], self._population[1::2]):
             # print p1.dist
             if random.random() < p_cross:
-                c1, c2 = self._gpx.recombine(p1, p2)
+                c1, c2 = self._cross_op.recombine(p1, p2)
                 children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
@@ -261,30 +263,31 @@ class GA(object):
 
     # Final report
     def report(self):
+        self._timers['total'].append(time.time() - self._start_time)
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
-        log.info("Failed: %i", self._gpx.counters['failed'])
+        log.info("Failed: %i", self._cross_op.counters['failed'])
         log.info("Partitions")
-        log.info("  Feasible type 1: %i", self._gpx.counters['feasible_1'])
-        log.info("  Feasible type 2: %i", self._gpx.counters['feasible_2'])
-        log.info("  Feasible type 3: %i", self._gpx.counters['feasible_3'])
-        log.info("  Infeasible: %i", self._gpx.counters['infeasible'])
-        log.info("  Fusions: %i", self._gpx.counters['fusions'])
-        log.info("  Unsolved: %i", self._gpx.counters['unsolved'])
-        log.info("Infeasible tours: %i", self._gpx.counters['inf_tours'])
+        log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
+        log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])
+        log.info(" Feasible type 3: %i", self._cross_op.counters['feasible_3'])
+        log.info(" Infeasible: %i", self._cross_op.counters['infeasible'])
+        log.info(" Fusions: %i", self._cross_op.counters['fusions'])
+        log.info(" Unsolved: %i", self._cross_op.counters['unsolved'])
+        log.info("Infeasible tours: %i", self._cross_op.counters['inf_tours'])
         log.info("Total mutations: %i", self._mut)
         log.info("--------------------- Time statistics----------------------")
-        log.info("Total execution time: %f", time.time() - self._start_time)
+        log.info("Total execution time: %f", sum(self._timers['total']))
         log.info("Inicial population: %f", sum(self._timers['population']))
         log.info("Evaluation: %f", sum(self._timers['evaluation']))
         log.info("Selection: %f", sum(self._timers['tournament']))
         log.info("Recombination: %f", sum(self._timers['recombination']))
-        log.info("  Partitioning: %f", sum(self._gpx.timers['partition']))
-        log.info("  Simplified graph: %f",
-                 sum(self._gpx.timers['simple graph']))
-        log.info("  Classification: %f", sum(self._gpx.timers['classify']))
-        log.info("  Fusion: %f", sum(self._gpx.timers['fusion']))
-        log.info("  Build: %f", sum(self._gpx.timers['build']))
+        log.info(" Partitioning: %f", sum(self._cross_op.timers['partition']))
+        log.info(" Simplified graph: %f",
+                 sum(self._cross_op.timers['simple graph']))
+        log.info(" Classification: %f", sum(self._cross_op.timers['classify']))
+        log.info(" Fusion: %f", sum(self._cross_op.timers['fusion']))
+        log.info(" Build: %f", sum(self._cross_op.timers['build']))
         log.info("Mutation: %f", sum(self._timers['mutation']))
         log.info("Population restart: %f", sum(self._timers['pop restart']))
         if self._data.best_solution:
