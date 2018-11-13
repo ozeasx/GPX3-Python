@@ -65,6 +65,8 @@ assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
+# Shell and TSP instance
+tsp = TSPLIB(args.I, Shell())
 
 # Create directory with timestamp
 if args.o == 'True':
@@ -78,7 +80,7 @@ if args.o == 'True':
         logging.getLogger().error('Uncaught exception:', exc_info=args)
 
     # Redefine sys.excepthook
-    sys.excepthook = excepthook
+#    sys.excepthook = excepthook
 
 
 # Function to call each ga run
@@ -88,10 +90,6 @@ def run_ga(id):
         # Log file
         logging.basicConfig(filename=log_dir + "/report%i.log" % (id + 1),
                             format='%(message)s', level=logging.INFO)
-        # Statistics
-        fitness = defaultdict(list)
-        counters = defaultdict(list)
-        timers = defaultdict(list)
         # Stdout
         logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
     else:
@@ -112,9 +110,14 @@ def run_ga(id):
     logging.info("TSPLIB instance: %s", args.I)
     logging.info("Iteration: %i/%i", id, args.n)
 
-    # Needed objects
-    cmd = Shell()
-    tsp = TSPLIB(args.I, cmd)
+    # Statistics variables
+    avg_fitness = defaultdict(list)
+    best_fitness = defaultdict(list)
+    best_solution = dict()
+    counters = defaultdict(list)
+    timers = defaultdict(list)
+
+    # Crossover operator
     gpx = GPX(tsp)
 
     # Define which tests will be applied
@@ -134,9 +137,8 @@ def run_ga(id):
     # Begin GA
     while ga.generation < args.g:
         # Store fitness evolution
-        if args.o == 'True':
-            fitness[ga.generation].append(ga.avg_fitness)
-            fitness[ga.generation].append(ga.best_solution.fitness)
+        avg_fitness[ga.generation].append(ga.avg_fitness)
+        best_fitness[ga.generation].append(ga.best_solution.fitness)
         # Generation info
         ga.print_info()
         # Selection
@@ -155,28 +157,33 @@ def run_ga(id):
         ga.evaluate()
     # Final report
     ga.report()
-    if args.o == 'True':
-        counters[id].extend([ga.cross, gpx.counters['failed'],
-                             gpx.counters['feasible_1'],
-                             gpx.counters['feasible_2'],
-                             gpx.counters['feasible_3'],
-                             gpx.counters['infeasible'],
-                             gpx.counters['fusions'],
-                             gpx.counters['unsolved'],
-                             gpx.counters['inf_tours'], ga.mut])
-        timers[id].extend([sum(ga.timers['total']),
-                           sum(ga.timers['population']),
-                           sum(ga.timers['evaluation']),
-                           sum(ga.timers['selection']),
-                           sum(ga.timers['recombination']),
-                           sum(gpx.timers['partition']),
-                           sum(gpx.timers['simple graph']),
-                           sum(gpx.timers['classify']),
-                           sum(gpx.timers['fusion']),
-                           sum(gpx.timers['build']),
-                           sum(ga.timers['mutation']),
-                           sum(ga.timers['pop restart'])])
-        return fitness, counters, timers
+    # Best solution
+    best_solution[id] = ga.best_solution
+    # Calc improvement
+    parent_sum = gpx.counters['parents_sum']
+    children_sum = gpx.counters['children_sum']
+    improvement = (parent_sum - children_sum) / float(parent_sum)
+    # Counters
+    counters[id].extend([ga.cross, gpx.counters['failed'], improvement,
+                         gpx.counters['feasible_1'],
+                         gpx.counters['feasible_2'],
+                         gpx.counters['feasible_3'],
+                         gpx.counters['infeasible'], gpx.counters['fusions'],
+                         gpx.counters['unsolved'], gpx.counters['inf_tours'],
+                         ga.mut])
+    # Timers
+    timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),
+                       sum(ga.timers['evaluation']),
+                       sum(ga.timers['tournament']),
+                       sum(ga.timers['recombination']),
+                       sum(gpx.timers['partitioning']),
+                       sum(gpx.timers['simple_graph']),
+                       sum(gpx.timers['classification']),
+                       sum(gpx.timers['fusion']), sum(gpx.timers['build']),
+                       sum(ga.timers['mutation']),
+                       sum(ga.timers['pop_restart'])])
+    # Return data
+    return avg_fitness, best_fitness, best_solution, counters, timers
 
 
 # Execution decision
@@ -188,42 +195,69 @@ if args.n > 1:
     pool.join()
 else:
     result = run_ga(0)
+    tsp.best_solution = result[2][0]
 
-# Statistics files
-if args.o == 'True' and args.n > 1:
-    # Consolidate data
-    fitness = defaultdict(list)
-    counters = defaultdict(list)
-    timers = defaultdict(list)
+# Consolidate data
+if args.n > 1:
 
-    for f, c, t in result:
-        for key, values in f.items():
-            fitness[key].extend(values)
-        for key, values in c.items():
-            counters[key].extend(values)
-        for key, values in t.items():
-            timers[key].extend(values)
+    # Best solution found
+    best_solution = None
 
-    # Write data
-    with open(log_dir + "/fitness.out", 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key in sorted(fitness):
-            writer.writerow([key, ','.join(map(str, fitness[key]))])
+    for af, bf, b, c, t in result:
+        for key, value in b.items():
+            if not best_solution:
+                best_solution = value
+            elif value.fitness > best_solution.fitness:
+                best_solution = value
 
-    with open(log_dir + "/counters.out", 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        for key in sorted(counters):
-            writer.writerow(["run", "crossovers", "failed", "feasible 1",
-                             "feasible 2", "feasible 3",
-                             "infeasible", "fusions", "unsolved",
-                             "infeasible tours", "mutations"])
-            writer.writerow([key, ','.join(map(str, counters[key]))])
+    # Write best solution
+    tsp.best_solution = best_solution
 
-    with open(log_dir + "/timers.out", 'w') as csv_file:
-        writer = csv.writer(csv_file)
-        writer.writerow(["run", "total", "population", "evaluation",
-                         "selection", "recombination", "partition",
-                         "simple graph", "classify", "fusion", "build",
-                         "mutation", "pop restart"])
-        for key in sorted(timers):
-            writer.writerow([key, ','.join(map(str, timers[key]))])
+    if args.o == 'True':
+
+        avg_fitness = defaultdict(list)
+        best_fitness = defaultdict(list)
+        counters = defaultdict(list)
+        timers = defaultdict(list)
+
+        for af, bf, b, c, t in result:
+            for key, value in af.items():
+                avg_fitness[key].extend(value)
+            for key, value in bf.items():
+                best_fitness[key].extend(value)
+            for key, value in c.items():
+                counters[key].extend(value)
+            for key, value in t.items():
+                timers[key].extend(value)
+
+        # Write data
+        with open(log_dir + "/avg_fitness.out", 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key in sorted(avg_fitness):
+                writer.writerow([key] + avg_fitness[key])
+
+        with open(log_dir + "/best_fitness.out", 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key in sorted(best_fitness):
+                writer.writerow([key] + best_fitness[key])
+
+        with open(log_dir + "/best_tour.out", 'w') as file:
+            print >> file, ",".join(map(str, best_solution.tour))
+
+        with open(log_dir + "/counters.out", 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            for key in sorted(counters):
+                writer.writerow(["Run", "Crossovers", "Failed", "Improvment",
+                                 "Feasible 1", "Feasible 2", "Feasible 3",
+                                 "Infeasible", "Fusions", "Unsolved",
+                                 "Infeasible tours", "Mutations"])
+                writer.writerow([key] + counters[key])
+
+        with open(log_dir + "/timers.out", 'w') as csv_file:
+            writer = csv.writer(csv_file)
+            writer.writerow(["Run", "Total", "Population", "Evaluation",
+                             "Selection", "Recombination", "Partitioning",
+                             "Simple graph", "Classification", "Fusion",
+                             "Build", "Mutation", "Pop restart"])
+            for key in sorted(timers):
+                writer.writerow([key] + timers[key])

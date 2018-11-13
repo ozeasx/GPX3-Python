@@ -124,7 +124,7 @@ class GPX(object):
             # Increment index
             index += 1
         # Store execution time and return
-        self._timers['partition'].append(time.time() - start_time)
+        self._timers['partitioning'].append(time.time() - start_time)
         # Return vertice set and ab_cycles
         return vertices, ab_cycles
 
@@ -173,7 +173,7 @@ class GPX(object):
                 simple_g[key]['common'].add(frozenset([first[2], first[1]]))
 
         # Store execution time
-        self._timers['simple graph'].append(time.time() - start_time)
+        self._timers['simple_graph'].append(time.time() - start_time)
         # Return constructed graphs
         return dict(simple_g)
 
@@ -209,7 +209,7 @@ class GPX(object):
                 self._counters['infeasible'] += 1
 
         # Store execution time
-        self._timers['classify'].append(time.time() - start_time)
+        self._timers['classification'].append(time.time() - start_time)
 
         # Return classified partitions
         return feasible, infeasible
@@ -393,11 +393,12 @@ class GPX(object):
             vertices, tour = Graph.dfs(graph, 1)
             if len(vertices) == self._data.dimension:
                 candidates.append([tour, dist])
+                # self._counters['feasible_tours'] += 1
             elif not inf_key:
                 self._counters['inf_tours'] += 1
         # For infeasible handling, Two solutions should be feasible at least
-        # if inf_key:
-        #    assert len(candidates) >= 2, len(candidates)
+        if inf_key and not self._f3_test:
+            assert len(candidates) >= 2, len(candidates)
         # Sort by distance
         candidates.sort(key=lambda s: s[1])
         # Store execution time
@@ -521,11 +522,17 @@ class GPX(object):
             # Improvment assertion
             parents_sum = parent_1.dist + parent_2.dist
             children_sum = candidates[0].dist + candidates[1].dist
-            assert children_sum <= parents_sum
+            if not self._f3_test:
+                assert children_sum < parents_sum
+            else:
+                assert children_sum <= parents_sum
+            # To calc total improvement
+            self._counters['parents_sum'] += parents_sum
+            self._counters['children_sum'] += children_sum
             # Measure execution time
-            self._timers['recombine'].append(time.time() - start_time)
+            self._timers['recombination'].append(time.time() - start_time)
             # Return created solutions
             return candidates[0], candidates[1]
 
         # Store total execution time
-        self._timers['recombine'].append(time.time() - start_time)
+        self._timers['recombination'].append(time.time() - start_time)

@@ -244,7 +244,7 @@ class GA(object):
                 self._population[i] = c
 
         # Register execution time
-        self._timers['pop restart'].append(time.time() - start_time)
+        self._timers['pop_restart'].append(time.time() - start_time)
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size
@@ -267,6 +267,10 @@ class GA(object):
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
         log.info("Failed: %i", self._cross_op.counters['failed'])
+        parents_sum = self._cross_op.counters['parents_sum']
+        children_sum = self._cross_op.counters['children_sum']
+        log.info("Overall improvement: %f", (parents_sum - children_sum)
+                 / float(parents_sum))
         log.info("Partitions")
         log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
         log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])
@@ -282,14 +286,16 @@ class GA(object):
         log.info("Evaluation: %f", sum(self._timers['evaluation']))
         log.info("Selection: %f", sum(self._timers['tournament']))
         log.info("Recombination: %f", sum(self._timers['recombination']))
-        log.info(" Partitioning: %f", sum(self._cross_op.timers['partition']))
+        log.info(" Partitioning: %f",
+                 sum(self._cross_op.timers['partitioning']))
         log.info(" Simplified graph: %f",
-                 sum(self._cross_op.timers['simple graph']))
-        log.info(" Classification: %f", sum(self._cross_op.timers['classify']))
+                 sum(self._cross_op.timers['simple_graph']))
+        log.info(" Classification: %f",
+                 sum(self._cross_op.timers['classification']))
         log.info(" Fusion: %f", sum(self._cross_op.timers['fusion']))
         log.info(" Build: %f", sum(self._cross_op.timers['build']))
         log.info("Mutation: %f", sum(self._timers['mutation']))
-        log.info("Population restart: %f", sum(self._timers['pop restart']))
+        log.info("Population restart: %f", sum(self._timers['pop_restart']))
         if self._data.best_solution:
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))

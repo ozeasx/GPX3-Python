@@ -17,6 +17,8 @@ class TSPLIB(object):
         # Set tsp dimension
         self._dimension = int(shell.run("grep DIMENSION " + instance_path
                                         + " | cut -d':' -f2").strip())
+        self._name = str(shell.run("grep NAME " + instance_path
+                                   + " | cut -d':' -f2").strip())
 
         # Condensed index mapping
         # https://stackoverflow.com/questions/13079563/how-does-condensed-distance-matrix-work-pdist/13079806
@@ -87,7 +89,7 @@ class TSPLIB(object):
             self._best_solution = solution
             # Write new solution to file
             with open(self._instance_name + ".opt.tour.new", 'w') as best:
-                best.write("NAME : " + self._instance_name + ".opt.tour\n")
+                best.write("NAME : " + self._name + ".opt.tour.new\n")
                 best.write("COMMENT : Length " + str(solution.dist)
                                                + ", ozeasx@gmail.com\n")
                 best.write("TYPE : TOUR\n")
