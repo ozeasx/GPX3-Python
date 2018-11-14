@@ -234,15 +234,21 @@ if args.n > 1:
         with open(log_dir + "/avg_fitness.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(avg_fitness):
-                writer.writerow([key] + avg_fitness[key])
+                writer.writerow(avg_fitness[key])
 
         with open(log_dir + "/best_fitness.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(best_fitness):
-                writer.writerow([key] + best_fitness[key])
+                writer.writerow(best_fitness[key])
 
-        with open(log_dir + "/best_tour.out", 'w') as file:
+        with open(log_dir + "/parametrization.out", 'w') as file:
+            print >> file, str(vars(args)).strip("{}")
+
+        with open(log_dir + "/best_tour_found.out", 'w') as file:
             print >> file, ",".join(map(str, best_solution.tour))
+
+        with open(log_dir + "/best_known_tour.out", 'w') as file:
+            print >> file, ",".join(map(str, tsp.best_solution.tour))
 
         with open(log_dir + "/counters.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
@@ -251,7 +257,7 @@ if args.n > 1:
                                  "Feasible 1", "Feasible 2", "Feasible 3",
                                  "Infeasible", "Fusions", "Unsolved",
                                  "Infeasible tours", "Mutations"])
-                writer.writerow([key] + counters[key])
+                writer.writerow(counters[key])
 
         with open(log_dir + "/timers.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
@@ -260,4 +266,4 @@ if args.n > 1:
                              "Simple graph", "Classification", "Fusion",
                              "Build", "Mutation", "Pop restart"])
             for key in sorted(timers):
-                writer.writerow([key] + timers[key])
+                writer.writerow(timers[key])
