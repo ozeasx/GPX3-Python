@@ -162,7 +162,7 @@ def run_ga(id):
     # Calc improvement
     parent_sum = gpx.counters['parents_sum']
     children_sum = gpx.counters['children_sum']
-    improvement = (parent_sum - children_sum) / float(parent_sum)
+    improvement = (parent_sum - children_sum) / float(parent_sum) * 100
     # Counters
     counters[id].extend([ga.cross, gpx.counters['failed'], improvement,
                          gpx.counters['feasible_1'],
@@ -253,17 +253,9 @@ if args.n > 1:
         with open(log_dir + "/counters.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(counters):
-                writer.writerow(["Run", "Crossovers", "Failed", "Improvment",
-                                 "Feasible 1", "Feasible 2", "Feasible 3",
-                                 "Infeasible", "Fusions", "Unsolved",
-                                 "Infeasible tours", "Mutations"])
-                writer.writerow(counters[key])
+                                writer.writerow(counters[key])
 
         with open(log_dir + "/timers.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
-            writer.writerow(["Run", "Total", "Population", "Evaluation",
-                             "Selection", "Recombination", "Partitioning",
-                             "Simple graph", "Classification", "Fusion",
-                             "Build", "Mutation", "Pop restart"])
             for key in sorted(timers):
                 writer.writerow(timers[key])

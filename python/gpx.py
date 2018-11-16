@@ -398,7 +398,8 @@ class GPX(object):
                 self._counters['inf_tours'] += 1
         # For infeasible handling, Two solutions should be feasible at least
         if inf_key and not self._f3_test:
-            assert len(candidates) >= 2, len(candidates)
+            assert len(candidates) >= 2, (self._parent_1_tour,
+                                          self._parent_2_tour)
         # Sort by distance
         candidates.sort(key=lambda s: s[1])
         # Store execution time
@@ -523,9 +524,11 @@ class GPX(object):
             parents_sum = parent_1.dist + parent_2.dist
             children_sum = candidates[0].dist + candidates[1].dist
             if not self._f3_test:
-                assert children_sum < parents_sum
+                assert children_sum < parents_sum, (parent_1.tour,
+                                                    parent_2.tour)
             else:
-                assert children_sum <= parents_sum
+                assert children_sum <= parents_sum, (parent_1.tour,
+                                                    parent_2.tour)
             # To calc total improvement
             self._counters['parents_sum'] += parents_sum
             self._counters['children_sum'] += children_sum
