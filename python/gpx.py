@@ -528,7 +528,7 @@ class GPX(object):
                                                     parent_2.tour)
             else:
                 assert children_sum <= parents_sum, (parent_1.tour,
-                                                    parent_2.tour)
+                                                     parent_2.tour)
             # To calc total improvement
             self._counters['parents_sum'] += parents_sum
             self._counters['children_sum'] += children_sum

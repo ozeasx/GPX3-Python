@@ -270,7 +270,7 @@ class GA(object):
         parents_sum = self._cross_op.counters['parents_sum']
         children_sum = self._cross_op.counters['children_sum']
         log.info("Overall improvement: %f", (parents_sum - children_sum)
-                 / float(parents_sum) * 100) 
+                 / float(parents_sum) * 100)
         log.info("Partitions")
         log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
         log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])
