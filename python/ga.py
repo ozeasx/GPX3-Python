@@ -164,7 +164,7 @@ class GA(object):
         self._timers['tournament'].append(time.time() - start_time)
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size
+        assert len(self._population) == self._pop_size, "Tournament, pop size"
 
     # Recombination
     def recombine(self, p_cross, pairwise=None):
@@ -208,7 +208,7 @@ class GA(object):
         self._timers['recombination'].append(time.time() - start_time)
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size, len(self._population)
+        assert len(self._population) == self._pop_size, "Cross, pop size"
 
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut):
@@ -247,7 +247,7 @@ class GA(object):
         self._timers['pop_restart'].append(time.time() - start_time)
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size
+        assert len(self._population) == self._pop_size, "restart, pop size"
 
     # Generation info
     def print_info(self):
@@ -269,8 +269,9 @@ class GA(object):
         log.info("Failed: %i", self._cross_op.counters['failed'])
         parents_sum = self._cross_op.counters['parents_sum']
         children_sum = self._cross_op.counters['children_sum']
-        log.info("Overall improvement: %f", (parents_sum - children_sum)
-                 / float(parents_sum) * 100)
+        if parents_sum != 0:
+            log.info("Overall improvement: %f", (parents_sum - children_sum)
+                     / float(parents_sum) * 100)
         log.info("Partitions")
         log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
         log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])

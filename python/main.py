@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # Ozeas - ozeasx@gmail.com
 
-import time
 import os
 import sys
 import multiprocessing
@@ -38,8 +37,7 @@ parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
                     default=0)
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
-parser.add_argument("-o", help="Generate file reports", default='False',
-                    choices=['True', 'False'])
+parser.add_argument("-o", help="Directory to generate file reports", type=str)
 parser.add_argument("-f1", help="Feasible 1 test", default='True',
                     choices=['True', 'False'])
 parser.add_argument("-f2", help="Feasible 2 test", default='True',
@@ -69,24 +67,17 @@ assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 tsp = TSPLIB(args.I, Shell())
 
 # Create directory with timestamp
-if args.o == 'True':
-    log_dir = time.strftime("../results/%Y%m%d%H%M%S")
+if args.o is not None:
+    # log_dir = time.strftime("../results/%Y%m%d%H%M%S")
+    log_dir = args.o
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
-
-    # Redefine function to log assertion erros
-    # http://code.activestate.com/recipes/577074-logging-asserts/
-    def excepthook(*args):
-        logging.getLogger().error('Uncaught exception:', exc_info=args)
-
-    # Redefine sys.excepthook
-#    sys.excepthook = excepthook
 
 
 # Function to call each ga run
 def run_ga(id):
     # File logging
-    if args.o == 'True':
+    if args.o is not None:
         # Log file
         logging.basicConfig(filename=log_dir + "/report%i.log" % (id + 1),
                             format='%(message)s', level=logging.INFO)
@@ -136,11 +127,11 @@ def run_ga(id):
     ga.evaluate()
     # Begin GA
     while ga.generation < args.g:
-        # Store fitness evolution
-        avg_fitness[ga.generation].append(ga.avg_fitness)
-        best_fitness[ga.generation].append(ga.best_solution.fitness)
         # Generation info
         ga.print_info()
+        # Logging
+        avg_fitness[ga.generation].append(ga.avg_fitness)
+        best_fitness[ga.generation].append(ga.best_solution.fitness)
         # Selection
         if args.k:
             ga.select_tournament(args.k)
@@ -155,6 +146,8 @@ def run_ga(id):
             ga.restart_pop(args.r, args.P)
         # Evaluation
         ga.evaluate()
+    # Last generation info
+    ga.print_info()
     # Final report
     ga.report()
     # Best solution
@@ -162,7 +155,10 @@ def run_ga(id):
     # Calc improvement
     parent_sum = gpx.counters['parents_sum']
     children_sum = gpx.counters['children_sum']
-    improvement = (parent_sum - children_sum) / float(parent_sum) * 100
+    improvement = 0
+    if parent_sum != 0:
+        improvement = (parent_sum - children_sum) / float(parent_sum) * 100
+
     # Counters
     counters[id].extend([ga.cross, gpx.counters['failed'], improvement,
                          gpx.counters['feasible_1'],
@@ -203,8 +199,8 @@ if args.n > 1:
     # Best solution found
     best_solution = None
 
-    for af, bf, b, c, t in result:
-        for key, value in b.items():
+    for _, _, best, _, _ in result:
+        for key, value in best.items():
             if not best_solution:
                 best_solution = value
             elif value.fitness > best_solution.fitness:
@@ -213,17 +209,18 @@ if args.n > 1:
     # Write best solution
     tsp.best_solution = best_solution
 
-    if args.o == 'True':
+    if args.o is not None:
 
         avg_fitness = defaultdict(list)
         best_fitness = defaultdict(list)
         counters = defaultdict(list)
         timers = defaultdict(list)
 
-        for af, bf, b, c, t in result:
-            for key, value in af.items():
+        # Average, best, counters and timers
+        for a, b, _, c, t in result:
+            for key, value in a.items():
                 avg_fitness[key].extend(value)
-            for key, value in bf.items():
+            for key, value in b.items():
                 best_fitness[key].extend(value)
             for key, value in c.items():
                 counters[key].extend(value)
