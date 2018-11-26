@@ -66,40 +66,46 @@ assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 # Shell and TSP instance
 tsp = TSPLIB(args.I, Shell())
 
-# Create directory with timestamp
+# Create directory to report data
 if args.o is not None:
     # log_dir = time.strftime("../results/%Y%m%d%H%M%S")
     log_dir = args.o
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
+# Stdout logging
+stdout_handler = logging.StreamHandler(sys.stdout)
+format = logging.Formatter('%(message)s')
+stdout_handler.setFormatter(format)
+
+# Set logging
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+logger.addHandler(stdout_handler)
+
 
 # Function to call each ga run
 def run_ga(id):
-    # File logging
+    # Also log to file
     if args.o is not None:
-        # Log file
-        logging.basicConfig(filename=log_dir + "/report%i.log" % (id + 1),
-                            format='%(message)s', level=logging.INFO)
-        # Stdout
-        logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
-    else:
-        # Only stdout
-        logging.basicConfig(format='%(message)s', level=logging.INFO)
+        file_handler = logging.FileHandler(log_dir + "/report%i.log"
+                                                     % (id + 1))
+        file_handler.setFormatter(format)
+        logger.addHandler(file_handler)
 
     # Summary
-    logging.info("------------------------------GA Settings------------------")
-    logging.info("Initial population: %i", args.p)
-    logging.info("Population restart percentage: %f", args.r)
-    logging.info("Elitism: %i", args.e)
-    logging.info("Tournament size: %i", args.k)
-    logging.info("Pairwise formation: %s", args.P)
-    logging.info("Crossover probability: %f", args.c)
-    logging.info("Crossover operator: %s", args.x)
-    logging.info("Mutation probability: %f", args.m)
-    logging.info("Generation limit: %i", args.g)
-    logging.info("TSPLIB instance: %s", args.I)
-    logging.info("Iteration: %i/%i", id, args.n)
+    logger.info("------------------------------GA Settings------------------")
+    logger.info("Initial population: %i", args.p)
+    logger.info("Population restart percentage: %f", args.r)
+    logger.info("Elitism: %i", args.e)
+    logger.info("Tournament size: %i", args.k)
+    logger.info("Pairwise formation: %s", args.P)
+    logger.info("Crossover probability: %f", args.c)
+    logger.info("Crossover operator: %s", args.x)
+    logger.info("Mutation probability: %f", args.m)
+    logger.info("Generation limit: %i", args.g)
+    logger.info("TSPLIB instance: %s", args.I)
+    logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Statistics variables
     avg_fitness = defaultdict(list)
@@ -250,7 +256,7 @@ if args.n > 1:
         with open(log_dir + "/counters.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(counters):
-                                writer.writerow(counters[key])
+                writer.writerow(counters[key])
 
         with open(log_dir + "/timers.out", 'w') as csv_file:
             writer = csv.writer(csv_file)

@@ -90,6 +90,8 @@ class TSPLIB(object):
             self._best_solution = solution
         elif solution.dist < self._best_solution.dist:
             self._best_solution = solution
+        else:
+            return
 
         # Write new solution to file
         with open(self._instance_name + ".opt.tour.new", 'w') as best:

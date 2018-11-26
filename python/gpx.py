@@ -217,6 +217,12 @@ class GPX(object):
     # Try fusion of infeasible partitions
     def _fusion(self, partitions):
 
+        # Mark start time
+        start_time = time.time()
+
+        # Fused partitions
+        fused = set()
+
         # Function to fuse ab_cycles
         def fuse(fusion, dest='feasible'):
             partitions['ab_cycles']['A'][fusion] = deque()
@@ -229,12 +235,6 @@ class GPX(object):
                 fused.add(i)
                 partitions['infeasible'].remove(i)
             partitions[dest].add(fusion)
-
-        # Mark start time
-        start_time = time.time()
-
-        # Fused partitions
-        fused = set()
 
         # Start fusion try with 2 partitions
         n = 2
@@ -291,11 +291,17 @@ class GPX(object):
         # handled by build method. The last of the mohicans remains infeasible
         # to be handled as well
         if len(partitions['infeasible']) > 1:
-            self._counters['unsolved'] += len(partitions['infeasible'])
-            fuse(tuple(partitions['infeasible']), 'infeasible')
+            if self._f2_test or self._f3_test:
+                self._counters['unsolved'] += len(partitions['infeasible'])
+                fuse(tuple(partitions['infeasible']), 'infeasible')
+            else:
+                fuse(tuple(partitions['infeasible']))
         # The last of the mohicans
         elif len(partitions['infeasible']) == 1:
-            self._counters['unsolved'] += 1
+            if self._f2_test or self._f3_test:
+                self._counters['unsolved'] += 1
+            else:
+                partitions['feasible'].add(partitions['infeasible'].pop())
 
         # Store execution time
         self._timers['fusion'].append(time.time() - start_time)
