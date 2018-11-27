@@ -4,20 +4,20 @@
 import os
 from itertools import combinations
 from chromosome import Chromosome
+from shell import Shell
 
 
 class TSPLIB(object):
-    def __init__(self, instance_path, shell):
-        # Set instance file and shell object
+    def __init__(self, instance_path):
+        # Set instance file and
         self._instance_path = instance_path
         self._instance_name = instance_path[:-4]
-        self._shell = shell
         self._best_solution = None
 
         # Set tsp dimension
-        self._dimension = int(shell.run("grep DIMENSION " + instance_path
+        self._dimension = int(Shell.run("grep DIMENSION " + instance_path
                                         + " | cut -d':' -f2").strip())
-        self._name = str(shell.run("grep NAME " + instance_path
+        self._name = str(Shell.run("grep NAME " + instance_path
                                    + " | cut -d':' -f2").strip())
 
         # Condensed index mapping
@@ -25,9 +25,9 @@ class TSPLIB(object):
         self._cindex = lambda i, j: i*(2*self._dimension - i - 3)/2 + j - 1
 
         # Generate distance matrix file
-        if not os.path.isfile(self._instance_name + ".tsp.dm"):
+        if not os.path.isfile(self._instance_path + ".dm"):
             print "Generating distance matrix..."
-            shell.call("../R/create_dm.r " + instance_path)
+            Shell.call("../R/create_dm.r " + instance_path)
             print "Done..."
         else:
             print "Distance matrix file already exists"
@@ -36,7 +36,7 @@ class TSPLIB(object):
         self._hash = dict()
         self._dm = list()
         line_number = 1
-        with open(self._instance_name + ".tsp.dm") as dm:
+        with open(self._instance_path + ".dm") as dm:
             for t, dist in zip(combinations(xrange(self._dimension), 2), dm):
                 self._hash[t] = line_number
                 self._dm.append(float(dist))
@@ -157,7 +157,7 @@ class TSPLIB(object):
         # https://stackoverflow.com/questions/3096259/bash-command-to-sum-a-column-of-numbers
         cmd += " | paste -sd+ | bc"
         # Return result
-        return float(self._shell.run(cmd))
+        return float(Shell.run(cmd))
 
     # Calc tour distance using file
     def tour_dist_2(self, tour):
@@ -179,4 +179,4 @@ class TSPLIB(object):
         # https://stackoverflow.com/questions/3096259/bash-command-to-sum-a-column-of-numbers
         cmd += " | paste -sd+ | bc"
         # Return result
-        return float(self._shell.run(cmd))
+        return float(Shell.run(cmd))
