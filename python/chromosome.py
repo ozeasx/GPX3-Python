@@ -12,9 +12,8 @@ class Chromosome(object):
         # Create random tour based on given dimension
         if isinstance(tour, int):
             nodes = xrange(1, tour + 1)
-            self._tour = list(np.random.choice(nodes, len(nodes),
-                                               replace=False))
-            self._tour = tuple(self._tour)
+            self._tour = tuple(list(np.random.choice(nodes, len(nodes),
+                                                     replace=False)))
         # User defined tour
         elif isinstance(tour, (list, tuple, deque)):
             self._tour = tuple(tour)
