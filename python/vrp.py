@@ -50,10 +50,31 @@ class VRP(TSPLIB):
             demand += self._demand[i - 1]
         return demand
 
+    # Calc AB_cycle distance using distance matrix (memory)
+    def ab_cycle_dist(self, ab_cycle):
+        # Convert deque to list
+        aux = list(ab_cycle)
+        # Distance
+        dist = 0
+        # Distance lookup
+        for i, j in zip(aux[0::2], aux[1::2]):
+            # Ignore ghost nodes
+            t = [abs(i)-1, abs(j)-1]
+            # Depots
+            if t[0] >= self._dimension:
+                t[0] = 0
+            if t[1] >= self._dimension:
+                t[1] = 0
+            dist += self._dm[self._cindex(*sorted(t))]
+        # Return result
+        return dist
+
 
 # Test section
 if __name__ == '__main__':
     vrp = VRP("../cvrp/F-n45-k4.vrp")
-    print vrp._capacity
-    print vrp._trucks
-    print vrp.tour_demand([1, 2, 3])
+    # print vrp._capacity
+    # print vrp._trucks
+    print vrp.ab_cycle_dist([1, 2, 3, 1])
+    print vrp.ab_cycle_dist([1, 2, 3, -47])
+    print vrp.ab_cycle_dist([1, 2, 3, 47])

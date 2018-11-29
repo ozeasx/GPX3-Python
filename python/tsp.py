@@ -114,6 +114,7 @@ class TSPLIB(object):
         dist = 0
         # Distance lookup
         for i, j in zip(aux[0::2], aux[1::2]):
+            # Ignore ghost nodes
             t = sorted([abs(i)-1, abs(j)-1])
             dist += self._dm[self._cindex(*t)]
         # Return result
