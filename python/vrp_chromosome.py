@@ -5,7 +5,6 @@ import random
 from collections import deque
 from graph import Graph
 from chromosome import Chromosome
-import vrp2tsp
 
 
 class VRP_Chromosome(Chromosome):
@@ -62,6 +61,45 @@ class VRP_Chromosome(Chromosome):
     def load(self, value):
         self._load = value
 
+    # Given a VRP Chromosome, returns a TSP Chromosome
+    def to_tsp(self):
+        # TSP tour
+        tsp_tour = list()
+
+        # Ghost depots numbering
+        ghost = self._dimension + 1
+
+        first = False
+        for i in self._tour:
+            if i == 1:
+                # If first depot, append 1
+                if not first:
+                    first = True
+                    tsp_tour.append(i)
+                    continue
+                # Ghost depots
+                else:
+                    tsp_tour.append(ghost)
+                    ghost += 1
+            else:
+                tsp_tour.append(i)
+
+        return Chromosome(tsp_tour)
+
+    # Given a vrp in TSP format, returns a VRP Chromosome
+    @staticmethod
+    def tsp2vrp(tsp, trucks):
+        vrp_tour = list()
+        dimension = len(tsp.tour) - trucks + 1
+        ghost_depots = range(dimension + 1, dimension + trucks + 2)
+        for i in tsp.tour:
+            if i in ghost_depots:
+                vrp_tour.append(1)
+            else:
+                vrp_tour.append(i)
+
+        return VRP_Chromosome(vrp_tour)
+
 
 # Test section
 if __name__ == '__main__':
@@ -71,14 +109,14 @@ if __name__ == '__main__':
     print "VRP Trucks, ", vrp1.trucks
     print "VRP Dimension, ", vrp1.dimension
 
-    tsp1 = vrp2tsp.vrp2tsp(vrp1)
+    tsp1 = VRP_Chromosome.vrp2tsp(vrp1)
 
     print
     print "TSP Tour, ", tsp1.tour
     print "TSP Dimension, ", tsp1.dimension
     print
 
-    vrp2 = vrp2tsp.tsp2vrp(tsp1, 3)
+    vrp2 = VRP_Chromosome.tsp2vrp(tsp1, 3)
 
     print
     print "VRP Tour, ", vrp2.tour

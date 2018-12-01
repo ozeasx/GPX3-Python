@@ -7,7 +7,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
-from chromosome import Chromosome
+from chromosome import VRP_Chromosome as Chromosome
 import mut
 
 
@@ -74,26 +74,29 @@ class GA(object):
 
     # Generate inicial population
     def gen_pop(self, size, method='random'):
+        # Regiter local and global start time
+        self._start_time = start_time = time.time()
         # Need even population
         assert not (size % 2), "Invalid population size. " \
                                "Must be even and greater than 0"
         # Print step
         print "Generating initial population..."
-        # Regiter local and global start time
-        self._start_time = start_time = time.time()
         # Population set to ensure unicity
         self._population = set()
         # Random generation
         if method == 'random':
             while len(self._population) < size:
-                self._population.add(Chromosome(self._data.dimension))
+                self._population.add(Chromosome(self._data.dimension),
+                                     self._data.trucks)
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
+                c.load = self._data.tour_load(c.tour)
         # two_opt
         if method == '2opt':
             while len(self._population) < size:
                 c = Chromosome(self._data.dimension)
                 c.dist = self._data.tour_dist(c.tour)
+                c.load = self._data.tour_load(c.tour)
                 c = mut.two_opt(c, self._data)
                 self._population.add(c)
         # Converto population to list

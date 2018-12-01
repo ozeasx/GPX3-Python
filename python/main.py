@@ -9,7 +9,7 @@ from collections import defaultdict
 import logging
 import csv
 from ga import GA
-from tsp import TSPLIB
+from vrp import VRP
 from gpx import GPX
 
 
@@ -44,7 +44,7 @@ parser.add_argument("-f2", help="Feasible 2 test", default='True',
 parser.add_argument("-f3", help="Feasible 3 test", default='False',
                     choices=['True', 'False'])
 # Mandatory argument
-parser.add_argument("I", help="TSPLIB instance file", type=str)
+parser.add_argument("I", help="VRP instance file", type=str)
 
 
 # Parser
@@ -62,8 +62,8 @@ assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
-# TSP instance
-tsp = TSPLIB(args.I)
+# VRP Instance
+vrp = VRP(args.I)
 
 # Create directory to report data
 if args.o is not None:
@@ -103,7 +103,7 @@ def run_ga(id):
     logger.info("Crossover operator: %s", args.x)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
-    logger.info("TSPLIB instance: %s", args.I)
+    logger.info("VRP Instance: %s", args.I)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Statistics variables
@@ -114,7 +114,7 @@ def run_ga(id):
     timers = defaultdict(list)
 
     # Crossover operator
-    gpx = GPX(tsp)
+    gpx = GPX(vrp)
 
     # Define which tests will be applied
     if args.f1 == 'False':
@@ -124,8 +124,8 @@ def run_ga(id):
     if args.f3 == 'True':
         gpx.f3_test = True
 
-    # GA instance
-    ga = GA(tsp, gpx, args.e)
+    # GA Instance
+    ga = GA(vrp, gpx, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M)
     # Fisrt population evaluation
@@ -196,7 +196,7 @@ if args.n > 1:
     pool.join()
 else:
     result = run_ga(0)
-    tsp.best_solution = result[2][0]
+    vrp.best_solution = result[2][0]
 
 # Consolidate data
 if args.n > 1:
@@ -212,7 +212,7 @@ if args.n > 1:
                 best_solution = value
 
     # Write best solution
-    tsp.best_solution = best_solution
+    vrp.best_solution = best_solution
 
     if args.o is not None:
 
@@ -250,7 +250,7 @@ if args.n > 1:
             print >> file, ",".join(map(str, best_solution.tour))
 
         with open(log_dir + "/best_known_tour.out", 'w') as file:
-            print >> file, ",".join(map(str, tsp.best_solution.tour))
+            print >> file, ",".join(map(str, int.best_solution.tour))
 
         with open(log_dir + "/counters.out", 'w') as csv_file:
             writer = csv.writer(csv_file)
