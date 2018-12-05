@@ -8,7 +8,7 @@ from graph import Graph
 
 class Chromosome(object):
     # Constructor
-    def __init__(self, tour=None, dist=None):
+    def __init__(self, tour, dist=None):
         # Create random tour based on given dimension
         if isinstance(tour, int):
             self._tour = range(1, tour + 1)

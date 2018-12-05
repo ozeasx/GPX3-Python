@@ -23,6 +23,8 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
+parser.add_argument("-t", help="Trucks", choices=['fixed', 'random',
+                                                  'free'], default='fixed')
 parser.add_argument("-M", help="Method to generate inicial population",
                     choices=['random', '2opt'], default='random')
 parser.add_argument("-r", help="Percentage of population to be restarted",
@@ -67,7 +69,6 @@ vrp = VRP(args.I)
 
 # Create directory to report data
 if args.o is not None:
-    # log_dir = time.strftime("../results/%Y%m%d%H%M%S")
     log_dir = args.o
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -77,7 +78,6 @@ stdout_handler = logging.StreamHandler(sys.stdout)
 format = logging.Formatter('%(message)s')
 stdout_handler.setFormatter(format)
 
-# Set logging
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
@@ -95,6 +95,7 @@ def run_ga(id):
     # Summary
     logger.info("------------------------------GA Settings------------------")
     logger.info("Initial population: %i", args.p)
+    logger.info("Truck number: %s, %i", args.t, vrp.trucks)
     logger.info("Population restart percentage: %f", args.r)
     logger.info("Elitism: %i", args.e)
     logger.info("Tournament size: %i", args.k)
@@ -127,7 +128,7 @@ def run_ga(id):
     # GA Instance
     ga = GA(vrp, gpx, args.e)
     # Generate inicial population
-    ga.gen_pop(args.p, args.M)
+    ga.gen_pop(args.p, args.M, args.t)
     # Fisrt population evaluation
     ga.evaluate()
     # Begin GA
@@ -148,7 +149,7 @@ def run_ga(id):
             ga.mutate(args.m)
         # Population restart
         if args.r:
-            ga.restart_pop(args.r, args.P)
+            ga.restart_pop(args.r, args.P, args.t)
         # Evaluation
         ga.evaluate()
     # Last generation info

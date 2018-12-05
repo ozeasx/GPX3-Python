@@ -76,7 +76,7 @@ class VRP(TSPLIB):
             best.write("EOF\n")
 
     # Get tour demand
-    def tour_demand(self, tour):
+    def tour_load(self, tour):
         demand = 0
         for i in tour:
             demand += self._demand[i - 1]

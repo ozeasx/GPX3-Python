@@ -8,7 +8,7 @@ from chromosome import Chromosome
 
 
 class VRP_Chromosome(Chromosome):
-    def __init__(self, tour, trucks=None):
+    def __init__(self, tour, trucks=None, dist=None):
         # Create random tour based on given dimension
         if isinstance(tour, int):
             # Assert valid truck number for tour dimension
@@ -17,8 +17,8 @@ class VRP_Chromosome(Chromosome):
             self._tour = range(2, tour + 1)
             random.shuffle(self._tour)
             # Insert depot at random
-            points = range(0, tour - 1)
-            depots = random.sample(points, trucks)
+            points = range(0, tour - 1)  # Insert positions
+            depots = random.sample(points, trucks)  # Random insert positions
             depots.sort()
             for i, d in enumerate(depots):
                 self._tour.insert(d + i, 1)
@@ -75,7 +75,7 @@ class VRP_Chromosome(Chromosome):
                 # If first depot, append 1
                 if not first:
                     first = True
-                    tsp_tour.append(i)
+                    tsp_tour.append(1)
                     continue
                 # Ghost depots
                 else:
@@ -84,16 +84,17 @@ class VRP_Chromosome(Chromosome):
             else:
                 tsp_tour.append(i)
 
-        return Chromosome(tsp_tour)
+        assert len(tsp_tour) == len(set(tsp_tour))
 
-    # Given a vrp in TSP format, returns a VRP Chromosome
-    @staticmethod
-    def tsp2vrp(tsp, trucks):
+        return VRP_Chromosome(tsp_tour)
+        # return VRP_Chromosome(tsp_tour, 1, self._dist)
+
+    # Convert back to a VRP Chromosome
+    def to_vrp(self, dimension):
         vrp_tour = list()
-        dimension = len(tsp.tour) - trucks + 1
-        ghost_depots = range(dimension + 1, dimension + trucks + 2)
-        for i in tsp.tour:
-            if i in ghost_depots:
+        ghost_depots = dimension + 1
+        for i in self.tour:
+            if i >= ghost_depots:
                 vrp_tour.append(1)
             else:
                 vrp_tour.append(i)
@@ -103,20 +104,20 @@ class VRP_Chromosome(Chromosome):
 
 # Test section
 if __name__ == '__main__':
-    vrp1 = VRP_Chromosome([2, 1, 3, 1, 4, 5, 1])
+    vrp1 = VRP_Chromosome([1, 2, 1, 3, 1, 4, 1, 5])
 
     print "VRP Tour, ", vrp1.tour
     print "VRP Trucks, ", vrp1.trucks
     print "VRP Dimension, ", vrp1.dimension
 
-    tsp1 = VRP_Chromosome.vrp2tsp(vrp1)
+    tsp1 = vrp1.to_tsp()
 
     print
     print "TSP Tour, ", tsp1.tour
     print "TSP Dimension, ", tsp1.dimension
     print
 
-    vrp2 = VRP_Chromosome.tsp2vrp(tsp1, 3)
+    vrp2 = tsp1.to_vrp(vrp1.dimension)
 
     print
     print "VRP Tour, ", vrp2.tour

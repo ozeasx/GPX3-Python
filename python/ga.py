@@ -7,7 +7,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
-from chromosome import VRP_Chromosome as Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 import mut
 
 
@@ -36,7 +36,7 @@ class GA(object):
         self._timers = defaultdict(list)
 
         # Current and next population
-        self._population = list()
+        self._population = None
         # Best solution found
         self._best_solution = None
         # Elite population
@@ -72,8 +72,18 @@ class GA(object):
     def timers(self):
         return self._timers
 
+    # Return number of trucks to generate a random chromosome
+    def _trucks(self, t):
+        if t == 'fixed':
+            return self._data.trucks
+        elif t == 'random':
+            return random.randint(self._data.trucks,
+                                  self._data.dimension - 1)
+        else:
+            return random.randint(2, self._data.dimension - 1)
+
     # Generate inicial population
-    def gen_pop(self, size, method='random'):
+    def gen_pop(self, size, method='random', trucks='fixed'):
         # Regiter local and global start time
         self._start_time = start_time = time.time()
         # Need even population
@@ -86,19 +96,19 @@ class GA(object):
         # Random generation
         if method == 'random':
             while len(self._population) < size:
-                self._population.add(Chromosome(self._data.dimension),
-                                     self._data.trucks)
+                self._population.add(Chromosome(self._data.dimension,
+                                                self._trucks(trucks)))
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
                 c.load = self._data.tour_load(c.tour)
         # two_opt
         if method == '2opt':
             while len(self._population) < size:
-                c = Chromosome(self._data.dimension)
+                c = Chromosome(self._data.dimension, self._trucks(trucks))
+            for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
                 c.load = self._data.tour_load(c.tour)
                 c = mut.two_opt(c, self._data)
-                self._population.add(c)
         # Converto population to list
         self._population = list(self._population)
         # Done
@@ -191,7 +201,9 @@ class GA(object):
         for p1, p2 in zip(self._population[0::2], self._population[1::2]):
             # print p1.dist
             if random.random() < p_cross:
-                c1, c2 = self._cross_op.recombine(p1, p2)
+                c1, c2 = self._cross_op.recombine(p1.to_tsp(), p2.to_tsp())
+                c1 = c1.to_vrp(self._data.dimension)
+                c2 = c2.to_vrp(self._data.dimension)
                 children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
@@ -228,7 +240,7 @@ class GA(object):
         self._timers['mutation'].append(time.time() - start_time)
 
     # Reset population
-    def restart_pop(self, ratio, pairwise):
+    def restart_pop(self, ratio, pairwise=False, trucks='fixed'):
         # Register start time
         start_time = time.time()
 
@@ -240,10 +252,11 @@ class GA(object):
             self._pop_restart = True
             self._population.sort(key=attrgetter('fitness'))
             for i in xrange(int(self._pop_size * ratio)):
-                c = Chromosome(self._data.dimension)
+                c = Chromosome(self._data.dimension, self._trucks(trucks))
                 while c in self._population:
-                    c = Chromosome(self._data.dimension)
+                    c = Chromosome(self._data.dimension, self._trucks(trucks))
                 c.dist = self._data.tour_dist(c.tour)
+                c.load = self._data.tour_load(c.tour)
                 self._population[i] = c
 
         # Register execution time
@@ -304,11 +317,16 @@ class GA(object):
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))
             log.info("Distance: %f", self._data.best_solution.dist)
+            log.info("Load: %f", self._data.best_solution.load)
         log.info("------------------- Best individual found -----------------")
         log.info("Tour: %s", (self._best_solution.tour,))
         log.info("Distance: %f", self._best_solution.dist)
+        log.info("Load: %f", self._best_solution.load)
         log.info("-----------------------------------------------------------")
 
     # Calculate the individual fitness
     def _evaluate(self, c):
-        return -c.dist
+        if c.load <= self._data.capacity:
+            return -c.dist
+        else:
+            return 0
