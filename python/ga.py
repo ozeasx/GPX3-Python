@@ -72,18 +72,8 @@ class GA(object):
     def timers(self):
         return self._timers
 
-    # Return number of trucks to generate a random chromosome
-    def _trucks(self, t):
-        if t == 'fixed':
-            return self._data.trucks
-        elif t == 'random':
-            return random.randint(self._data.trucks,
-                                  self._data.dimension - 1)
-        else:
-            return random.randint(2, self._data.dimension - 1)
-
     # Generate inicial population
-    def gen_pop(self, size, method='random', trucks='fixed'):
+    def gen_pop(self, size, method='random'):
         # Regiter local and global start time
         self._start_time = start_time = time.time()
         # Need even population
@@ -97,14 +87,14 @@ class GA(object):
         if method == 'random':
             while len(self._population) < size:
                 self._population.add(Chromosome(self._data.dimension,
-                                                self._trucks(trucks)))
+                                                self._data.trucks))
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
                 c.load = self._data.tour_load(c.tour)
         # two_opt
         if method == '2opt':
             while len(self._population) < size:
-                c = Chromosome(self._data.dimension, self._trucks(trucks))
+                c = Chromosome(self._data.dimension, self._data.trucks)
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
                 c.load = self._data.tour_load(c.tour)
@@ -204,6 +194,8 @@ class GA(object):
                 c1, c2 = self._cross_op.recombine(p1.to_tsp(), p2.to_tsp())
                 c1 = c1.to_vrp(self._data.dimension)
                 c2 = c2.to_vrp(self._data.dimension)
+                c1.load = self._data.tour_load(c1.tour)
+                c2.load = self._data.tour_load(c2.tour)
                 children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
@@ -252,9 +244,9 @@ class GA(object):
             self._pop_restart = True
             self._population.sort(key=attrgetter('fitness'))
             for i in xrange(int(self._pop_size * ratio)):
-                c = Chromosome(self._data.dimension, self._trucks(trucks))
+                c = Chromosome(self._data.dimension, self._data.trucks)
                 while c in self._population:
-                    c = Chromosome(self._data.dimension, self._trucks(trucks))
+                    c = Chromosome(self._data.dimension, self._data.trucks)
                 c.dist = self._data.tour_dist(c.tour)
                 c.load = self._data.tour_load(c.tour)
                 self._population[i] = c
@@ -326,7 +318,7 @@ class GA(object):
 
     # Calculate the individual fitness
     def _evaluate(self, c):
-        if c.load <= self._data.capacity:
+        if c.load <= self._data.dimension:
             return -c.dist
         else:
-            return 0
+            return -9999999999

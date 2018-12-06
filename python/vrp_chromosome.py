@@ -28,6 +28,7 @@ class VRP_Chromosome(Chromosome):
         # User defined tour
         elif isinstance(tour, (list, tuple, deque)):
             # If OK, set tour and truck number
+            self._dist = dist
             self._tour = tuple(tour)
             self._trucks = self._tour.count(1)
 
@@ -86,8 +87,8 @@ class VRP_Chromosome(Chromosome):
 
         assert len(tsp_tour) == len(set(tsp_tour))
 
-        return VRP_Chromosome(tsp_tour)
-        # return VRP_Chromosome(tsp_tour, 1, self._dist)
+        # return VRP_Chromosome(tsp_tour)
+        return VRP_Chromosome(tsp_tour, None, self._dist)
 
     # Convert back to a VRP Chromosome
     def to_vrp(self, dimension):
@@ -99,12 +100,13 @@ class VRP_Chromosome(Chromosome):
             else:
                 vrp_tour.append(i)
 
-        return VRP_Chromosome(vrp_tour)
+        # return VRP_Chromosome(vrp_tour)
+        return VRP_Chromosome(vrp_tour, None, self._dist)
 
 
 # Test section
 if __name__ == '__main__':
-    vrp1 = VRP_Chromosome([1, 2, 1, 3, 1, 4, 1, 5])
+    vrp1 = VRP_Chromosome(4, 3)
 
     print "VRP Tour, ", vrp1.tour
     print "VRP Trucks, ", vrp1.trucks

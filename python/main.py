@@ -23,8 +23,6 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
-parser.add_argument("-t", help="Trucks", choices=['fixed', 'random',
-                                                  'free'], default='fixed')
 parser.add_argument("-M", help="Method to generate inicial population",
                     choices=['random', '2opt'], default='random')
 parser.add_argument("-r", help="Percentage of population to be restarted",
@@ -95,7 +93,7 @@ def run_ga(id):
     # Summary
     logger.info("------------------------------GA Settings------------------")
     logger.info("Initial population: %i", args.p)
-    logger.info("Truck number: %s, %i", args.t, vrp.trucks)
+    logger.info("Truck number: %i", vrp.trucks)
     logger.info("Population restart percentage: %f", args.r)
     logger.info("Elitism: %i", args.e)
     logger.info("Tournament size: %i", args.k)
@@ -128,7 +126,7 @@ def run_ga(id):
     # GA Instance
     ga = GA(vrp, gpx, args.e)
     # Generate inicial population
-    ga.gen_pop(args.p, args.M, args.t)
+    ga.gen_pop(args.p, args.M)
     # Fisrt population evaluation
     ga.evaluate()
     # Begin GA
@@ -149,7 +147,7 @@ def run_ga(id):
             ga.mutate(args.m)
         # Population restart
         if args.r:
-            ga.restart_pop(args.r, args.P, args.t)
+            ga.restart_pop(args.r, args.P)
         # Evaluation
         ga.evaluate()
     # Last generation info

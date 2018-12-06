@@ -7,8 +7,7 @@ from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-cmd = Shell()
-tsp = TSPLIB("../tsplib/ulysses12.tsp", cmd)
+tsp = TSPLIB("../tsplib/eil51.tsp")
 gpx = GPX()
 
 # p1 = Chromosome(16)
@@ -164,6 +163,19 @@ gpx = GPX()
 # F21
 p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
 p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
+
+# vrp1
+p1 = Chromosome((1, 2, 3, 10, 4, 5, 6, 11, 7, 8, 9))
+p2 = Chromosome((1, 2, 3, 4, 5, 10, 6, 7, 8, 9))
+
+# vrp2
+p1 = Chromosome((15, 25, 41, 42, 21, 39, 38, 33, 45, 32, 43, 30, 9, 34, 2, 24,
+                 1, 20, 46, 6, 3, 40, 29, 12, 4, 44, 35, 27, 31, 19, 14, 26,
+                 11, 23, 16, 22, 5, 37, 47, 7, 10, 48, 13, 28, 36, 8, 17, 18))
+
+p2 = Chromosome((4, 1, 3, 24, 14, 9, 45, 38, 26, 46, 13, 32, 44, 20, 35, 12, 7,
+                 16, 19, 5, 2, 34, 6, 30, 47, 18, 27, 33, 43, 29, 8, 48, 22,
+                 25, 42, 40, 36, 41, 11, 23, 39, 21, 31, 15, 17, 10, 37, 28))
 
 # p1.dist = tsp.tour_dist(p1.tour)
 # p2.dist = tsp.tour_dist(p2.tour)

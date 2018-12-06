@@ -7,7 +7,7 @@ from collections import deque
 from itertools import combinations
 from operator import attrgetter
 from graph import Graph
-from chromosome import Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
 # Generalized partition crossover operator
@@ -31,10 +31,10 @@ class GPX(object):
         self._partitions = dict()
         # Counters
         self._counters = defaultdict(int)
-        # Measure cumulative improvement over parents
-        self._improvement = 0
         # Dict with lists containing execution time of each step
         self._timers = defaultdict(list)
+        # Measure cumulative improvement over parents
+        self._improvement = 0
 
     @property
     def infeasible_weight(self):
@@ -397,7 +397,7 @@ class GPX(object):
         # Builder
         for graph, dist in zip(graphs, distances):
             vertices, tour = Graph.dfs(graph, 1)
-            if len(vertices) == self._data.dimension:
+            if len(vertices) == len(self._parent_1_tour):
                 candidates.append([tour, dist])
                 # self._counters['feasible_tours'] += 1
             elif not inf_key:
@@ -524,7 +524,7 @@ class GPX(object):
             # Make sure GPX return best solutions
             candidates = list([parent_1, parent_2])
             for tour, dist in constructed:
-                candidates.append(Chromosome(tour, dist))
+                candidates.append(Chromosome(tour, None, dist))
             # Sort by distance
             candidates.sort(key=attrgetter('dist'))
             # Improvment assertion
