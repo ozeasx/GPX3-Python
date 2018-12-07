@@ -2,7 +2,7 @@
 # ozeasx@gmail.com
 
 from collections import deque
-from chromosome import Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 
 # 2-opt adapted from
 # https://en.wikipedia.org/wiki/2-opt

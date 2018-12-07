@@ -224,8 +224,10 @@ class GA(object):
         # Is map fast?
         for i in xrange(self._pop_size):
             if random.random() < p_mut:
-                self._population[i] = mut.two_opt(self._population[i],
+                self._population[i] = mut.two_opt(self._population[i].to_tsp(),
                                                   self._data)
+                self._population[i] = self._population[i].to_vrp(
+                                                          self._data.dimension)
                 self._mut += 1
 
         # Register execution time
@@ -318,7 +320,4 @@ class GA(object):
 
     # Calculate the individual fitness
     def _evaluate(self, c):
-        if c.load <= self._data.dimension:
-            return -c.dist
-        else:
-            return -9999999999
+        return

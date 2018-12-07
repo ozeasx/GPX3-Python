@@ -17,7 +17,7 @@ class VRP(TSPLIB):
         self._trucks = int(Shell.run("grep TRUCKS " + instance_path
                                      + " | cut -d':' -f2").strip())
 
-        # Load demand
+        # Load demand array
         with open(instance_path) as instance:
             read = False
             self._demand = list()
@@ -32,6 +32,9 @@ class VRP(TSPLIB):
                 # If DEMAND_SECTION, set 'read'
                 if word.strip() == "DEMAND_SECTION":
                     read = True
+
+        if self._best_solution is not None:
+            self._best_solution.load = self.tour_load(self._best_solution.tour)
 
     # Get vehicles capacity
     @property

@@ -3,8 +3,8 @@
 
 import os
 from itertools import combinations
-from chromosome import Chromosome
 from shell import Shell
+from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
 class TSPLIB(object):
@@ -68,7 +68,7 @@ class TSPLIB(object):
             except ValueError:
                 pass
             # Store best solution
-            self._best_solution = Chromosome(best_tour,
+            self._best_solution = Chromosome(best_tour, None,
                                              self.tour_dist(best_tour))
 
     # Get instance dimension
