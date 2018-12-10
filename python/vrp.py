@@ -80,10 +80,16 @@ class VRP(TSPLIB):
 
     # Get tour demand
     def tour_load(self, tour):
-        demand = 0
-        for i in tour:
-            demand += self._demand[i - 1]
-        return demand
+        demand = list()
+        demand.append(0)
+        for i, c in enumerate(tour):
+            if i == 0:
+                continue
+            if c == 1:
+                demand.append(0)
+            else:
+                demand[-1] += self._demand[c - 1]
+        return tuple(demand)
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

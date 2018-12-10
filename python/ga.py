@@ -311,13 +311,13 @@ class GA(object):
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))
             log.info("Distance: %f", self._data.best_solution.dist)
-            log.info("Load: %f", self._data.best_solution.load)
+            log.info("Load: %s", (self._data.best_solution.load))
         log.info("------------------- Best individual found -----------------")
         log.info("Tour: %s", (self._best_solution.tour,))
         log.info("Distance: %f", self._best_solution.dist)
-        log.info("Load: %f", self._best_solution.load)
+        log.info("Load: %s", (self._best_solution.load))
         log.info("-----------------------------------------------------------")
 
     # Calculate the individual fitness
     def _evaluate(self, c):
-        return
+        if c.load
