@@ -59,7 +59,7 @@ class VRP(TSPLIB):
         if self._best_solution is None:
             self._best_solution = solution
         elif (solution.dist < self._best_solution.dist
-              and solution.load <= self._capacity):
+              and all(load <= self._capacity for load in solution.load)):
             self._best_solution = solution
         else:
             return

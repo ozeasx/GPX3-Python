@@ -224,8 +224,8 @@ class GA(object):
         # Is map fast?
         for i in xrange(self._pop_size):
             if random.random() < p_mut:
-                self._population[i] = mut.two_opt(self._population[i].to_tsp(),
-                                                  self._data)
+                self._population[i] = mut.vrp_2opt(self._population[i],
+                                                   self._data)
                 self._population[i] = self._population[i].to_vrp(
                                                           self._data.dimension)
                 self._mut += 1
@@ -307,6 +307,7 @@ class GA(object):
         log.info(" Build: %f", sum(self._cross_op.timers['build']))
         log.info("Mutation: %f", sum(self._timers['mutation']))
         log.info("Population restart: %f", sum(self._timers['pop_restart']))
+        log.info("Capcity: %f", self._data.capacity)
         if self._data.best_solution:
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))
@@ -320,4 +321,7 @@ class GA(object):
 
     # Calculate the individual fitness
     def _evaluate(self, c):
-        if c.load
+        if not any(load > self._data.capacity for load in c.load):
+            return -c.dist
+        else:
+            return -float("inf")

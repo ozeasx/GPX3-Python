@@ -4,20 +4,39 @@
 from collections import deque
 from vrp_chromosome import VRP_Chromosome as Chromosome
 
+
+def vrp_2opt(chromosome, data):
+    p = chromosome.tour.index(1)
+    tour = deque(chromosome.tour)
+    tour.rotate(p)
+    petals = dict()
+    for i in tour:
+
+
+    new_tour = list()
+    dist = 0
+
+    for petal in petals:
+        t, d = two_opt([1] + petal, data.tour_dist([1] + petal))
+        new_tour.extend(t)
+        dist += d
+
+    return Chromosome(new_tour, None, dist)
+
+
 # 2-opt adapted from
 # https://en.wikipedia.org/wiki/2-opt
 # https://github.com/rellermeyer/99tsp/blob/master/python/2opt/TSP2opt.py
 # http://pedrohfsd.com/2017/08/09/2opt-part1.html
-# https://rawgit.com/pedrohfsd/TSP/develop/2opt.js
+# https://rawgit.com/pedrohfsd/TSP/develop/2opt.js ""
+# Initial tour
+def two_opt(tour, dist, data):
 
-
-def two_opt(chromosome, data):
-    # Initial tour
-    best_tour = list(chromosome.tour)
+    best_tour = list(tour)
     # Get tour dist
-    best_dist = chromosome.dist
+    best_dist = dist
     # Get dimension
-    dimension = chromosome.dimension
+    dimension = len(tour)
     # Begin with no improvement
     improved = True
     # Tested inversions
@@ -66,11 +85,6 @@ def two_opt(chromosome, data):
                     improved = True
 
     # Make sure 2opt is doing its job
-    assert best_dist <= chromosome.dist, "Something wrong..."
-    # Rotate solution to begin with 1
-    p = best_tour.index(1)
-    best_tour = deque(best_tour)
-    best_tour.rotate(-p)
-
+    assert best_dist <= dist, "Something wrong..."
     # Return solution
-    return Chromosome(best_tour, best_dist)
+    return best_tour, best_dist

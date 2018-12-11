@@ -88,7 +88,7 @@ class VRP_Chromosome(Chromosome):
         assert len(tsp_tour) == len(set(tsp_tour))
 
         # return VRP_Chromosome(tsp_tour)
-        return VRP_Chromosome(tsp_tour, None, self._dist)
+        return VRP_Chromosome(tsp_tour, 1, self._dist)
 
     # Convert back to a VRP Chromosome
     def to_vrp(self, dimension):
@@ -101,7 +101,7 @@ class VRP_Chromosome(Chromosome):
                 vrp_tour.append(i)
 
         # return VRP_Chromosome(vrp_tour)
-        return VRP_Chromosome(vrp_tour, None, self._dist)
+        return VRP_Chromosome(vrp_tour, 1, self._dist)
 
 
 # Test section
