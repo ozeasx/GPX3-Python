@@ -34,7 +34,8 @@ class VRP(TSPLIB):
                     read = True
 
         if self._best_solution is not None:
-            self._best_solution.load = self.tour_load(self._best_solution.tour)
+            self._best_solution.load = self.routes_load(
+                                                      self._best_solution.routes)
 
     # Get vehicles capacity
     @property
@@ -79,10 +80,10 @@ class VRP(TSPLIB):
             best.write("EOF\n")
 
     # Get tour demand
-    def tour_load(self, petals):
-        demand = [0] * len(petals)
-        for key in petals:
-            for client in petals[key]:
+    def routes_load(self, routes):
+        demand = [0] * len(routes)
+        for key in routes:
+            for client in routes[key]:
                 demand[key] += self._demand[client - 1]
         return tuple(demand)
 

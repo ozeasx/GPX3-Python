@@ -5,21 +5,11 @@ from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
 def vrp_2opt(chromosome, data):
-    p = chromosome.tour.index(1)
-    tour = deque(chromosome.tour)
-    tour.rotate(p)
-    petals = defaultdict(list)
-    truck = 0
-    for index, client in enumerate(tour):
-        if index is not 0 and client == 1:
-            truck += 1
-        petals[truck].append(client)
-
     new_tour = list()
     dist = 0
 
-    for petal in petals:
-        t, d = two_opt(petal, data.tour_dist(petal))
+    for route in chromosome.routes:
+        t, d = two_opt(route, data.tour_dist(route))
         new_tour.extend(t)
         dist += d
 

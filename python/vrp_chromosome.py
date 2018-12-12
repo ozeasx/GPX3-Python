@@ -49,15 +49,15 @@ class VRP_Chromosome(Chromosome):
         self._undirected_graph = Graph.gen_undirected_graph(self._tour)
         self._undirected_edges = Graph.gen_undirected_edges(self._tour)
 
-        # Store petals
-        self._petals = self._tour
+        # Store routes
+        self._routes = self._tour
         if self._trucks > 1:
-            self._petals = defaultdict(list)
+            self._routes = defaultdict(list)
             aux = 0
             for index, client in enumerate(self._tour):
                 if index is not 0 and client == 1:
                     aux += 1
-                self._petals[aux].append(client)
+                self._routes[aux].append(client)
 
     # Get trucks
     @property
@@ -70,8 +70,8 @@ class VRP_Chromosome(Chromosome):
         return self._load
 
     # Get petals
-    def petals(self):
-        return self._petals
+    def routes(self):
+        return self._routes
 
     # Set load
     @load.setter

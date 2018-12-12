@@ -90,14 +90,14 @@ class GA(object):
                                                 self._data.trucks))
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
-                c.load = self._data.tour_load(c.tour)
+                c.load = self._data.routes_load(c.routes)
         # two_opt
         if method == '2opt':
             while len(self._population) < size:
                 c = Chromosome(self._data.dimension, self._data.trucks)
             for c in self._population:
                 c.dist = self._data.tour_dist(c.tour)
-                c.load = self._data.tour_load(c.tour)
+                c.load = self._data.routes_load(c.routes)
                 c = mut.two_opt(c, self._data)
         # Converto population to list
         self._population = list(self._population)
@@ -194,8 +194,8 @@ class GA(object):
                 c1, c2 = self._cross_op.recombine(p1.to_tsp(), p2.to_tsp())
                 c1 = c1.to_vrp(self._data.dimension)
                 c2 = c2.to_vrp(self._data.dimension)
-                c1.load = self._data.tour_load(c1.tour)
-                c2.load = self._data.tour_load(c2.tour)
+                c1.load = self._data.routes_load(c1.routes)
+                c2.load = self._data.routes_load(c2.routes)
                 children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
@@ -226,8 +226,6 @@ class GA(object):
             if random.random() < p_mut:
                 self._population[i] = mut.vrp_2opt(self._population[i],
                                                    self._data)
-                self._population[i] = self._population[i].to_vrp(
-                                                          self._data.dimension)
                 self._mut += 1
 
         # Register execution time
@@ -250,7 +248,7 @@ class GA(object):
                 while c in self._population:
                     c = Chromosome(self._data.dimension, self._data.trucks)
                 c.dist = self._data.tour_dist(c.tour)
-                c.load = self._data.tour_load(c.tour)
+                c.load = self._data.routes_load(c.routes)
                 self._population[i] = c
 
         # Register execution time
