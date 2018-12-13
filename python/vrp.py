@@ -81,11 +81,11 @@ class VRP(TSPLIB):
 
     # Get tour demand
     def routes_load(self, routes):
-        demand = [0] * len(routes)
+        load = [0] * len(routes)
         for key in routes:
             for client in routes[key]:
-                demand[key] += self._demand[client - 1]
-        return tuple(demand)
+                load[key] += self._demand[client - 1]
+        return tuple(load)
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

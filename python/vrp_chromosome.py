@@ -70,6 +70,7 @@ class VRP_Chromosome(Chromosome):
         return self._load
 
     # Get petals
+    @property
     def routes(self):
         return self._routes
 
