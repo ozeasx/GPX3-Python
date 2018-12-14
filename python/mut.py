@@ -8,8 +8,8 @@ def vrp_2opt(chromosome, data):
     new_tour = list()
     dist = 0
 
-    for route in chromosome.routes:
-        t, d = two_opt(route, data.tour_dist(route))
+    for key, route in chromosome.routes.items():
+        t, d = two_opt(route, data.tour_dist(route), data)
         new_tour.extend(t)
         dist += d
 
@@ -36,7 +36,7 @@ def two_opt(tour, dist, data):
     # Stop when no improvement is made
     while improved:
         improved = False
-        for i in xrange(dimension - 1):
+        for i in xrange(1, dimension - 1):
             for j in xrange(i + 1, dimension):
                 # Do not invert whole tour
                 if j-i == dimension - 1:

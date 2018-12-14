@@ -79,6 +79,37 @@ class VRP_Chromosome(Chromosome):
     def load(self, value):
         self._load = value
 
+    # Get best known tour
+    @property
+    def best_solution(self):
+        return self._best_solution
+
+    # Set a new best tour and write to file
+    @best_solution.setter
+    def best_solution(self, solution):
+
+        # Set best solution
+        if self._best_solution is None:
+            self._best_solution = solution
+        elif (solution.dist < self._best_solution.dist
+              and all(load <= self._capacity for load in solution.load)):
+            self._best_solution = solution
+        else:
+            return
+
+        # Write new solution to file
+        with open(self._instance_name + ".opt.tour.new", 'w') as best:
+            best.write("NAME : " + self._name + ".opt.tour.new\n")
+            best.write("COMMENT : Length " + str(solution.dist)
+                                           + ", ozeasx@gmail.com\n")
+            best.write("TYPE : TOUR\n")
+            best.write("DIMENSION : " + str(self._dimension) + "\n")
+            best.write("TOUR_SECTION\n")
+            for node in solution.tour:
+                best.write(str(node) + "\n")
+            best.write("-1\n")
+            best.write("EOF\n")
+
     # Given a VRP Chromosome, returns a TSP Chromosome
     def to_tsp(self):
         # TSP tour

@@ -94,11 +94,13 @@ class GA(object):
         # two_opt
         if method == '2opt':
             while len(self._population) < size:
-                c = Chromosome(self._data.dimension, self._data.trucks)
-            for c in self._population:
+                self._population.add(Chromosome(self._data.dimension,
+                                                self._data.trucks))
+            self._population = list(self._population)
+            for i, c in enumerate(self._population):
                 c.dist = self._data.tour_dist(c.tour)
+                self._population[i] = mut.vrp_2opt(c, self._data)
                 c.load = self._data.routes_load(c.routes)
-                c = mut.two_opt(c, self._data)
         # Converto population to list
         self._population = list(self._population)
         # Done
@@ -226,6 +228,8 @@ class GA(object):
             if random.random() < p_mut:
                 self._population[i] = mut.vrp_2opt(self._population[i],
                                                    self._data)
+                self._population[i].load = self._data.routes_load(
+                                                    self._population[i].routes)
                 self._mut += 1
 
         # Register execution time

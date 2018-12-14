@@ -2,6 +2,7 @@ NAME : F-n135-k7
 COMMENT : (Fisher: problem 12, Min no of trucks: 7, Best value: 1165, CVRP)
 TYPE : TSP
 DIMENSION : 135
+TRUCKS: 7
 EDGE_WEIGHT_TYPE : EUC_2D
 CAPACITY : 2210
 NODE_COORD_SECTION
