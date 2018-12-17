@@ -7,6 +7,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
+import numpy
 from vrp_chromosome import VRP_Chromosome as Chromosome
 import mut
 
@@ -84,24 +85,17 @@ class GA(object):
         # Population set to ensure unicity
         self._population = set()
         # Random generation
-        if method == 'random':
-            while len(self._population) < size:
-                self._population.add(Chromosome(self._data.dimension,
-                                                self._data.trucks))
-            for c in self._population:
-                c.dist = self._data.tour_dist(c.tour)
-                c.load = self._data.routes_load(c.routes)
-        # two_opt
-        if method == '2opt':
-            while len(self._population) < size:
-                self._population.add(Chromosome(self._data.dimension,
-                                                self._data.trucks))
-            self._population = list(self._population)
-            for i, c in enumerate(self._population):
-                c.dist = self._data.tour_dist(c.tour)
-                self._population[i] = mut.vrp_2opt(c, self._data)
-                c.load = self._data.routes_load(c.routes)
-        # Converto population to list
+        for i in xrange(size):
+            c = Chromosome(self._data.dimension, self._data.trucks)
+            while c in self._population:
+                c = Chromosome(self._data.dimension, self._data.trucks)
+            c.dist = self._data.tour_dist(c.tour)
+            # 2opt generation
+            if method is '2opt':
+                c = mut.vrp_2opt(c, self._data)
+            c.load = self._data.routes_load(c.routes)
+            self._population.add(c)
+        # Convert population to list
         self._population = list(self._population)
         # Done
         print "Done..."
@@ -236,7 +230,7 @@ class GA(object):
         self._timers['mutation'].append(time.time() - start_time)
 
     # Reset population
-    def restart_pop(self, ratio, pairwise=False, trucks='fixed'):
+    def restart_pop(self, ratio, pairwise=False, method='random'):
         # Register start time
         start_time = time.time()
 
@@ -252,6 +246,8 @@ class GA(object):
                 while c in self._population:
                     c = Chromosome(self._data.dimension, self._data.trucks)
                 c.dist = self._data.tour_dist(c.tour)
+                if method is '2opt':
+                    c = mut.vrp_2opt(c, self._data)
                 c.load = self._data.routes_load(c.routes)
                 self._population[i] = c
 
@@ -322,8 +318,25 @@ class GA(object):
         log.info("-----------------------------------------------------------")
 
     # Calculate the individual fitness
-    def _evaluate(self, c):
-        if not any(load > self._data.capacity for load in c.load):
-            return -c.dist
-        else:
-            return -float("inf")
+    def _evaluate(self, c, method=1):
+        # Eliminate infeasible solutions
+        if method is 1:
+            if any(load > self._data.capacity for load in c.load):
+                return -float("inf")
+            else:
+                return -c.dist
+        # Square of standard deviation
+        elif method is 2:
+            return -c.dist/(numpy.std(c.load) ** 2)
+        # Standard deviation if infeasible
+        elif method is 3:
+            if any(load > self._data.capacity for load in c.load):
+                return -c.dist/numpy.std(c.load)
+            else:
+                return -c.dist
+        # Square of standard deviation if infeasible
+        elif method is 4:
+            if any(load > self._data.capacity for load in c.load):
+                return -c.dist/(numpy.std(c.load) ** 2)
+            else:
+                return -c.dist

@@ -147,7 +147,7 @@ def run_ga(id):
             ga.mutate(args.m)
         # Population restart
         if args.r:
-            ga.restart_pop(args.r, args.P)
+            ga.restart_pop(args.r, args.P, args.M)
         # Evaluation
         ga.evaluate()
     # Last generation info
