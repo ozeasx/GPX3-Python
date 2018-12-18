@@ -23,8 +23,8 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
-parser.add_argument("-M", help="Method to generate inicial population",
-                    choices=['random', '2opt'], default='random')
+parser.add_argument("-M", choices=['random', '2opt'], default='random',
+                    help="Method to generate inicial and restart population")
 parser.add_argument("-r", help="Percentage of population to be restarted",
                     type=float, default=0)
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
@@ -37,6 +37,8 @@ parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Directory to generate file reports", type=str)
+parser.add_argument("-F", help="Fitness function", default='a',
+                    choices=['a', 'b', 'c', 'd', 'e'])
 parser.add_argument("-f1", help="Feasible 1 test", default='True',
                     choices=['True', 'False'])
 parser.add_argument("-f2", help="Feasible 2 test", default='True',
@@ -124,7 +126,7 @@ def run_ga(id):
         gpx.f3_test = True
 
     # GA Instance
-    ga = GA(vrp, gpx, args.e)
+    ga = GA(vrp, gpx, args.F, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M)
     # Fisrt population evaluation
@@ -249,7 +251,7 @@ if args.n > 1:
             print >> file, ",".join(map(str, best_solution.tour))
 
         with open(log_dir + "/best_known_tour.out", 'w') as file:
-            print >> file, ",".join(map(str, int.best_solution.tour))
+            print >> file, ",".join(map(str, best_solution.tour))
 
         with open(log_dir + "/counters.out", 'w') as csv_file:
             writer = csv.writer(csv_file)

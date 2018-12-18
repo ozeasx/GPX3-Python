@@ -15,7 +15,7 @@ import mut
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization
-    def __init__(self, data, cross_op, elitism=0):
+    def __init__(self, data, cross_op, fit_func, elitism=0):
         # Parametrization
         self._data = data
         self._cross_op = cross_op
@@ -33,6 +33,8 @@ class GA(object):
         self._last_mut = 0
         # Population was restarted
         self._pop_restart = False
+        # Fitness function
+        self._fit_func = fit_func
         # Timers
         self._timers = defaultdict(list)
 
@@ -318,25 +320,28 @@ class GA(object):
         log.info("-----------------------------------------------------------")
 
     # Calculate the individual fitness
-    def _evaluate(self, c, method=1):
+    def _evaluate(self, c):
         # Eliminate infeasible solutions
-        if method is 1:
+        if self._fit_func is 'a':
             if any(load > self._data.capacity for load in c.load):
                 return -float("inf")
             else:
                 return -c.dist
-        # Square of standard deviation
-        elif method is 2:
-            return -c.dist/(numpy.std(c.load) ** 2)
+        # Standard deviation
+        elif self._fit_func is 'b':
+            return -c.dist * numpy.std(c.load)
+        # Standard deviation squared
+        elif self._fit_func is 'c':
+            return -c.dist * (numpy.std(c.load) ** 2)
         # Standard deviation if infeasible
-        elif method is 3:
+        elif self._fit_func is 'd':
             if any(load > self._data.capacity for load in c.load):
-                return -c.dist/numpy.std(c.load)
+                return -c.dist * numpy.std(c.load)
             else:
                 return -c.dist
         # Square of standard deviation if infeasible
-        elif method is 4:
+        elif self._fit_func is 'e':
             if any(load > self._data.capacity for load in c.load):
-                return -c.dist/(numpy.std(c.load) ** 2)
+                return -c.dist * (numpy.std(c.load) ** 2)
             else:
                 return -c.dist

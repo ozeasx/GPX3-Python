@@ -23,7 +23,7 @@ def vrp_2opt(chromosome, data):
 # https://rawgit.com/pedrohfsd/TSP/develop/2opt.js ""
 # Initial tour
 def two_opt(tour, dist, data):
-
+    # Inicial tour
     best_tour = list(tour)
     # Get tour dist
     best_dist = dist
