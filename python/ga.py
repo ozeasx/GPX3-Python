@@ -93,7 +93,7 @@ class GA(object):
                 c = Chromosome(self._data.dimension, self._data.trucks)
             c.dist = self._data.tour_dist(c.tour)
             # 2opt generation
-            if method is '2opt':
+            if method == '2opt':
                 c = mut.vrp_2opt(c, self._data)
             c.load = self._data.routes_load(c.routes)
             self._population.add(c)
@@ -248,7 +248,7 @@ class GA(object):
                 while c in self._population:
                     c = Chromosome(self._data.dimension, self._data.trucks)
                 c.dist = self._data.tour_dist(c.tour)
-                if method is '2opt':
+                if method == '2opt':
                     c = mut.vrp_2opt(c, self._data)
                 c.load = self._data.routes_load(c.routes)
                 self._population[i] = c
@@ -322,25 +322,25 @@ class GA(object):
     # Calculate the individual fitness
     def _evaluate(self, c):
         # Eliminate infeasible solutions
-        if self._fit_func is 'a':
+        if self._fit_func == 'a':
             if any(load > self._data.capacity for load in c.load):
                 return -float("inf")
             else:
                 return -c.dist
         # Standard deviation
-        elif self._fit_func is 'b':
+        elif self._fit_func == 'b':
             return -c.dist * numpy.std(c.load)
         # Standard deviation squared
-        elif self._fit_func is 'c':
+        elif self._fit_func == 'c':
             return -c.dist * (numpy.std(c.load) ** 2)
         # Standard deviation if infeasible
-        elif self._fit_func is 'd':
+        elif self._fit_func == 'd':
             if any(load > self._data.capacity for load in c.load):
                 return -c.dist * numpy.std(c.load)
             else:
                 return -c.dist
         # Square of standard deviation if infeasible
-        elif self._fit_func is 'e':
+        elif self._fit_func == 'e':
             if any(load > self._data.capacity for load in c.load):
                 return -c.dist * (numpy.std(c.load) ** 2)
             else:

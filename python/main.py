@@ -37,7 +37,7 @@ parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Directory to generate file reports", type=str)
-parser.add_argument("-F", help="Fitness function", default='a',
+parser.add_argument("-F", help="Fitness function", default='d',
                     choices=['a', 'b', 'c', 'd', 'e'])
 parser.add_argument("-f1", help="Feasible 1 test", default='True',
                     choices=['True', 'False'])

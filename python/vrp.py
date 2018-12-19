@@ -68,10 +68,10 @@ class VRP(TSPLIB):
         # Write new solution to file
         with open(self._instance_name + ".opt.tour.new", 'w') as best:
             best.write("NAME : " + self._name + ".opt.tour.new\n")
-            best.write("COMMENT : Length " + str(solution.dist)
-                                           + ", ozeasx@gmail.com\n")
-            best.write("TYPE : TOUR\n")
+            best.write("COMMENT : ozeasx@gmail.com\n")
+            best.write("TYPE : CVRP TOUR\n")
             best.write("DIMENSION : " + str(self._dimension) + "\n")
+            best.write("LENGTH : " + str(solution.dist) + "\n")
             best.write("LOAD : " + str(solution.load) + "\n")
             best.write("TOUR_SECTION\n")
             for node in solution.tour:

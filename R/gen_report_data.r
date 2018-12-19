@@ -22,7 +22,7 @@ tsp = read_TSPLIB(instance_file)
 best_known_tour_file = paste(args[n], "best_known_tour.out", sep = '')
 best_known_tour = scan(best_known_tour_file, sep = ',')
 # https://stackoverflow.com/questions/5665599/range-standardization-0-to-1-in-r
-# range0b <- function(x){(x-min(x))/(-tour_length(best_known_tour, tsp)-min(x))}
+range0b <- function(x){(x-min(x))/(-tour_length(best_known_tour, tsp)-min(x))}
 # rangeMm <- function(x, M, m){(x-m)/(M-m)}
 
 # Generate various file paths
@@ -87,7 +87,7 @@ params = lapply(params, paste, collapse = " ")
 # Consolidate fitness data
 fitness = lapply(fitness_files, read.csv2, sep = ',', dec = '.', header = FALSE)
 fitness = lapply(fitness, rowMeans)
-fitness = lapply(fitness, range0b)
+#fitness = lapply(fitness, range0b)
 
 # Plot fitness
 # Change the palette to avoid yellow
