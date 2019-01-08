@@ -1,7 +1,6 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from shell import Shell
 from tsp import TSPLIB
 from chromosome import Chromosome
 from gpx import GPX

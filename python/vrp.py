@@ -35,7 +35,7 @@ class VRP(TSPLIB):
 
         if self._best_solution is not None:
             self._best_solution.load = self.routes_load(
-                                                      self._best_solution.routes)
+                                                    self._best_solution.routes)
 
     # Get vehicles capacity
     @property

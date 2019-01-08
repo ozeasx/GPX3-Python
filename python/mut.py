@@ -4,6 +4,12 @@
 from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
+# Nearest neighbour algorithm
+def nn(data):
+    pass
+
+
+# Run 2opt over vrp solution
 def vrp_2opt(chromosome, data):
     new_tour = list()
     dist = 0
