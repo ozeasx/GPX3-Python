@@ -32,8 +32,9 @@ class TSPLIB(object):
         else:
             print "Distance matrix file already exists"
 
-        # Generate list of lists combination lookup
+        # Hash lockup
         self._hash = dict()
+        # Distance matrix
         self._dm = list()
         line_number = 1
         with open(self._instance_path + ".dm") as dm:
@@ -105,6 +106,10 @@ class TSPLIB(object):
                 best.write(str(node) + "\n")
             best.write("-1\n")
             best.write("EOF\n")
+
+    # Return distance between two nodes in a ordered tuple 't'
+    def dist(self, t):
+        return self._dm[self._cindex(*t)]
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

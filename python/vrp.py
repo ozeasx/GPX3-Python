@@ -79,6 +79,10 @@ class VRP(TSPLIB):
             best.write("-1\n")
             best.write("EOF\n")
 
+    # Get client demand
+    def demand(self, client):
+        return self._demand[client - 1]
+
     # Get tour demand
     def routes_load(self, routes):
         load = [0] * len(routes)
@@ -97,7 +101,7 @@ class VRP(TSPLIB):
         for i, j in zip(aux[0::2], aux[1::2]):
             # Ignore ghost nodes
             t = [abs(i)-1, abs(j)-1]
-            # Depots
+            # Convert depots
             if t[0] >= self._dimension:
                 t[0] = 0
             if t[1] >= self._dimension:

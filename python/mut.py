@@ -2,11 +2,36 @@
 # ozeasx@gmail.com
 
 from vrp_chromosome import VRP_Chromosome as Chromosome
+from itertools import combinations
 
 
 # Nearest neighbour algorithm
 def nn(data):
-    pass
+    tour = list()
+    visited = set()
+    over_capacity = set()
+    nodes = set(range(2, data.dimension + 1))
+
+    # Return nearest node from i
+    def next(i):
+        last_dist = int("inf")
+        neighbour = None
+        for j in nodes - visited - over_capacity:
+            dist = data.dist(sorted([i, j]))
+            if dist < last_dist:
+                neighbour = j
+                last_dist = dist
+        return neighbour, dist
+
+
+    for i in range(data.trucks):
+        # append depot
+        last = 1
+        tour.append(1)
+        while True:
+            tour.append(next(last))
+
+
 
 
 # Run 2opt over vrp solution
