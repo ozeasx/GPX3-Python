@@ -16,6 +16,7 @@ def nn(data):
     def next(i):
         last_dist = int("inf")
         neighbour = None
+        dist = None
         for j in nodes - visited - over_capacity:
             dist = data.dist(sorted([i, j]))
             if dist < last_dist:
@@ -24,12 +25,15 @@ def nn(data):
         return neighbour, dist
 
 
-    for i in range(data.trucks):
-        # append depot
-        last = 1
-        tour.append(1)
-        while True:
-            tour.append(next(last))
+#    for i in range(data.trucks):
+#        # append depot
+#        last = 1
+#        tour.append(last)
+#        demand = 0
+#        while next(last)
+#            test = next(last)
+#            demand +=
+#            tour.append()
 
 
 

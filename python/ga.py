@@ -76,7 +76,7 @@ class GA(object):
         return self._timers
 
     # Generate inicial population
-    def gen_pop(self, size, method='random'):
+    def gen_pop(self, size, method='random', ratio=1):
         # Regiter local and global start time
         self._start_time = start_time = time.time()
         # Need even population
@@ -94,7 +94,8 @@ class GA(object):
             c.dist = self._data.tour_dist(c.tour)
             # 2opt generation
             if method == '2opt':
-                c = mut.vrp_2opt(c, self._data)
+                if i <= ratio * size:
+                    c = mut.vrp_2opt(c, self._data)
             c.load = self._data.routes_load(c.routes)
             self._population.add(c)
         # Convert population to list

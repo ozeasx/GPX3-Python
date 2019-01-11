@@ -25,6 +25,8 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
 parser.add_argument("-p", help="Initial population", type=int, default=100)
 parser.add_argument("-M", choices=['random', '2opt'], default='random',
                     help="Method to generate inicial and restart population")
+parser.add_argument("-R", type=float, default=1.0,
+                    help="Inicial population ratio to be created with 2opt")
 parser.add_argument("-r", help="Percentage of population to be restarted",
                     type=float, default=0)
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
@@ -56,6 +58,7 @@ args = parser.parse_args()
 assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
                                       " and greater than 0"
 assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
+assert 0 < args.R <= 1, "2opt ratio must be in ]0,1] interval"
 assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
 assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
 assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
@@ -128,7 +131,7 @@ def run_ga(id):
     # GA Instance
     ga = GA(vrp, gpx, args.F, args.e)
     # Generate inicial population
-    ga.gen_pop(args.p, args.M)
+    ga.gen_pop(args.p, args.M, args.R)
     # Fisrt population evaluation
     ga.evaluate()
     # Begin GA
