@@ -6,7 +6,7 @@ from itertools import combinations
 
 
 # Nearest neighbour algorithm
-def nn(data):
+def nearest_neighbor(data):
     tour = list()
     visited = set()
     over_capacity = set()
@@ -15,25 +15,24 @@ def nn(data):
     # Return nearest node from i
     def next(i):
         last_dist = int("inf")
-        neighbour = None
+        nearest = None
         dist = None
         for j in nodes - visited - over_capacity:
             dist = data.dist(sorted([i, j]))
             if dist < last_dist:
-                neighbour = j
+                nearest = j
                 last_dist = dist
-        return neighbour, dist
+        return nearest, dist
 
 
-#    for i in range(data.trucks):
-#        # append depot
-#        last = 1
-#        tour.append(last)
-#        demand = 0
-#        while next(last)
-#            test = next(last)
-#            demand +=
-#            tour.append()
+    for i in range(data.trucks):
+        # append depot
+        tour.append(1)
+        demand = 0
+        while next(last)
+            test = next(last)
+            demand +=
+            tour.append()
 
 
 
