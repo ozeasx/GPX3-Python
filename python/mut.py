@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+import random
 from vrp_chromosome import VRP_Chromosome as Chromosome
-from itertools import combinations
 
 
 # Nearest neighbour algorithm
-def nearest_neighbor(data):
+def nn(data):
     tour = list()
     visited = set()
     over_capacity = set()
@@ -14,27 +14,41 @@ def nearest_neighbor(data):
 
     # Return nearest node from i
     def next(i):
-        last_dist = int("inf")
+        last_dist = float("inf")
         nearest = None
         dist = None
         for j in nodes - visited - over_capacity:
-            dist = data.dist(sorted([i, j]))
+            dist = data.dist(sorted([i-1, j-1]))
             if dist < last_dist:
                 nearest = j
                 last_dist = dist
         return nearest, dist
 
-
     for i in range(data.trucks):
         # append depot
         tour.append(1)
-        demand = 0
-        while next(last)
-            test = next(last)
-            demand +=
-            tour.append()
+        # append random node
+        last = random.sample(nodes - visited, 1)[0]
+        tour.append(last)
+        visited.add(last)
+        dist = data.dist([1, last])
+        demand = data.demand(last)
 
+        over_capacity = set()
+        while nodes - visited - over_capacity:
+            test, test_dist = next(last)
+            if test is None:
+                break
+            if demand + data.demand(test) <= data.capacity:
+                tour.append(test)
+                visited.add(test)
+                demand += data.demand(test)
+                dist += dist
+            else:
+                over_capacity.add(test)
 
+    # print tour
+    return Chromosome(tour, None, dist)
 
 
 # Run 2opt over vrp solution

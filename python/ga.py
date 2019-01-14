@@ -91,11 +91,13 @@ class GA(object):
             c = Chromosome(self._data.dimension, self._data.trucks)
             while c in self._population:
                 c = Chromosome(self._data.dimension, self._data.trucks)
-            c.dist = self._data.tour_dist(c.tour)
-            # 2opt generation
-            if method == '2opt':
-                if i <= ratio * size:
+            if i <= ratio * size:
+                # 2opt generation
+                if method == "2opt":
+                    c.dist = self._data.tour_dist(c.tour)
                     c = mut.vrp_2opt(c, self._data)
+                elif method == 'nn':
+                    c = mut.nn(self._data)
             c.load = self._data.routes_load(c.routes)
             self._population.add(c)
         # Convert population to list
@@ -251,6 +253,8 @@ class GA(object):
                 c.dist = self._data.tour_dist(c.tour)
                 if method == '2opt':
                     c = mut.vrp_2opt(c, self._data)
+                elif method == 'nn':
+                    c = mut.nn(self._data)
                 c.load = self._data.routes_load(c.routes)
                 self._population[i] = c
 

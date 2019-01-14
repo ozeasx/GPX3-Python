@@ -23,7 +23,7 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
-parser.add_argument("-M", choices=['random', '2opt'], default='random',
+parser.add_argument("-M", choices=['random', '2opt', 'nn'], default='random',
                     help="Method to generate inicial and restart population")
 parser.add_argument("-R", type=float, default=1.0,
                     help="Inicial population ratio to be created with 2opt")

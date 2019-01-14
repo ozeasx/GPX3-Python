@@ -109,6 +109,7 @@ class TSPLIB(object):
 
     # Return distance between two nodes in a ordered tuple 't'
     def dist(self, t):
+        # print t
         return self._dm[self._cindex(*t)]
 
     # Calc AB_cycle distance using distance matrix (memory)
