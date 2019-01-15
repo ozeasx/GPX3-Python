@@ -89,6 +89,7 @@ class GA(object):
         # Random generation
         for i in xrange(size):
             c = Chromosome(self._data.dimension, self._data.trucks)
+            # Avoid duplicates
             while c in self._population:
                 c = Chromosome(self._data.dimension, self._data.trucks)
             if i <= ratio * size:
@@ -96,9 +97,15 @@ class GA(object):
                 if method == "2opt":
                     c.dist = self._data.tour_dist(c.tour)
                     c = mut.vrp_2opt(c, self._data)
-                elif method == 'nn':
+                elif method == "nn":
                     c = mut.nn(self._data)
+                    # Avoid duplicates
+                    while c in self._population:
+                        c = mut.nn(self._data)
+            else:
+                c.dist = self._data.tour_dist(c.tour)
             c.load = self._data.routes_load(c.routes)
+            # print c.dist, c.load
             self._population.add(c)
         # Convert population to list
         self._population = list(self._population)
