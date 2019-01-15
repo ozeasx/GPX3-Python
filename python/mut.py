@@ -7,42 +7,33 @@ from vrp_chromosome import VRP_Chromosome as Chromosome
 
 # Nearest neighbour algorithm
 def nn(data):
+
     tour = list()
-    tour_dist = 0
-    visited = set()
     nodes = set(range(2, data.dimension + 1))
 
-    # Return nearest node from i
-    def next(i):
-        last_dist = float("inf")
-        nearest = None
-        dist = None
-        for j in nodes - visited - over_capacity:
-            dist = data.dist(sorted([i-1, j-1]))
-            if dist < last_dist:
-                nearest = j
-                last_dist = dist
-        return nearest, last_dist
-
+    # Create each route
     for i in range(data.trucks):
         # append depot
         tour.append(1)
-        tour_dist += data.dist([1, tour[-1]])
-        # append random to each route
+        # append random to first truck route
         if i == 0:
-            tour.append(random.sample(nodes - visited, 1)[0])
-            visited.add(tour[-1])
-            tour_dist += data.dist([1, tour[-1]])
+            tour.append(random.sample(nodes, 1)[0])
+            nodes.remove(tour[-1])
             demand = data.demand(tour[-1])
+            tour_dist = data.dist([1, tour[-1]])
+        else:
+            demand = 0
+            tour_dist += data.dist([1, tour[-2]])
 
         over_capacity = set()
-        while nodes - visited - over_capacity:
-            test, test_dist = next(tour[-1])
+        while nodes:
+            test, test_dist = data.get_nearest(tour[-1], nodes - over_capacity)
+            # Test wheter demand is violated
             if test is None:
                 break
-            if demand + data.demand(test) <= data.capacity:
+            elif demand + data.demand(test) <= data.capacity:
                 tour.append(test)
-                visited.add(test)
+                nodes.remove(test)
                 demand += data.demand(test)
                 tour_dist += test_dist
             else:
@@ -50,7 +41,7 @@ def nn(data):
 
     tour_dist += data.dist(([1, tour[-1]]))
 
-    assert tour_dist == data.tour_dist(tour), (tour_dist, data.tour_dist(tour))
+    assert abs(tour_dist - data.tour_dist(tour)) < 0.01, (tour_dist, data.tour_dist(tour))
 
     # print tour
     return Chromosome(tour, None, tour_dist)

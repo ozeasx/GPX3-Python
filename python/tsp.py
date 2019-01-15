@@ -112,6 +112,19 @@ class TSPLIB(object):
         # print t
         return self._dm[self._cindex(*t)]
 
+    # Return nearest nodes from i in nodes set
+    def get_nearest(self, i, nodes):
+        last_dist = float("inf")
+        nearest = None
+        dist = None
+        for j in nodes:
+            t = sorted([i-1, j-1])
+            dist = self._dm[self._cindex(*t)]
+            if dist < last_dist:
+                nearest = j
+                last_dist = dist
+        return nearest, last_dist
+
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):
         # Convert deque to list
