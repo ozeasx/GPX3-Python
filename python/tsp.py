@@ -123,7 +123,7 @@ class TSPLIB(object):
             if dist < last_dist:
                 nearest = j
                 last_dist = dist
-        return nearest, last_dist
+        return nearest
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

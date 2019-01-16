@@ -262,6 +262,9 @@ class GA(object):
                     c = mut.vrp_2opt(c, self._data)
                 elif method == 'nn':
                     c = mut.nn(self._data)
+                    # Avoid duplicates
+                    while c in self._population:
+                        c = mut.nn(self._data)
                 c.load = self._data.routes_load(c.routes)
                 self._population[i] = c
 

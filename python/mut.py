@@ -8,43 +8,39 @@ from vrp_chromosome import VRP_Chromosome as Chromosome
 # Nearest neighbour algorithm
 def nn(data):
 
+    # Tour and available nodes
     tour = list()
     nodes = set(range(2, data.dimension + 1))
 
-    # Create each route
+    # Create a route for each truck
     for i in range(data.trucks):
         # append depot
         tour.append(1)
-        # append random to first truck route
-        if i == 0:
-            tour.append(random.sample(nodes, 1)[0])
-            nodes.remove(tour[-1])
-            demand = data.demand(tour[-1])
-            tour_dist = data.dist([1, tour[-1]])
-        else:
-            demand = 0
-            tour_dist += data.dist([1, tour[-2]])
-
+        # append random truck route client
+        tour.append(random.sample(nodes, 1)[0])
+        # Remove added client from nodes
+        nodes.remove(tour[-1])
+        # Initialize route demand
+        demand = data.demand(tour[-1])
+        # Exclude nodes that exceed capacity
         over_capacity = set()
+        # Add nearest nodes
         while nodes:
-            test, test_dist = data.get_nearest(tour[-1], nodes - over_capacity)
-            # Test wheter demand is violated
+            test = data.get_nearest(tour[-1], nodes - over_capacity)
+            # Test if are nodes available
             if test is None:
                 break
+            # Test candidate demand
             elif demand + data.demand(test) <= data.capacity:
                 tour.append(test)
                 nodes.remove(test)
                 demand += data.demand(test)
-                tour_dist += test_dist
+            # Update nodes that exceed capacity
             else:
                 over_capacity.add(test)
 
-    tour_dist += data.dist(([1, tour[-1]]))
-
-    assert abs(tour_dist - data.tour_dist(tour)) < 0.01, (tour_dist, data.tour_dist(tour))
-
-    # print tour
-    return Chromosome(tour, None, tour_dist)
+    # Return created solution
+    return Chromosome(tour, None, data.tour_dist(tour))
 
 
 # Run 2opt over vrp solution
