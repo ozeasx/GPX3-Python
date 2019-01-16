@@ -2,6 +2,7 @@ NAME : F-n72-k4
 COMMENT : (Fisher: problem 11, Min no of trucks: 4, Best value: 238, CVRP)
 TYPE : TSP
 DIMENSION : 72
+TRUCKS: 4
 EDGE_WEIGHT_TYPE : EUC_2D
 CAPACITY : 30000
 NODE_COORD_SECTION

@@ -1,12 +1,12 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from tsp import TSPLIB
-from chromosome import Chromosome
+from vrp import VRP
+from vrp_chromosome import VRP_Chromosome as Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-tsp = TSPLIB("../tsplib/eil51.tsp")
+vrp = VRP("../cvrp/F-n45-k4.vrp")
 gpx = GPX()
 
 # p1 = Chromosome(16)
@@ -176,8 +176,17 @@ p2 = Chromosome((4, 1, 3, 24, 14, 9, 45, 38, 26, 46, 13, 32, 44, 20, 35, 12, 7,
                  16, 19, 5, 2, 34, 6, 30, 47, 18, 27, 33, 43, 29, 8, 48, 22,
                  25, 42, 40, 36, 41, 11, 23, 39, 21, 31, 15, 17, 10, 37, 28))
 
-# p1.dist = tsp.tour_dist(p1.tour)
-# p2.dist = tsp.tour_dist(p2.tour)
+p1 = Chromosome((1, 10, 16, 2, 37, 4, 3, 17, 18, 15, 14, 13, 12, 19, 11, 27,
+                 21, 22, 46, 26, 24, 23, 20, 9, 45, 44, 35, 43, 39, 47, 25, 38,
+                 5, 36, 8, 6, 7, 28, 30, 29, 34, 32, 31, 42, 41, 40, 48, 33))
+
+p2 = Chromosome((1, 22, 21, 20, 27, 23, 24, 26, 11, 18, 4, 37, 3, 2, 16, 10,
+                 46, 19, 12, 13, 14, 15, 17, 38, 39, 43, 40, 41, 35, 32, 42,
+                 44, 47, 9, 45, 31, 33, 7, 6, 36, 48, 25, 5, 8, 28, 30, 34,
+                 29))
+
+p1.dist = vrp.tour_dist(p1.tour)
+p2.dist = vrp.tour_dist(p2.tour)
 # p1 = Chromosome(1000)
 # p2 = Chromosome(1000)
 r = gpx.recombine(p1, p2)

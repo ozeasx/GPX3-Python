@@ -84,26 +84,32 @@ class GA(object):
                                "Must be even and greater than 0"
         # Print step
         print "Generating initial population..."
-        # Population set to ensure unicity
+        # "in" over sets is fast
         self._population = set()
-        # Random generation
+        # Population generation
         for i in xrange(size):
+            # Random generation
             c = Chromosome(self._data.dimension, self._data.trucks)
             # Avoid duplicates
             while c in self._population:
                 c = Chromosome(self._data.dimension, self._data.trucks)
-            if i <= ratio * size:
-                # 2opt generation
+            # Other methods
+            if i < ratio * size:
+                # 2opt generaion
                 if method == "2opt":
                     c.dist = self._data.tour_dist(c.tour)
                     c = mut.vrp_2opt(c, self._data)
-                elif method == "nn":
-                    c = mut.nn(self._data)
+                # nn generaion
+                elif method == "nn" or method == "nn2opt":
+                    c = mut.nn(self._data, method)
                     # Avoid duplicates
-                    while c in self._population:
-                        c = mut.nn(self._data)
-            else:
+                    while c in self._population or c is None:
+                        c = mut.nn(self._data, method)
+                    c.dist = self._data.tour_dist(c.tour)
+            # Calc distance for random solutions
+            if c.dist is None:
                 c.dist = self._data.tour_dist(c.tour)
+            # Calc solution load
             c.load = self._data.routes_load(c.routes)
             # print c.dist, c.load
             self._population.add(c)
@@ -254,18 +260,28 @@ class GA(object):
             self._pop_restart = True
             self._population.sort(key=attrgetter('fitness'))
             for i in xrange(int(self._pop_size * ratio)):
+                # Random restart
                 c = Chromosome(self._data.dimension, self._data.trucks)
+                # Avoid duplicates
                 while c in self._population:
                     c = Chromosome(self._data.dimension, self._data.trucks)
-                c.dist = self._data.tour_dist(c.tour)
-                if method == '2opt':
+                # 2opt generaion
+                if method == "2opt":
+                    c.dist = self._data.tour_dist(c.tour)
                     c = mut.vrp_2opt(c, self._data)
-                elif method == 'nn':
-                    c = mut.nn(self._data)
+                # nn generaion
+                elif method == "nn" or method == "nn2opt":
+                    c = mut.nn(self._data, method)
                     # Avoid duplicates
-                    while c in self._population:
-                        c = mut.nn(self._data)
+                    while c in self._population or c is None:
+                        c = mut.nn(self._data, method)
+                    c.dist = self._data.tour_dist(c.tour)
+                # Calc distance for random solutions
+                if c.dist is None:
+                    c.dist = self._data.tour_dist(c.tour)
+                # Calc solution load
                 c.load = self._data.routes_load(c.routes)
+                # Restart solution in population
                 self._population[i] = c
 
         # Register execution time

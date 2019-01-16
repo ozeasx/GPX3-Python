@@ -6,7 +6,7 @@ from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
 # Nearest neighbour algorithm
-def nn(data):
+def nn(data, method):
 
     # Tour and available nodes
     tour = list()
@@ -22,7 +22,7 @@ def nn(data):
         nodes.remove(tour[-1])
         # Initialize route demand
         demand = data.demand(tour[-1])
-        # Exclude nodes that exceed capacity
+        # Nodes that exceed truck capacity
         over_capacity = set()
         # Add nearest nodes
         while nodes:
@@ -39,8 +39,15 @@ def nn(data):
             else:
                 over_capacity.add(test)
 
-    # Return created solution
-    return Chromosome(tour, None, data.tour_dist(tour))
+    # Return only a complete solution
+    if len(nodes) == 0:
+        c = Chromosome(tour, None, data.tour_dist(tour))
+        if method == "nn2opt":
+            c = vrp_2opt(c, data)
+        # Return created solution
+        return c
+    else:
+        return None
 
 
 # Run 2opt over vrp solution

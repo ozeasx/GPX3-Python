@@ -402,7 +402,7 @@ class GPX(object):
                 # self._counters['feasible_tours'] += 1
             elif not inf_key:
                 self._counters['inf_tours'] += 1
-        # For infeasible handling, Two solutions should be feasible at least
+        # For infeasible handling, two solutions should be feasible at least
         if inf_key and not self._f3_test:
             assert len(candidates) >= 2, (self._parent_1_tour,
                                           self._parent_2_tour,

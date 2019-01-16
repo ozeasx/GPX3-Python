@@ -23,7 +23,8 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
-parser.add_argument("-M", choices=['random', '2opt', 'nn'], default='random',
+parser.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
+                    default='random',
                     help="Method to generate inicial and restart population")
 parser.add_argument("-R", type=float, default=1.0,
                     help="Inicial population ratio to be created with 2opt")
@@ -108,6 +109,7 @@ def run_ga(id):
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
     logger.info("VRP Instance: %s", args.I)
+    logger.info("VRP dimension: %i", vrp.dimension)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Statistics variables
