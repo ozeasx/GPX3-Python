@@ -37,6 +37,9 @@ class GA(object):
         self._fit_func = fit_func
         # Timers
         self._timers = defaultdict(list)
+        # Constructions and destructions counters
+        self._constructions = 0
+        self._destructions = 0
 
         # Current and next population
         self._population = None
@@ -210,10 +213,20 @@ class GA(object):
                 c2 = c2.to_vrp(self._data.dimension)
                 c1.load = self._data.routes_load(c1.routes)
                 c2.load = self._data.routes_load(c2.routes)
-                children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     self._cross += 1
+                    # Conditions
+                    p1f = not any(l > self._data.capacity for l in p1.load)
+                    p2f = not any(l > self._data.capacity for l in p2.load)
+                    c1f = not any(l > self._data.capacity for l in c1.load)
+                    c2f = not any(l > self._data.capacity for l in c2.load)
+                    # Count constructions
+                    if (not (p1f and p2f)) and (c1f or c2f):
+                        self._constructions += 1
+                    # Count destructions
+                    if (p1f or p2f) and not (c1f or c2f):
+                        self._destructions += 1
 
         # Reduce population in case of pairwise recombination
         if pairwise == 'True':
