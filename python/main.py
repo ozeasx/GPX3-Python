@@ -35,13 +35,15 @@ parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
 parser.add_argument("-c", help="Crossover probability", type=float, default=0)
 parser.add_argument("-x", help="Crossover operator", choices=['GPX'],
                     default='GPX')
+parser.add_argument("-i", help="Repair infesible solutions", default='False',
+                    choices=['True', 'False'])
 parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
                     default=0)
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Directory to generate file reports", type=str)
 parser.add_argument("-F", help="Fitness function", default='d',
-                    choices=['a', 'b', 'c', 'd', 'e'])
+                    choices=['a', 'b', 'c', 'd', 'e', 'f'])
 parser.add_argument("-f1", help="Feasible 1 test", default='True',
                     choices=['True', 'False'])
 parser.add_argument("-f2", help="Feasible 2 test", default='True',
@@ -106,6 +108,7 @@ def run_ga(id):
     logger.info("Pairwise formation: %s", args.P)
     logger.info("Crossover probability: %f", args.c)
     logger.info("Crossover operator: %s", args.x)
+    logger.info("Repair infeasible solutions: %s", args.i)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
     logger.info("VRP Instance: %s", args.I)
@@ -138,8 +141,6 @@ def run_ga(id):
     ga.evaluate()
     # Begin GA
     while ga.generation < args.g:
-        # Generation info
-        ga.print_info()
         # Logging
         avg_fitness[ga.generation].append(ga.avg_fitness)
         best_fitness[ga.generation].append(ga.best_solution.fitness)
@@ -149,6 +150,9 @@ def run_ga(id):
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
+        # Repair infeasible solutions
+        if args.i == 'True':
+            ga.repair()
         # Mutation
         if args.m:
             ga.mutate(args.m)
@@ -157,8 +161,8 @@ def run_ga(id):
             ga.restart_pop(args.r, args.P, args.M)
         # Evaluation
         ga.evaluate()
-    # Last generation info
-    ga.print_info()
+        # Generation info
+        ga.print_info()
     # Final report
     ga.report()
     # Best solution
@@ -171,13 +175,13 @@ def run_ga(id):
         improvement = (parent_sum - children_sum) / float(parent_sum) * 100
 
     # Counters
-    counters[id].extend([ga.cross, gpx.counters['failed'], improvement,
-                         gpx.counters['feasible_1'],
+    counters[id].extend([sum(ga.counters['cross']), gpx.counters['failed'],
+                         improvement, gpx.counters['feasible_1'],
                          gpx.counters['feasible_2'],
                          gpx.counters['feasible_3'],
                          gpx.counters['infeasible'], gpx.counters['fusions'],
                          gpx.counters['unsolved'], gpx.counters['inf_tours'],
-                         ga.mut])
+                         sum(ga.counters['mut'])])
     # Timers
     timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),
                        sum(ga.timers['evaluation']),
