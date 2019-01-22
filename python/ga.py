@@ -320,6 +320,8 @@ class GA(object):
         self._timers['total'].append(time.time() - self._start_time)
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", self._cross)
+        log.info("Constructions: %i", self._constructions)
+        log.info("Destructions: %i", self._destructions)
         log.info("Failed: %i", self._cross_op.counters['failed'])
         parents_sum = self._cross_op.counters['parents_sum']
         children_sum = self._cross_op.counters['children_sum']
