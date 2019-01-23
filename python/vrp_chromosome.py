@@ -47,8 +47,6 @@ class VRP_Chromosome(Chromosome):
 
         # Dimension
         self._dimension = len(self._tour) - self._trucks + 1
-        # Load
-        self._load = list()
         # undirected graph and edges representaition
         self._undirected_graph = Graph.gen_undirected_graph(self._tour)
         self._undirected_edges = Graph.gen_undirected_edges(self._tour)

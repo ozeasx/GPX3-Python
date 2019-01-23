@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+from collections import defaultdict
 from tsp import TSPLIB
 from shell import Shell
 
@@ -85,11 +86,11 @@ class VRP(TSPLIB):
 
     # Get tour demand
     def routes_load(self, routes):
-        load = [0] * len(routes)
+        load = defaultdict(int)
         for key in routes:
             for client in routes[key]:
                 load[key] += self._demand[client - 1]
-        return tuple(load)
+        return load
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

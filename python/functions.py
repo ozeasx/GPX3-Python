@@ -1,8 +1,65 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+import copy
 import random
 from vrp_chromosome import VRP_Chromosome as Chromosome
+
+
+# Fix vrp solutions
+def fix(c, data):
+    routes = copy.deepcopy(c.routes)
+    demand = copy.deepcopy(c.load)
+    extra_demand = set()
+
+    # Remove clients which extrapolate truck capacity
+    for key in c.load:
+        if c.load[key] > data.capacity:
+            demand[key] = 0
+            for node in c.routes[key]:
+                demand[key] += data.demand(node)
+                if demand[key] > data.capacity:
+                    routes[key].remove(node)
+                    demand[key] -= data.demand(node)
+                    extra_demand.add(node)
+
+    # Insert extra demand nodes
+    limit = len(extra_demand) * 2
+    while limit and extra_demand:
+        limit -= 1
+        for key in routes:
+            if len(extra_demand) == 0:
+                break
+            test = next(iter(extra_demand))
+            # test = sorted(extra_demand)[-1]
+            if demand[key] + data.demand(test) <= data.capacity:
+                best = float("inf")
+                for i, node in enumerate(routes[key]):
+                    r = [routes[key][i-1]] + [test] + [routes[key][i]]
+                    dist = data.route_dist(r)
+                    if dist < best:
+                        best = dist
+                        index = i
+                if index == 0:
+                    index = -1
+                routes[key].insert(index, test)
+                demand[key] += data.demand(test)
+                extra_demand.remove(test)
+
+    # Insert remaining nodes
+    if len(extra_demand):
+        while extra_demand:
+            for key in routes:
+                routes[key].append(extra_demand.pop())
+                if len(extra_demand) == 0:
+                    break
+
+    # Build and return new tour
+    tour = list()
+    for key in routes:
+        tour.extend(routes[key])
+
+    return Chromosome(tour, None, data.tour_dist(tour))
 
 
 # Nearest neighbour algorithm
@@ -68,7 +125,6 @@ def vrp_2opt(chromosome, data):
 # https://github.com/rellermeyer/99tsp/blob/master/python/2opt/TSP2opt.py
 # http://pedrohfsd.com/2017/08/09/2opt-part1.html
 # https://rawgit.com/pedrohfsd/TSP/develop/2opt.js ""
-# Initial tour
 def two_opt(tour, dist, data):
     # Inicial tour
     best_tour = list(tour)

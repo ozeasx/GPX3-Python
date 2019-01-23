@@ -156,26 +156,26 @@ class GA(object):
     def _evaluate(self, c):
         # Eliminate infeasible solutions
         if self._fit_func == 'a':
-            if any(load > self._data.capacity for load in c.load):
+            if any(load > self._data.capacity for load in c.load.values()):
                 return -float("inf")
             else:
                 return -c.dist
         # Standard deviation
         elif self._fit_func == 'b':
-            return -c.dist * numpy.std(c.load)
+            return -c.dist * numpy.std(c.load.values())
         # Standard deviation squared
         elif self._fit_func == 'c':
-            return -c.dist * (numpy.std(c.load) ** 2)
+            return -c.dist * (numpy.std(c.load.values()) ** 2)
         # Standard deviation if infeasible
         elif self._fit_func == 'd':
-            if any(load > self._data.capacity for load in c.load):
-                return -c.dist * numpy.std(c.load)
+            if any(load > self._data.capacity for load in c.load.values()):
+                return -c.dist * (numpy.std(c.load.values()))
             else:
                 return -c.dist
         # Square of standard deviation if infeasible
         elif self._fit_func == 'e':
-            if any(load > self._data.capacity for load in c.load):
-                return -c.dist * (numpy.std(c.load) ** 2)
+            if any(load > self._data.capacity for load in c.load.values()):
+                return -c.dist * (numpy.std(c.load.values()) ** 2)
             else:
                 return -c.dist
 
@@ -200,6 +200,14 @@ class GA(object):
 
         # Assure population size remains the same
         assert len(self._population) == self._pop_size, "Tournament, pop size"
+
+    # Ranking selection
+    def select_rank(self, weight):
+        selected = list()
+        self._population.sort(key=attrgetter('fitness'))
+        weight_list = range(0, self._pop_size, weight)
+        for i in xrange(self._pop_size):
+            pass
 
     # Recombination
     def recombine(self, p_cross, pairwise=None):
@@ -238,10 +246,14 @@ class GA(object):
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     cross += 1
                     # Conditions
-                    p1f = not any(l > self._data.capacity for l in p1.load)
-                    p2f = not any(l > self._data.capacity for l in p2.load)
-                    c1f = not any(l > self._data.capacity for l in c1.load)
-                    c2f = not any(l > self._data.capacity for l in c2.load)
+                    p1f = not any(l > self._data.capacity
+                                  for l in p1.load.values())
+                    p2f = not any(l > self._data.capacity
+                                  for l in p2.load.values())
+                    c1f = not any(l > self._data.capacity
+                                  for l in c1.load.values())
+                    c2f = not any(l > self._data.capacity
+                                  for l in c2.load.values())
                     # Count constructions
                     if (not (p1f or p2f)) and (c1f or c2f):
                         constructions += 1
@@ -254,7 +266,7 @@ class GA(object):
             # Reevaluate population
             for c in children:
                 c.fitness = self._evaluate(c)
-            children.sort(key=attrgetter('fitness'))
+            children.sort(key=attrgetter('fitness'), reverse=True)
             self._population = children[:self._pop_size]
         else:
             self._population = children
@@ -272,16 +284,15 @@ class GA(object):
 
     # Repair infeasible solutions
     def repair(self):
+        fixed = 0
         for i in xrange(self._pop_size):
-            if any(load > self._data.capacity
-                   for load in self._population[i].load):
-                c = functions.nn(self._data, 'nn')
-                # Avoid duplicates
-                while c in self._population or c is None:
-                    c = functions.nn(self._data, 'nn')
-                c.dist = self._data.tour_dist(c.tour)
+            if any(l > self._data.capacity for l in
+                   self._population[i].load.values()):
+                c = functions.fix(self._population[i], self._data)
                 c.load = self._data.routes_load(c.routes)
-                self._population[i] = c
+                if not any(l > self._data.capacity for l in c.load.values()):
+                    fixed += 1
+        self._counters['fixed'].append(fixed)
 
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut):
@@ -292,11 +303,11 @@ class GA(object):
         # Is map fast?
         for i in xrange(self._pop_size):
             if random.random() < p_mut:
-                self._population[i] = functions.vrp_2opt(self._population[i],
-                                                         self._data)
-                self._population[i].load = self._data.routes_load(
-                                                    self._population[i].routes)
-                mut += 1
+                c = functions.vrp_2opt(self._population[i], self._data)
+                if c != self._population[i]:
+                    c.load = self._data.routes_load(c.routes)
+                    self._population[i] = c
+                    mut += 1
 
         # Register execution time
         self._timers['mutation'].append(time.time() - start_time)
@@ -351,9 +362,11 @@ class GA(object):
 
     # Generation info
     def print_info(self):
-        log.info("T: %i\tC: %i\tD: %i\tM: %i\tAvg: %f\tB: %f\tR: %s",
+        log.info("T: %i\tC: %i\tCDF: %i/%i/%i\tM: %i\tAvg: %f\tB: %f\tR: %s",
                  self._generation, self._counters['cross'][-1],
+                 self._counters['constructions'][-1],
                  self._counters['destructions'][-1],
+                 self._counters['fixed'][-1],
                  self._counters['mut'][-1], self._avg_fitness,
                  self._best_solution.fitness, self._pop_restart)
         # set pop restart flag
@@ -366,6 +379,7 @@ class GA(object):
         log.info("Total Crossover: %i", sum(self._counters['cross']))
         log.info("Constructions: %i", sum(self._counters['constructions']))
         log.info("Destructions: %i", sum(self._counters['destructions']))
+        log.info("Fixed: %i", sum(self._counters['fixed']))
         log.info("Failed: %i", self._xop.counters['failed'])
         parents_sum = self._xop.counters['parents_sum']
         children_sum = self._xop.counters['children_sum']
@@ -402,9 +416,9 @@ class GA(object):
             log.info("---------------- Best known solution ------------------")
             log.info("Tour: %s", (self._data.best_solution.tour,))
             log.info("Distance: %f", self._data.best_solution.dist)
-            log.info("Load: %s", (self._data.best_solution.load))
+            log.info("Load: %s", (self._data.best_solution.load.values()))
         log.info("------------------- Best individual found -----------------")
         log.info("Tour: %s", (self._best_solution.tour,))
         log.info("Distance: %f", self._best_solution.dist)
-        log.info("Load: %s", (self._best_solution.load))
+        log.info("Load: %s", (self._best_solution.load.values()))
         log.info("-----------------------------------------------------------")

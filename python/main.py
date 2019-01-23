@@ -21,15 +21,20 @@ multual = parser.add_mutually_exclusive_group()
 multual.add_argument("-k", help="Tournament size", type=int, default=0)
 multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
+multual.add_argument("-K", help="Ranking selection", default='False',
+                     choices=['True', 'False'])
 # Optional arguments
 parser.add_argument("-p", help="Initial population", type=int, default=100)
 parser.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                     default='random',
-                    help="Method to generate inicial and restart population")
+                    help="Method to generate inicial population")
 parser.add_argument("-R", type=float, default=1.0,
                     help="Inicial population ratio to be created with 2opt")
 parser.add_argument("-r", help="Percentage of population to be restarted",
                     type=float, default=0)
+parser.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
+                    default='random',
+                    help="Method to restart population")
 parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
                     type=int, default=0)
 parser.add_argument("-c", help="Crossover probability", type=float, default=0)
@@ -37,8 +42,10 @@ parser.add_argument("-x", help="Crossover operator", choices=['GPX'],
                     default='GPX')
 parser.add_argument("-i", help="Repair infesible solutions", default='False',
                     choices=['True', 'False'])
-parser.add_argument("-m", help="Mutation probability (2opt)", type=float,
+parser.add_argument("-m", help="Mutation probability", type=float,
                     default=0)
+parser.add_argument("-t", help="Mutation operator", default='2opt',
+                    choices=['2opt', 'nn', 'nn2opt'])
 parser.add_argument("-g", help="Generation limit", type=int, default=100)
 parser.add_argument("-n", help="Number of iterations", type=int, default=1)
 parser.add_argument("-o", help="Directory to generate file reports", type=str)
@@ -146,7 +153,9 @@ def run_ga(id):
         best_fitness[ga.generation].append(ga.best_solution.fitness)
         # Selection
         if args.k:
-            ga.select_tournament(args.k)
+            ga.tournament_selection(args.k)
+        elif args.K == 'True':
+            ga.rank_selection()
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
@@ -158,7 +167,7 @@ def run_ga(id):
             ga.mutate(args.m)
         # Population restart
         if args.r:
-            ga.restart_pop(args.r, args.P, args.M)
+            ga.restart_pop(args.r, args.P, args.S)
         # Evaluation
         ga.evaluate()
         # Generation info

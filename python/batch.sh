@@ -1,7 +1,7 @@
 #!/bin/bash
 
-./main.py -c 1 -m 0.02 -k 3 -e 3 -r 0.8 -f3 True -F a -g 500 -n 5 -o ../result/vrpA/ ../cvrp/F-n45-k4.vrp
-./main.py -c 1 -m 0.02 -k 3 -e 3 -r 0.8 -f3 True -F b -g 500 -n 5 -o ../result/vrpB/ ../cvrp/F-n45-k4.vrp
-./main.py -c 1 -m 0.02 -k 3 -e 3 -r 0.8 -f3 True -F c -g 500 -n 5 -o ../result/vrpC/ ../cvrp/F-n45-k4.vrp
-./main.py -c 1 -m 0.02 -k 3 -e 3 -r 0.8 -f3 True -F d -g 500 -n 5 -o ../result/vrpD/ ../cvrp/F-n45-k4.vrp
-./main.py -c 1 -m 0.02 -k 3 -e 3 -r 0.8 -f3 True -F e -g 500 -n 5 -o ../result/vrpE/ ../cvrp/F-n45-k4.vrp
+./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpA/ ../cvrp/B-n31-k5.vrp &
+./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpB/ ../cvrp/B-n34-k5.vrp &
+./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpC/ ../cvrp/B-n35-k5.vrp &
+./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpD/ ../cvrp/B-n38-k6.vrp &
+./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpE/ ../cvrp/B-n41-k6.vrp &

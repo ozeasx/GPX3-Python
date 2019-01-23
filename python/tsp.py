@@ -107,11 +107,6 @@ class TSPLIB(object):
             best.write("-1\n")
             best.write("EOF\n")
 
-    # Return distance between two nodes in a ordered tuple 't'
-    def dist(self, t):
-        # print t
-        return self._dm[self._cindex(*t)]
-
     # Return nearest nodes from i in nodes set
     def get_nearest(self, i, nodes):
         last_dist = float("inf")
@@ -152,6 +147,17 @@ class TSPLIB(object):
         # Close path
         t = sorted([tour[0]-1, tour[-1]-1])
         dist += self._dm[self._cindex(*t)]
+
+        return dist
+
+    # Calc route distance
+    def route_dist(self, route):
+        # distance
+        dist = 0
+        # Distance matrix lookup
+        for i, j in zip(route[:-1], route[1:]):
+            t = sorted([i-1, j-1])
+            dist += self._dm[self._cindex(*t)]
 
         return dist
 
