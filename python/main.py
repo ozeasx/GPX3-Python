@@ -199,7 +199,7 @@ def run_ga(id):
                        sum(gpx.timers['classification']),
                        sum(gpx.timers['fusion']), sum(gpx.timers['build']),
                        sum(ga.timers['mutation']),
-                       sum(ga.timers['pop_restart'])])
+                       sum(ga.timers['restart_pop'])])
     # Return data
     return avg_fitness, best_fitness, best_solution, counters, timers
 

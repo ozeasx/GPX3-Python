@@ -300,7 +300,7 @@ class GA(object):
 
         # Set restart based on crossover number
         if self._generation > 0:
-            if self._counters['cross'][-1] == 0:
+            if cross == 0:
                 self._restart_pop = True
 
         # Assure population size remains the same
@@ -349,8 +349,7 @@ class GA(object):
             self._restart_pop = False
             # Sort pop
             self._population.sort(key=attrgetter('fitness'), reverse=True)
-            # random.shuffle(self._population)
-            # Discard ratio at the end
+            # Reduce pop to acomodate restart
             self._population = self._population[:int(self._pop_size
                                                      - self._pop_size * ratio)]
             # Insert new population
@@ -371,7 +370,7 @@ class GA(object):
                  self._counters['destructions'][-1],
                  self._counters['repairs'][-1],
                  self._counters['mut'][-1], self._avg_fitness,
-                 self._best_solution.fitness, not self._restart_pop)
+                 self._best_solution.fitness, self._restart_pop)
 
     # Final report
     def report(self):
