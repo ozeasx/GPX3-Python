@@ -262,13 +262,13 @@ class GPX(object):
             # Increment fusion size
             n += 1
             # Try fusions
-            for fusion in candidates:
+            for test in candidates:
                 # Partitions vertices union
                 union = defaultdict(set)
                 # Test to determine if partition is fused already
-                if not any(i in fused for i in fusion):
-                    for i in fusion:
-                        union[fusion] |= partitions['vertices'][i]
+                if not any(i in fused for i in test):
+                    for i in test:
+                        union[test] |= partitions['vertices'][i]
 
                     # Pause time count
                     start_time = time.time() - start_time
@@ -283,9 +283,9 @@ class GPX(object):
                     start_time = time.time() - start_time
 
                     # Update information if successfull fusion
-                    if fusion in feasible:
+                    if test in feasible:
                         self._counters['fusions'] += 1
-                        fuse(fusion)
+                        fuse(test)
 
         # Fuse all remaining partitions in one infeasible partition to be
         # handled by build method. The last of the mohicans remains infeasible

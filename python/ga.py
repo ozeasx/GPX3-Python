@@ -26,8 +26,8 @@ class GA(object):
         self._generation = -1
         # Average fitness of the current generation
         self._avg_fitness = 0
-        # Indicate population restart
-        self._pop_restart = False
+        # To indicate if pop should be restarted
+        self._restart_pop = False
         # Fitness function
         self._fit_func = fit_func
         # Counters amd timers
@@ -35,11 +35,18 @@ class GA(object):
         self._timers = defaultdict(list)
 
         # Current population
-        self._population = None
+        self._population = list()
         # Elite population
         self._elite = list()
         # Best solution found
         self._best_solution = None
+
+        # Initialize counters
+        self._counters['cross'].append(0)
+        self._counters['mut'].append(0)
+        self._counters['constructions'].append(0)
+        self._counters['destructions'].append(0)
+        self._counters['repairs'].append(0)
 
     # Get current generation number
     @property
@@ -66,6 +73,43 @@ class GA(object):
     def timers(self):
         return self._timers
 
+    # Insert unique solutions into population
+    def _insert_pop(self, number, method, eval=False):
+
+        # Sub method to generate one unique random chromosome
+        def random():
+            c = Chromosome(self._data.dimension, self._data.trucks)
+            # Avoid duplicates
+            while c in self._population:
+                c = Chromosome(self._data.dimension, self._data.trucks)
+            return c
+
+        # Individuals to be inserted
+        for i in xrange(int(number)):
+            # Random
+            if method == 'random':
+                c = random()
+                c.dist = self._data.tour_dist(c.tour)
+            # 2opt
+            elif method == '2opt':
+                c = random()
+                c = functions.vrp_2opt(c, self._data)
+                while c in self._population:
+                    c = random()
+                    c = functions.vrp_2opt(c, self._data)
+            # NN and NN with 2opt
+            elif method == 'nn' or 'nn2opt':
+                c = functions.nn(self._data, method)
+                # Avoid duplicates
+                while c in self._population or c is None:
+                    c = functions.nn(self._data, method)
+            # Insert c in population
+            assert c.dist is not None, "ga, _insert_pop, 'dist is none'"
+            c.load = self._data.routes_load(c.routes)
+            if eval:
+                c.fitness = self._evaluate(c)
+            self._population.append(c)
+
     # Generate inicial population
     def gen_pop(self, size, method='random', ratio=1):
         # Regiter local and global start time
@@ -75,37 +119,12 @@ class GA(object):
                                "Must be even and greater than 0"
         # Print step
         print "Generating initial population..."
-        # "in" over sets is fast
-        self._population = set()
         # Population generation
-        for i in xrange(size):
-            # Random generation
-            c = Chromosome(self._data.dimension, self._data.trucks)
-            # Avoid duplicates
-            while c in self._population:
-                c = Chromosome(self._data.dimension, self._data.trucks)
-            # Other methods
-            if i < ratio * size:
-                # 2opt generaion
-                if method == "2opt":
-                    c.dist = self._data.tour_dist(c.tour)
-                    c = functions.vrp_2opt(c, self._data)
-                # nn generaion
-                elif method == "nn" or method == "nn2opt":
-                    c = functions.nn(self._data, method)
-                    # Avoid duplicates
-                    while c in self._population or c is None:
-                        c = functions.nn(self._data, method)
-                    c.dist = self._data.tour_dist(c.tour)
-            # Calc distance for random solutions
-            if c.dist is None:
-                c.dist = self._data.tour_dist(c.tour)
-            # Calc solution load
-            c.load = self._data.routes_load(c.routes)
-            # print c.dist, c.load
-            self._population.add(c)
-        # Convert population to list
-        self._population = list(self._population)
+        if method == 'random':
+            self._insert_pop(size, method)
+        else:
+            self._insert_pop(size - ratio * size, 'random')
+            self._insert_pop(ratio * size, method)
         # Done
         print "Done..."
         # Store execution time
@@ -180,7 +199,7 @@ class GA(object):
                 return -c.dist
 
     # Tournament selection
-    def select_tournament(self, k):
+    def tournament_selection(self, k):
         # Register start time
         start_time = time.time()
         # Tournament winners
@@ -202,7 +221,7 @@ class GA(object):
         assert len(self._population) == self._pop_size, "Tournament, pop size"
 
     # Ranking selection
-    def select_rank(self, weight):
+    def rank_selection(self, weight):
         selected = list()
         self._population.sort(key=attrgetter('fitness'))
         weight_list = range(0, self._pop_size, weight)
@@ -279,6 +298,11 @@ class GA(object):
         self._counters['constructions'].append(constructions)
         self._counters['destructions'].append(destructions)
 
+        # Set restart based on crossover number
+        if self._generation > 0:
+            if self._counters['cross'][-1] == 0:
+                self._restart_pop = True
+
         # Assure population size remains the same
         assert len(self._population) == self._pop_size, "Cross, pop size"
 
@@ -292,10 +316,10 @@ class GA(object):
                 c.load = self._data.routes_load(c.routes)
                 if not any(l > self._data.capacity for l in c.load.values()):
                     fixed += 1
-        self._counters['fixed'].append(fixed)
+        self._counters['repairs'].append(fixed)
 
     # Mutate individuals according to p_mut probability
-    def mutate(self, p_mut):
+    def mutate(self, p_mut, op):
         # Register start time
         start_time = time.time()
         # Mutations counter
@@ -316,61 +340,38 @@ class GA(object):
         self._counters['mut'].append(mut)
 
     # Reset population
-    def restart_pop(self, ratio, pairwise=False, method='random'):
+    def restart_pop(self, ratio, method='random'):
         # Register start time
         start_time = time.time()
 
-        if (not (self._counters['cross'][-1]
-                 - self._counters['cross'][-2 % len(self._counters['cross'])])
-                or pairwise == 'True'):
-            # Reevaluate population
-            for c in self._population:
-                c.fitness = self._evaluate(c)
+        if self._restart_pop:
             # Population restarted flag
-            self._pop_restart = True
-            self._population.sort(key=attrgetter('fitness'))
-            for i in xrange(int(self._pop_size * ratio)):
-                # Random restart
-                c = Chromosome(self._data.dimension, self._data.trucks)
-                # Avoid duplicates
-                while c in self._population:
-                    c = Chromosome(self._data.dimension, self._data.trucks)
-                # 2opt generaion
-                if method == "2opt":
-                    c.dist = self._data.tour_dist(c.tour)
-                    c = functions.vrp_2opt(c, self._data)
-                # nn generaion
-                elif method == "nn" or method == "nn2opt":
-                    c = functions.nn(self._data, method)
-                    # Avoid duplicates
-                    while c in self._population or c is None:
-                        c = functions.nn(self._data, method)
-                    c.dist = self._data.tour_dist(c.tour)
-                # Calc distance for random solutions
-                if c.dist is None:
-                    c.dist = self._data.tour_dist(c.tour)
-                # Calc solution load
-                c.load = self._data.routes_load(c.routes)
-                # Restart solution in population
-                self._population[i] = c
+            self._restart_pop = False
+            # Sort pop
+            self._population.sort(key=attrgetter('fitness'), reverse=True)
+            # random.shuffle(self._population)
+            # Discard ratio at the end
+            self._population = self._population[:int(self._pop_size
+                                                     - self._pop_size * ratio)]
+            # Insert new population
+            self._insert_pop(self._pop_size * ratio, method, eval=True)
 
         # Register execution time
-        self._timers['pop_restart'].append(time.time() - start_time)
+        self._timers['restart_pop'].append(time.time() - start_time)
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size, "restart, pop size"
+        assert len(self._population) == self._pop_size, "ga, restart_pop"
 
     # Generation info
     def print_info(self):
+
         log.info("T: %i\tC: %i\tCDF: %i/%i/%i\tM: %i\tAvg: %f\tB: %f\tR: %s",
                  self._generation, self._counters['cross'][-1],
                  self._counters['constructions'][-1],
                  self._counters['destructions'][-1],
-                 self._counters['fixed'][-1],
+                 self._counters['repairs'][-1],
                  self._counters['mut'][-1], self._avg_fitness,
-                 self._best_solution.fitness, self._pop_restart)
-        # set pop restart flag
-        self._pop_restart = False
+                 self._best_solution.fitness, not self._restart_pop)
 
     # Final report
     def report(self):
@@ -379,7 +380,7 @@ class GA(object):
         log.info("Total Crossover: %i", sum(self._counters['cross']))
         log.info("Constructions: %i", sum(self._counters['constructions']))
         log.info("Destructions: %i", sum(self._counters['destructions']))
-        log.info("Fixed: %i", sum(self._counters['fixed']))
+        log.info("Repairs: %i", sum(self._counters['repairs']))
         log.info("Failed: %i", self._xop.counters['failed'])
         parents_sum = self._xop.counters['parents_sum']
         children_sum = self._xop.counters['children_sum']
@@ -410,7 +411,7 @@ class GA(object):
         log.info(" Fusion: %f", sum(self._xop.timers['fusion']))
         log.info(" Build: %f", sum(self._xop.timers['build']))
         log.info("Mutation: %f", sum(self._timers['mutation']))
-        log.info("Population restart: %f", sum(self._timers['pop_restart']))
+        log.info("Population restart: %f", sum(self._timers['restart_pop']))
         log.info("Capcity: %f", self._data.capacity)
         if self._data.best_solution:
             log.info("---------------- Best known solution ------------------")

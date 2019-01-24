@@ -108,11 +108,11 @@ def nn(data, method):
 
 
 # Run 2opt over vrp solution
-def vrp_2opt(chromosome, data):
+def vrp_2opt(c, data):
     new_tour = list()
     dist = 0
 
-    for key, route in chromosome.routes.items():
+    for key, route in c.routes.items():
         t, d = two_opt(route, data.tour_dist(route), data)
         new_tour.extend(t)
         dist += d

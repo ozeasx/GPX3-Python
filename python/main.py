@@ -14,55 +14,54 @@ from gpx import GPX
 
 
 # Argument parser
-parser = argparse.ArgumentParser(description="Genetic algorithm + GPX + 2opt")
+p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
 # Multual exclusive arguments
-multual = parser.add_mutually_exclusive_group()
+multual = p.add_mutually_exclusive_group()
 multual.add_argument("-k", help="Tournament size", type=int, default=0)
 multual.add_argument("-P", help="Pairwise Recombination", default='False',
                      choices=['True', 'False'])
 multual.add_argument("-K", help="Ranking selection", default='False',
                      choices=['True', 'False'])
 # Optional arguments
-parser.add_argument("-p", help="Initial population", type=int, default=100)
-parser.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
-                    default='random',
-                    help="Method to generate inicial population")
-parser.add_argument("-R", type=float, default=1.0,
-                    help="Inicial population ratio to be created with 2opt")
-parser.add_argument("-r", help="Percentage of population to be restarted",
-                    type=float, default=0)
-parser.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
-                    default='random',
-                    help="Method to restart population")
-parser.add_argument("-e", help="Elitism. Number of individuals to preserve",
-                    type=int, default=0)
-parser.add_argument("-c", help="Crossover probability", type=float, default=0)
-parser.add_argument("-x", help="Crossover operator", choices=['GPX'],
-                    default='GPX')
-parser.add_argument("-i", help="Repair infesible solutions", default='False',
-                    choices=['True', 'False'])
-parser.add_argument("-m", help="Mutation probability", type=float,
-                    default=0)
-parser.add_argument("-t", help="Mutation operator", default='2opt',
-                    choices=['2opt', 'nn', 'nn2opt'])
-parser.add_argument("-g", help="Generation limit", type=int, default=100)
-parser.add_argument("-n", help="Number of iterations", type=int, default=1)
-parser.add_argument("-o", help="Directory to generate file reports", type=str)
-parser.add_argument("-F", help="Fitness function", default='d',
-                    choices=['a', 'b', 'c', 'd', 'e', 'f'])
-parser.add_argument("-f1", help="Feasible 1 test", default='True',
-                    choices=['True', 'False'])
-parser.add_argument("-f2", help="Feasible 2 test", default='True',
-                    choices=['True', 'False'])
-parser.add_argument("-f3", help="Feasible 3 test", default='False',
-                    choices=['True', 'False'])
+p.add_argument("-F", help="Fitness function", default='d',
+               choices=['a', 'b', 'c', 'd', 'e', 'f'])
+p.add_argument("-f1", help="Feasible 1 test", default='True',
+               choices=['True', 'False'])
+p.add_argument("-f2", help="Feasible 2 test", default='True',
+               choices=['True', 'False'])
+p.add_argument("-f3", help="Feasible 3 test", default='False',
+               choices=['True', 'False'])
+p.add_argument("-p", help="Initial population", type=int, default=100)
+p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
+               default='random',
+               help="Method to generate inicial population")
+p.add_argument("-R", type=float, default=1.0,
+               help="Ratio o inicial popopulation to be created with method M")
+p.add_argument("-r", type=float, default=0,
+               help="Percentage of population to be restarted with method S")
+p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
+               default='random',
+               help="Method to restart population")
+p.add_argument("-e", help="Elitism. Number of individuals to preserve",
+               type=int, default=0)
+p.add_argument("-c", help="Crossover probability", type=float, default=0)
+p.add_argument("-i", help="Repair infesible solutions", default='False',
+               choices=['True', 'False'])
+p.add_argument("-m", help="Mutation probability", type=float,
+               default=0)
+p.add_argument("-t", help="Mutation operator", default='2opt',
+               choices=['2opt', 'nn', 'nn2opt'])
+p.add_argument("-g", help="Generation limit", type=int, default=100)
+p.add_argument("-n", help="Number of iterations (paralelism will be used)",
+               type=int, default=1)
+p.add_argument("-o", help="Directory to generate file reports", type=str)
 # Mandatory argument
-parser.add_argument("I", help="VRP instance file", type=str)
+p.add_argument("I", help="VRP instance file", type=str)
 
 
 # Parser
-args = parser.parse_args()
+args = p.parse_args()
 
 # Assert arguments
 assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
@@ -114,7 +113,6 @@ def run_ga(id):
     logger.info("Tournament size: %i", args.k)
     logger.info("Pairwise formation: %s", args.P)
     logger.info("Crossover probability: %f", args.c)
-    logger.info("Crossover operator: %s", args.x)
     logger.info("Repair infeasible solutions: %s", args.i)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
@@ -151,6 +149,9 @@ def run_ga(id):
         # Logging
         avg_fitness[ga.generation].append(ga.avg_fitness)
         best_fitness[ga.generation].append(ga.best_solution.fitness)
+        # Population restart
+        if args.r:
+            ga.restart_pop(args.r, args.S)
         # Selection
         if args.k:
             ga.tournament_selection(args.k)
@@ -164,10 +165,7 @@ def run_ga(id):
             ga.repair()
         # Mutation
         if args.m:
-            ga.mutate(args.m)
-        # Population restart
-        if args.r:
-            ga.restart_pop(args.r, args.P, args.S)
+            ga.mutate(args.m, args.t)
         # Evaluation
         ga.evaluate()
         # Generation info
