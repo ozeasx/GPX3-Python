@@ -293,9 +293,6 @@ class GA(object):
         else:
             self._population = children
 
-        # Repopulate
-        self._insert_pop(self._pop_size - len(self._population))
-
         # Update counters
         self._counters['cross'].append(cross)
         self._counters['constructions'].append(constructions)
@@ -309,11 +306,14 @@ class GA(object):
                     == self._counters['best_fit'][-1])):
                 self._restart_pop = True
 
-        # Assure population size remains the same
-        assert len(self._population) == self._pop_size, len(self._population)
-
         # Register execution time
         self._timers['recombination'].append(time.time() - start_time)
+
+    # Repopulate with unique solutions
+    def repopulate(self, method):
+        self._insert_pop(self._pop_size - len(self._population), method)
+        # Assure population size remains the same
+        assert len(self._population) == self._pop_size, len(self._population)
 
     # Repair infeasible solutions
     def repair(self):
@@ -324,6 +324,7 @@ class GA(object):
                 c = functions.fix(self._population[i], self._data)
                 c.load = self._data.routes_load(c.routes)
                 if not any(l > self._data.capacity for l in c.load.values()):
+                    self._population[i] = c
                     fixed += 1
         self._counters['repairs'].append(fixed)
 

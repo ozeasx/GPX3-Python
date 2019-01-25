@@ -46,6 +46,9 @@ p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
 p.add_argument("-e", help="Elitism. Number of individuals to preserve",
                type=int, default=0)
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
+p.add_argument("-j", choices=['random', '2opt', 'nn', 'nn2opt'],
+               default='random',
+               help="Method to repopulate after crossover")
 p.add_argument("-i", help="Repair infesible solutions", default='False',
                choices=['True', 'False'])
 p.add_argument("-m", help="Mutation probability", type=float,
@@ -171,6 +174,7 @@ def run_ga(id):
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
+        ga.repopulate(args.j)
         # Repair infeasible solutions
         if args.i == 'True':
             ga.repair()
