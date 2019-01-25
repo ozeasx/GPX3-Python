@@ -6,12 +6,12 @@ import sys
 import multiprocessing
 import argparse
 from collections import defaultdict
+from streamplot import PlotManager
 import logging
 import csv
 from ga import GA
 from vrp import VRP
 from gpx import GPX
-
 
 # Argument parser
 p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
@@ -94,6 +94,10 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
 
+# Plot instance
+if args.n == 1:
+    plt_mgr = PlotManager(title="Fitness evolution")
+
 
 # Function to call each ga run
 def run_ga(id):
@@ -146,9 +150,16 @@ def run_ga(id):
     ga.evaluate()
     # Begin GA
     while ga.generation < args.g:
+        # Update plot
+        if args.n == 1:
+            plt_mgr.add(x=ga.generation, y=ga.counters['avg_fit'][-1],
+                        name='Average fitness')
+            plt_mgr.add(x=ga.generation, y=ga.counters['best_fit'][-1],
+                        name='Best fitness')
+            plt_mgr.update()
         # Logging
-        avg_fitness[ga.generation].append(ga.avg_fitness)
-        best_fitness[ga.generation].append(ga.best_solution.fitness)
+        avg_fitness[ga.generation].append(ga.counters['avg_fit'][-1])
+        best_fitness[ga.generation].append(ga.counters['best_fit'][-1])
         # Population restart
         if args.r:
             ga.restart_pop(args.r, args.S)
@@ -172,6 +183,9 @@ def run_ga(id):
         ga.print_info()
     # Final report
     ga.report()
+    # Close ploting
+    if args.n == 1:
+        plt_mgr.close()
     # Best solution
     best_solution[id] = ga.best_solution
     # Calc improvement

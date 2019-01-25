@@ -74,7 +74,7 @@ class GA(object):
         return self._timers
 
     # Insert unique solutions into population
-    def _insert_pop(self, number, method, eval=False):
+    def _insert_pop(self, number, method='random', eval=False):
 
         # Sub method to generate one unique random chromosome
         def random():
@@ -129,6 +129,9 @@ class GA(object):
         print "Done..."
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
+        # Assert population size
+        assert size == len(self._population), "ga, gen_pop"
+        self._pop_size = size
 
     # Evaluate the entire population
     def evaluate(self):
@@ -142,8 +145,7 @@ class GA(object):
             total_fitness += c.fitness
 
         # Calc average fitness
-        self._pop_size = len(self._population)
-        self._avg_fitness = total_fitness/float(self._pop_size)
+        self._counters['avg_fit'].append(total_fitness/float(self._pop_size))
 
         # Elitism
         if self._elitism:
@@ -164,6 +166,8 @@ class GA(object):
             current_best = max(self._population, key=attrgetter('fitness'))
             if current_best.fitness > self._best_solution.fitness:
                 self._best_solution = current_best
+
+        self._counters['best_fit'].append(self._best_solution.fitness)
 
         # Increment generaion
         self._generation += 1
@@ -233,9 +237,6 @@ class GA(object):
         # Register start time
         start_time = time.time()
 
-        # Shuffle population
-        # random.shuffle(self._population)
-
         # Pairwise recombination
         if pairwise == 'True':
             selected = list()
@@ -244,7 +245,7 @@ class GA(object):
             self._population = selected
 
         # New generation
-        children = list()
+        children = set()
 
         # Counters
         cross = 0
@@ -260,7 +261,8 @@ class GA(object):
                 c2 = c2.to_vrp(self._data.dimension)
                 c1.load = self._data.routes_load(c1.routes)
                 c2.load = self._data.routes_load(c2.routes)
-                children.extend([c1, c2])
+                children.add(c1)
+                children.add(c2)
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     cross += 1
@@ -281,6 +283,7 @@ class GA(object):
                         destructions += 1
 
         # Reduce population in case of pairwise recombination
+        children = list(children)
         if pairwise == 'True':
             # Reevaluate population
             for c in children:
@@ -290,21 +293,27 @@ class GA(object):
         else:
             self._population = children
 
-        # Register execution time
-        self._timers['recombination'].append(time.time() - start_time)
+        # Repopulate
+        self._insert_pop(self._pop_size - len(self._population))
 
         # Update counters
         self._counters['cross'].append(cross)
         self._counters['constructions'].append(constructions)
         self._counters['destructions'].append(destructions)
 
-        # Set restart based on crossover number
+        # Set restart based on crossover number or best_fit or avg_fit
         if self._generation > 0:
-            if cross == 0:
+            if ((cross == 0) or (self._counters['avg_fit'][-2]
+                                 == self._counters['avg_fit'][-1])
+                or (self._counters['best_fit'][-2]
+                    == self._counters['best_fit'][-1])):
                 self._restart_pop = True
 
         # Assure population size remains the same
-        assert len(self._population) == self._pop_size, "Cross, pop size"
+        assert len(self._population) == self._pop_size, len(self._population)
+
+        # Register execution time
+        self._timers['recombination'].append(time.time() - start_time)
 
     # Repair infeasible solutions
     def repair(self):
@@ -369,8 +378,8 @@ class GA(object):
                  self._counters['constructions'][-1],
                  self._counters['destructions'][-1],
                  self._counters['repairs'][-1],
-                 self._counters['mut'][-1], self._avg_fitness,
-                 self._best_solution.fitness, self._restart_pop)
+                 self._counters['mut'][-1], self._counters['avg_fit'][-1],
+                 self._counters['best_fit'][-1], self._restart_pop)
 
     # Final report
     def report(self):
