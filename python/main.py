@@ -6,7 +6,6 @@ import sys
 import multiprocessing
 import argparse
 from collections import defaultdict
-from streamplot import PlotManager
 import logging
 import csv
 from ga import GA
@@ -38,11 +37,11 @@ p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                help="Method to generate inicial population")
 p.add_argument("-R", type=float, default=1.0,
                help="Ratio o inicial popopulation to be created with method M")
-p.add_argument("-r", type=float, default=0,
-               help="Percentage of population to be restarted with method S")
 p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random',
                help="Method to restart population")
+p.add_argument("-r", type=float, default=0,
+               help="Percentage of population to be restarted with method S")
 p.add_argument("-e", help="Elitism. Number of individuals to preserve",
                type=int, default=0)
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
@@ -56,6 +55,8 @@ p.add_argument("-m", help="Mutation probability", type=float,
 p.add_argument("-t", help="Mutation operator", default='2opt',
                choices=['2opt', 'nn', 'nn2opt'])
 p.add_argument("-g", help="Generation limit", type=int, default=100)
+p.add_argument("-G", help="Fitness ploting", default='False',
+               choices=['True', 'False'])
 p.add_argument("-n", help="Number of iterations (paralelism will be used)",
                type=int, default=1)
 p.add_argument("-o", help="Directory to generate file reports", type=str)
@@ -98,7 +99,8 @@ logger.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
 
 # Plot instance
-if args.n == 1:
+if args.n == 1 and args.G == 'True':
+    from streamplot import PlotManager
     plt_mgr = PlotManager(title="Fitness evolution")
 
 
@@ -154,7 +156,7 @@ def run_ga(id):
     # Begin GA
     while ga.generation < args.g:
         # Update plot
-        if args.n == 1:
+        if args.n == 1 and args.G == 'True':
             plt_mgr.add(x=ga.generation, y=ga.counters['avg_fit'][-1],
                         name='Average fitness')
             plt_mgr.add(x=ga.generation, y=ga.counters['best_fit'][-1],
@@ -188,7 +190,7 @@ def run_ga(id):
     # Final report
     ga.report()
     # Close ploting
-    if args.n == 1:
+    if args.n == 1 and args.G == 'True':
         plt_mgr.close()
     # Best solution
     best_solution[id] = ga.best_solution

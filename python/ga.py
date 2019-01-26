@@ -329,25 +329,31 @@ class GA(object):
         self._counters['repairs'].append(fixed)
 
     # Mutate individuals according to p_mut probability
-    def mutate(self, p_mut, op):
+    def mutate(self, p_mut, method):
         # Register start time
         start_time = time.time()
         # Mutations counter
         mut = 0
         # Is map fast?
-        for i in xrange(self._pop_size):
+        for i, c in enumerate(self._population):
             if random.random() < p_mut:
-                c = functions.vrp_2opt(self._population[i], self._data)
+                if method == '2opt':
+                    c = functions.vrp_2opt(self._population[i], self._data)
+                elif method == 'nn' or method == 'nn2opt':
+                    c = functions.nn(self._data, method)
+                    # Avoid duplicates
+                    while c in self._population or c is None:
+                        c = functions.nn(self._data, method)
                 if c != self._population[i]:
                     c.load = self._data.routes_load(c.routes)
                     self._population[i] = c
                     mut += 1
 
-        # Register execution time
-        self._timers['mutation'].append(time.time() - start_time)
-
         # Update counter
         self._counters['mut'].append(mut)
+
+        # Register execution time
+        self._timers['mutation'].append(time.time() - start_time)
 
     # Reset population
     def restart_pop(self, ratio, method='random'):
