@@ -1,13 +1,13 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-from vrp import VRP
-from vrp_chromosome import VRP_Chromosome as Chromosome
+from tsp import TSPLIB
+from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-vrp = VRP("../cvrp/F-n45-k4.vrp")
-gpx = GPX()
+tsp = TSPLIB("../tsplib/berlin52.tsp")
+gpx = GPX(tsp)
 
 # p1 = Chromosome(16)
 # p1.dist = tsp.tour_dist(p1.tour)
@@ -40,8 +40,8 @@ gpx = GPX()
 # test(tsp, 10000)
 
 # Whitley2010-F1
-# p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
-# p2 = Chromosome([1,13,14,12,11,3,10,9,6,8,7,5,4,2])
+p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+p2 = Chromosome([1,13,14,12,11,3,10,9,6,8,7,5,4,2])
 
 # Tinos2014-F1
 # p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11])
@@ -160,39 +160,39 @@ gpx = GPX()
 # p2 = Chromosome((1, 7, 6, 5, 11, 9, 10, 12, 13, 14, 15, 16, 8, 4, 2, 3))
 
 # F21
-p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
-p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
+# p1 = Chromosome((12, 2, 1, 9, 5, 3, 8, 7, 4, 11, 10, 6))
+# p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
 
 # vrp1
-p1 = Chromosome((1, 2, 3, 10, 4, 5, 6, 11, 7, 8, 9))
-p2 = Chromosome((1, 2, 3, 4, 5, 10, 6, 7, 8, 9))
+# p1 = Chromosome((1, 2, 3, 10, 4, 5, 6, 11, 7, 8, 9))
+# p2 = Chromosome((1, 2, 3, 4, 5, 10, 6, 7, 8, 9))
 
 # vrp2
-p1 = Chromosome((15, 25, 41, 42, 21, 39, 38, 33, 45, 32, 43, 30, 9, 34, 2, 24,
-                 1, 20, 46, 6, 3, 40, 29, 12, 4, 44, 35, 27, 31, 19, 14, 26,
-                 11, 23, 16, 22, 5, 37, 47, 7, 10, 48, 13, 28, 36, 8, 17, 18))
+# p1 = Chromosome((15, 25, 41, 42, 21, 39, 38, 33, 45, 32, 43, 30, 9, 34, 2, 24,
+#                 1, 20, 46, 6, 3, 40, 29, 12, 4, 44, 35, 27, 31, 19, 14, 26,
+#                 11, 23, 16, 22, 5, 37, 47, 7, 10, 48, 13, 28, 36, 8, 17, 18))
 
-p2 = Chromosome((4, 1, 3, 24, 14, 9, 45, 38, 26, 46, 13, 32, 44, 20, 35, 12, 7,
-                 16, 19, 5, 2, 34, 6, 30, 47, 18, 27, 33, 43, 29, 8, 48, 22,
-                 25, 42, 40, 36, 41, 11, 23, 39, 21, 31, 15, 17, 10, 37, 28))
+# p2 = Chromosome((4, 1, 3, 24, 14, 9, 45, 38, 26, 46, 13, 32, 44, 20, 35, 12, 7,
+#                 16, 19, 5, 2, 34, 6, 30, 47, 18, 27, 33, 43, 29, 8, 48, 22,
+#                 25, 42, 40, 36, 41, 11, 23, 39, 21, 31, 15, 17, 10, 37, 28))
 
-p1 = Chromosome((1, 10, 16, 2, 37, 4, 3, 17, 18, 15, 14, 13, 12, 19, 11, 27,
-                 21, 22, 1, 26, 24, 23, 20, 9, 45, 44, 35, 43, 39, 1, 25, 38,
-                 5, 36, 8, 6, 7, 28, 30, 29, 34, 32, 31, 42, 41, 40, 1, 33))
+# p1 = Chromosome((1, 10, 16, 2, 37, 4, 3, 17, 18, 15, 14, 13, 12, 19, 11, 27,
+#                 21, 22, 1, 26, 24, 23, 20, 9, 45, 44, 35, 43, 39, 1, 25, 38,
+#                 5, 36, 8, 6, 7, 28, 30, 29, 34, 32, 31, 42, 41, 40, 1, 33))
 
-p2 = Chromosome((1, 22, 21, 20, 27, 23, 24, 26, 11, 18, 4, 37, 3, 2, 16, 10,
-                 1, 19, 12, 13, 14, 15, 17, 38, 39, 43, 40, 41, 35, 32, 42,
-                 44, 1, 9, 45, 31, 33, 7, 6, 36, 1, 25, 5, 8, 28, 30, 34,
-                 29))
+# p2 = Chromosome((1, 22, 21, 20, 27, 23, 24, 26, 11, 18, 4, 37, 3, 2, 16, 10,
+#                 1, 19, 12, 13, 14, 15, 17, 38, 39, 43, 40, 41, 35, 32, 42,
+#                 44, 1, 9, 45, 31, 33, 7, 6, 36, 1, 25, 5, 8, 28, 30, 34,
+#                 29))
 
-p1.dist = vrp.tour_dist(p1.tour)
-p2.dist = vrp.tour_dist(p2.tour)
-# p1 = Chromosome(1000)
-# p2 = Chromosome(1000)
-r = gpx.recombine(p1.to_tsp(), p2.to_tsp())
-if r:
-    r[0] = r[0].to_vrp(vrp.dimension)
-    r[1] = r[1].to_vrp(vrp.dimension)
+p1.dist = tsp.tour_dist(p1.tour)
+p2.dist = tsp.tour_dist(p2.tour)
+
+c1, c2 = gpx.recombine(p1, p2)
+
+gpx.f1_test = True
+gpx.f2_test = False
+gpx.f3_test = False
 
 print "Results ---------------------------------------------------------------"
 print
@@ -204,34 +204,53 @@ print "Internal tour b: ", gpx.partitions['tour_b']
 print
 print "Execution Time --------------------------------------------------------"
 print
-print "Partitioning: ", sum(gpx.timers['partition'])
-print "simple graphs: ", sum(gpx.timers['simple graph'])
-print "Classification: ", sum(gpx.timers['classify'])
-print "Fusion: ", sum(gpx.timers['fusion'])
-print "Build: ", sum(gpx.timers['build'])
-print "Recombination: ", sum(gpx.timers['recombination'])
+print "\tPartitioning: ", sum(gpx.timers['partition'])
+print "\tsimple graphs: ", sum(gpx.timers['simple graph'])
+print "\tClassification: ", sum(gpx.timers['classify'])
+print "\tFusion: ", sum(gpx.timers['fusion'])
+print "\tBuild: ", sum(gpx.timers['build'])
+print "\tRecombination: ", sum(gpx.timers['recombination'])
 print
-print "Partitions ------------------------------------------------------------"
+print "Partitioning ----------------------------------------------------------"
 print
-print "Vertices: ", gpx.partitions['vertices']
+print "\tFeasible type 1: ", gpx.counters['feasible_1']
+print "\tFeasible type 2: ", gpx.counters['feasible_2']
+print "\tFeasible type 3: ", gpx.counters['feasible_3']
+print "\tInfeasible: ", gpx.counters['infeasible']
+print "\tFusions: ", gpx.counters['fusions']
+print "\tUnsolved: ", gpx.counters['unsolved']
+print "\tInfeasible tour handling: ", gpx.counters['inf_tours']
 print
-print "AB_cycles: ", gpx.partitions['ab_cycles']
+print "Partitions vertices: --------------------------------------------------"
+print
+for key, value in gpx.partitions['vertices'].items():
+    print key, value
+print
+print "AB_cycles: -----------------------------------------------------------"
+print
+for key, value in gpx.partitions['ab_cycles'].items():
+    print key, value
 print
 print "simple graph a"
-for value in gpx.partitions['simple_graph_a'].values():
-    print value
+for key in gpx.partitions['simple_graph_a']:
+    print
+    for k in gpx.partitions['simple_graph_a'][key]:
+        print key, k, gpx.partitions['simple_graph_a'][key][k]
+print
 print "simple graph b"
-for value in gpx.partitions['simple_graph_b'].values():
-    print value
+for key in gpx.partitions['simple_graph_b']:
+    print
+    for k in gpx.partitions['simple_graph_b'][key]:
+        print key, k, gpx.partitions['simple_graph_b'][key][k]
 print
 print "Feasible: ", gpx.partitions['feasible']
 print "Infeasible: ", gpx.partitions['infeasible']
-if r:
+if c1:
     print
     print "Solutions ---------------------------------------------------------"
     print
-    print "Solution 1: ", r[0].tour, ", Distance: ", r[0].dist
+    print "Solution 1: ", c1.tour, ", Distance: ", c1.dist
     print
-    print "Solution 2: ", r[1].tour, ", Distance: ", r[1].dist
+    print "Solution 2: ", c1.tour, ", Distance: ", c1.dist
     print
-    print "Improvment: ", (p1.dist + p2.dist) - (r[0].dist + r[1].dist)
+    print "Improvment: ", (p1.dist + p2.dist) - (c1.dist + c1.dist)

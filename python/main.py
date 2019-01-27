@@ -43,9 +43,6 @@ p.add_argument("-r", type=float, default=0,
 p.add_argument("-e", help="Elitism. Number of individuals to preserve",
                type=int, default=0)
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
-p.add_argument("-j", choices=['random', '2opt', 'nn', 'nn2opt'],
-               default = 'random',
-               help="Method to repopulate after crossover")
 p.add_argument("-m", help="Mutation probability", type=float,
                default=0)
 p.add_argument("-t", help="Mutation operator", default='2opt',
@@ -155,6 +152,8 @@ def run_ga(id):
                         name='Average fitness')
             plt_mgr.add(x=ga.generation, y=ga.counters['best_fit'][-1],
                         name='Best fitness')
+            plt_mgr.add(x=ga.generation, y=ga.counters['cross'][-1],
+                        name='Crossover')
             plt_mgr.update()
         # Logging
         avg_fitness[ga.generation].append(ga.counters['avg_fit'][-1])
@@ -167,11 +166,11 @@ def run_ga(id):
             ga.tournament_selection(args.k)
         elif args.K == 'True':
             ga.rank_selection()
+        elif args.P == 'True':
+            ga.pairwise_selection()
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
-        # Repopulation
-        ga.repopulate(args.j)
         # Mutation
         if args.m:
             ga.mutate(args.m, args.t)

@@ -128,8 +128,9 @@ class GA(object):
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
         # Assert population size
-        assert size == len(self._population), "ga, gen_pop"
         self._pop_size = size
+        assert size == len(self._population), "ga, gen_pop"
+
 
     # Evaluate the entire population
     def evaluate(self):
@@ -199,6 +200,13 @@ class GA(object):
         # Assure population size remains the same
         assert len(self._population) == self._pop_size, "Tournament, pop size"
 
+    # Pairwise selection
+    def pairwise_selection(self):
+        selected = list()
+        for p1, p2 in combinations(set(self._population), 2):
+            selected.extend([p1, p2])
+        self._population = selected
+
     # Ranking selection
     def rank_selection(self, weight):
         selected = list()
@@ -212,36 +220,33 @@ class GA(object):
         # Register start time
         start_time = time.time()
 
-        # Pairwise recombination
-        if pairwise == 'True':
-            selected = list()
-            for pair in combinations(set(self._population), 2):
-                selected.extend([pair[0], pair[1]])
-            self._population = selected
-
         # New generation
-        children = set()
-
+        children = list()
         # Counters
         cross = 0
-
         # Recombination
         for p1, p2 in zip(self._population[0::2], self._population[1::2]):
             # print p1.dist
             if random.random() < p_cross:
                 c1, c2 = self._xop.recombine(p1, p2)
+                children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     cross += 1
 
         # Reduce population in case of pairwise recombination
-        children = list(children)
         if pairwise == 'True':
+            # Remove duplicates
+            children = set(children)
+            children = list(children)
             # Reevaluate population
             for c in children:
                 c.fitness = self._evaluate(c)
             children.sort(key=attrgetter('fitness'), reverse=True)
             self._population = children[:self._pop_size]
+            if len(self._population) < self._pop_size:
+                self._insert_pop(self._pop_size - len(self._population),
+                                 'random', eval=True)
         else:
             self._population = children
 
@@ -253,17 +258,14 @@ class GA(object):
                     == self._counters['best_fit'][-1])):
                 self._restart_pop = True
 
+        # Assure population size remains the same
+        assert len(self._population) == self._pop_size, "ga, recombination"
+
         # Update counters
         self._counters['cross'].append(cross)
 
         # Register execution time
         self._timers['recombination'].append(time.time() - start_time)
-
-    # Repopulate with unique solutions
-    def repopulate(self, method):
-        self._insert_pop(self._pop_size - len(self._population), method)
-        # Assure population size remains the same
-        assert len(self._population) == self._pop_size, "ga, repopulate"
 
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut, method):
@@ -301,7 +303,13 @@ class GA(object):
             self._restart_pop = False
             # Report population restart
             self._pop_restarted = True
-            # Sort pop
+            # Remove duplicates
+            self._population = set(self._population)
+            self._population = list(self._population)
+            # Complete population
+            self._insert_pop(self._pop_size - len(self._population), method,
+                             eval=True)
+            # Sort population
             self._population.sort(key=attrgetter('fitness'), reverse=True)
             # Reduce pop to acomodate restart
             self._population = self._population[:int(self._pop_size
