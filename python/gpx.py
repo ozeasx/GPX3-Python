@@ -154,24 +154,26 @@ class GPX(object):
                     continue
                 # Entrance vertice
                 if previous not in vertices[key]:
-                    simple_g[key]['out'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([previous, current]))
+                    simple_g[key]['out'].add(tuple(sorted([last, current])))
+                    simple_g[key]['common'].add(tuple(sorted([previous,
+                                                              current])))
                     last = current
                     continue
                 # Exit vertice
                 if next not in vertices[key]:
-                    simple_g[key]['in'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([current, next]))
+                    simple_g[key]['in'].add(tuple(sorted([last, current])))
+                    simple_g[key]['common'].add(tuple(sorted([current, next])))
                     last = current
             # Close outter graph
             if first[0] not in vertices[key]:  # previous not in
-                simple_g[key]['out'].add(frozenset([last, first[1]]))
-                simple_g[key]['common'].add(frozenset([first[0], first[1]]))
+                simple_g[key]['out'].add(tuple(sorted([last, first[1]])))
+                simple_g[key]['common'].add(tuple(sorted([first[0],
+                                                          first[1]])))
             # Close inner graph
             if first[2] not in vertices[key]:  # next not in
-                simple_g[key]['in'].add(frozenset([last, first[1]]))
-                simple_g[key]['common'].add(frozenset([first[2], first[1]]))
-
+                simple_g[key]['in'].add(tuple(sorted([last, first[1]])))
+                simple_g[key]['common'].add(tuple(sorted([first[2],
+                                                          first[1]])))
         # Store execution time
         self._timers['simple_graph'].append(time.time() - start_time)
         # Return constructed graphs
@@ -419,13 +421,13 @@ class GPX(object):
         # Mark start time
         start_time = time.time()
 
-        # Save parents tours
-        self._parent_1_tour = parent_1.tour
-        self._parent_2_tour = parent_2.tour
-
         # Duplicated solutions
         if parent_1 == parent_2:
             return parent_1, parent_2
+
+        # Save parents tours
+        self._parent_1_tour = parent_1.tour
+        self._parent_2_tour = parent_2.tour
 
         # Tours
         tour_a = list(parent_1.tour)

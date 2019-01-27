@@ -188,11 +188,11 @@ p2 = Chromosome([1,13,14,12,11,3,10,9,6,8,7,5,4,2])
 p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
 
-c1, c2 = gpx.recombine(p1, p2)
-
 gpx.f1_test = True
 gpx.f2_test = False
-gpx.f3_test = False
+gpx.f3_test = True
+
+c1, c2 = gpx.recombine(p1, p2)
 
 print "Results ---------------------------------------------------------------"
 print
