@@ -9,7 +9,7 @@ from collections import defaultdict
 import logging
 import csv
 from ga import GA
-from vrp import VRP
+from tsp import TSPLIB
 from gpx import GPX
 
 # Argument parser
@@ -23,8 +23,6 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
 multual.add_argument("-K", help="Ranking selection", default='False',
                      choices=['True', 'False'])
 # Optional arguments
-p.add_argument("-F", help="Fitness function", default='d',
-               choices=['a', 'b', 'c', 'd', 'e', 'f'])
 p.add_argument("-f1", help="Feasible 1 test", default='True',
                choices=['True', 'False'])
 p.add_argument("-f2", help="Feasible 2 test", default='True',
@@ -46,10 +44,8 @@ p.add_argument("-e", help="Elitism. Number of individuals to preserve",
                type=int, default=0)
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
 p.add_argument("-j", choices=['random', '2opt', 'nn', 'nn2opt'],
-               default='random',
+               default = 'random',
                help="Method to repopulate after crossover")
-p.add_argument("-i", help="Repair infesible solutions", default='False',
-               choices=['True', 'False'])
 p.add_argument("-m", help="Mutation probability", type=float,
                default=0)
 p.add_argument("-t", help="Mutation operator", default='2opt',
@@ -61,7 +57,7 @@ p.add_argument("-n", help="Number of iterations (paralelism will be used)",
                type=int, default=1)
 p.add_argument("-o", help="Directory to generate file reports", type=str)
 # Mandatory argument
-p.add_argument("I", help="VRP instance file", type=str)
+p.add_argument("I", help="TSP instance file", type=str)
 
 
 # Parser
@@ -71,7 +67,7 @@ args = p.parse_args()
 assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
                                       " and greater than 0"
 assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
-assert 0 < args.R <= 1, "2opt ratio must be in ]0,1] interval"
+assert 0 < args.R <= 1, "Rratio must be in ]0,1] interval"
 assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
 assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
 assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
@@ -81,7 +77,7 @@ assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
 # VRP Instance
-vrp = VRP(args.I)
+tsp = TSPLIB(args.I)
 
 # Create directory to report data
 if args.o is not None:
@@ -116,17 +112,15 @@ def run_ga(id):
     # Summary
     logger.info("------------------------------GA Settings------------------")
     logger.info("Initial population: %i", args.p)
-    logger.info("Truck number: %i", vrp.trucks)
     logger.info("Population restart percentage: %f", args.r)
     logger.info("Elitism: %i", args.e)
     logger.info("Tournament size: %i", args.k)
-    logger.info("Pairwise formation: %s", args.P)
+    logger.info("Pairwise recombination: %s", args.P)
     logger.info("Crossover probability: %f", args.c)
-    logger.info("Repair infeasible solutions: %s", args.i)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
-    logger.info("VRP Instance: %s", args.I)
-    logger.info("VRP dimension: %i", vrp.dimension)
+    logger.info("TSP Instance: %s", args.I)
+    logger.info("TSP dimension: %i", tsp.dimension)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Statistics variables
@@ -137,7 +131,7 @@ def run_ga(id):
     timers = defaultdict(list)
 
     # Crossover operator
-    gpx = GPX(vrp)
+    gpx = GPX(tsp)
 
     # Define which tests will be applied
     if args.f1 == 'False':
@@ -148,7 +142,7 @@ def run_ga(id):
         gpx.f3_test = True
 
     # GA Instance
-    ga = GA(vrp, gpx, args.F, args.e)
+    ga = GA(tsp, gpx, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M, args.R)
     # Fisrt population evaluation
@@ -176,10 +170,8 @@ def run_ga(id):
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
+        # Repopulation
         ga.repopulate(args.j)
-        # Repair infeasible solutions
-        if args.i == 'True':
-            ga.repair()
         # Mutation
         if args.m:
             ga.mutate(args.m, args.t)
@@ -233,7 +225,7 @@ if args.n > 1:
     pool.join()
 else:
     result = run_ga(0)
-    vrp.best_solution = result[2][0]
+    tsp.best_solution = result[2][0]
 
 # Consolidate data
 if args.n > 1:
@@ -249,7 +241,7 @@ if args.n > 1:
                 best_solution = value
 
     # Write best solution
-    vrp.best_solution = best_solution
+    tsp.best_solution = best_solution
 
     if args.o is not None:
 

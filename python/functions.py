@@ -1,137 +1,49 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-import copy
 import random
-from vrp_chromosome import VRP_Chromosome as Chromosome
-
-
-# Fix vrp solutions
-def fix(c, data):
-    routes = copy.deepcopy(c.routes)
-    demand = copy.deepcopy(c.load)
-    extra_demand = set()
-
-    # Remove clients which extrapolate truck capacity
-    for key in c.load:
-        if c.load[key] > data.capacity:
-            demand[key] = 0
-            for node in c.routes[key]:
-                demand[key] += data.demand(node)
-                if demand[key] > data.capacity:
-                    routes[key].remove(node)
-                    demand[key] -= data.demand(node)
-                    extra_demand.add(node)
-
-    # Insert extra demand nodes
-    limit = len(extra_demand) * 2
-    while limit and extra_demand:
-        limit -= 1
-        for key in routes:
-            if len(extra_demand) == 0:
-                break
-            test = next(iter(extra_demand))
-            # test = sorted(extra_demand)[-1]
-            if demand[key] + data.demand(test) <= data.capacity:
-                best = float("inf")
-                for i, node in enumerate(routes[key]):
-                    r = [routes[key][i-1]] + [test] + [routes[key][i]]
-                    dist = data.route_dist(r)
-                    if dist < best:
-                        best = dist
-                        index = i
-                if index == 0:
-                    index = -1
-                routes[key].insert(index, test)
-                demand[key] += data.demand(test)
-                extra_demand.remove(test)
-
-    # Insert remaining nodes
-    if len(extra_demand):
-        while extra_demand:
-            for key in routes:
-                routes[key].append(extra_demand.pop())
-                if len(extra_demand) == 0:
-                    break
-
-    # Build and return new tour
-    tour = list()
-    for key in routes:
-        tour.extend(routes[key])
-
-    return Chromosome(tour, None, data.tour_dist(tour))
+from collections import deque
+from chromosome import Chromosome
 
 
 # Nearest neighbour algorithm
 def nn(data, method):
 
-    # Tour and available nodes
+    # Tour
     tour = list()
-    nodes = set(range(2, data.dimension + 1))
-
-    # Create a route for each truck
-    for i in range(data.trucks):
-        # append depot
-        tour.append(1)
-        # append random truck route client
-        tour.append(random.sample(nodes, 1)[0])
-        # Remove added client from nodes
-        nodes.remove(tour[-1])
-        # Initialize route demand
-        demand = data.demand(tour[-1])
-        # Nodes that exceed truck capacity
-        over_capacity = set()
-        # Add nearest nodes
-        while nodes:
-            test = data.get_nearest(tour[-1], nodes - over_capacity)
-            # Test if are nodes available
-            if test is None:
-                break
-            # Test candidate demand
-            elif demand + data.demand(test) <= data.capacity:
-                tour.append(test)
-                nodes.remove(test)
-                demand += data.demand(test)
-            # Update nodes that exceed capacity
-            else:
-                over_capacity.add(test)
-
-    # Return only a complete solution
-    if len(nodes) == 0:
-        c = Chromosome(tour, None, data.tour_dist(tour))
-        if method == "nn2opt":
-            c = vrp_2opt(c, data)
-        # Return created solution
-        return c
-    else:
-        return None
-
-
-# Run 2opt over vrp solution
-def vrp_2opt(c, data):
-    new_tour = list()
+    # Available nodes
+    nodes = set(range(1, data.dimension + 1))
+    # Choose first random node
+    tour.append(random.sample(nodes, 1)[0])
+    # Remove added client from available nodes
+    nodes.remove(tour[-1])
+    # Add nearest nodes
     dist = 0
-
-    for key, route in c.routes.items():
-        t, d = two_opt(route, data.tour_dist(route), data)
-        new_tour.extend(t)
+    while nodes:
+        n, d = data.get_nearest(tour[-1], nodes)
+        tour.append(n)
         dist += d
 
-    return Chromosome(new_tour, None, dist)
+    c = Chromosome(tour, dist)
+    if method == 'nn2opt':
+        c = two_opt(c, data)
+    return c
 
 
 # 2-opt adapted from
 # https://en.wikipedia.org/wiki/2-opt
 # https://github.com/rellermeyer/99tsp/blob/master/python/2opt/TSP2opt.py
 # http://pedrohfsd.com/2017/08/09/2opt-part1.html
-# https://rawgit.com/pedrohfsd/TSP/develop/2opt.js ""
-def two_opt(tour, dist, data):
-    # Inicial tour
-    best_tour = list(tour)
+# https://rawgit.com/pedrohfsd/TSP/develop/2opt.js
+
+
+def two_opt(chromosome, data):
+    # Initial tour
+    best_tour = list(chromosome.tour)
     # Get tour dist
-    best_dist = dist
+    best_dist = chromosome.dist
     # Get dimension
-    dimension = len(tour)
+    dimension = chromosome.dimension
     # Begin with no improvement
     improved = True
     # Tested inversions
@@ -139,7 +51,7 @@ def two_opt(tour, dist, data):
     # Stop when no improvement is made
     while improved:
         improved = False
-        for i in xrange(1, dimension - 1):
+        for i in xrange(dimension - 1):
             for j in xrange(i + 1, dimension):
                 # Do not invert whole tour
                 if j-i == dimension - 1:
@@ -180,6 +92,11 @@ def two_opt(tour, dist, data):
                     improved = True
 
     # Make sure 2opt is doing its job
-    assert best_dist <= dist, "Something wrong..."
+    assert best_dist <= chromosome.dist, "Something wrong..."
+    # Rotate solution to begin with 1
+    p = best_tour.index(1)
+    best_tour = deque(best_tour)
+    best_tour.rotate(-p)
+
     # Return solution
-    return best_tour, best_dist
+    return Chromosome(best_tour, best_dist)

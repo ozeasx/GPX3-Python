@@ -4,7 +4,7 @@
 import os
 from itertools import combinations
 from shell import Shell
-from vrp_chromosome import VRP_Chromosome as Chromosome
+from chromosome import Chromosome
 
 
 class TSPLIB(object):
@@ -69,7 +69,7 @@ class TSPLIB(object):
             except ValueError:
                 pass
             # Store best solution
-            self._best_solution = Chromosome(best_tour, None,
+            self._best_solution = Chromosome(best_tour,
                                              self.tour_dist(best_tour))
 
     # Get instance dimension
@@ -118,7 +118,7 @@ class TSPLIB(object):
             if dist < last_dist:
                 nearest = j
                 last_dist = dist
-        return nearest
+        return nearest, dist
 
     # Calc AB_cycle distance using distance matrix (memory)
     def ab_cycle_dist(self, ab_cycle):

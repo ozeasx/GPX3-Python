@@ -7,7 +7,7 @@ from collections import deque
 from itertools import combinations
 from operator import attrgetter
 from graph import Graph
-from vrp_chromosome import VRP_Chromosome as Chromosome
+from chromosome import Chromosome
 
 
 # Generalized partition crossover operator
@@ -524,7 +524,7 @@ class GPX(object):
             # Make sure GPX return best solutions
             candidates = list([parent_1, parent_2])
             for tour, dist in constructed:
-                candidates.append(Chromosome(tour, None, dist))
+                candidates.append(Chromosome(tour, dist))
             # Sort by distance
             candidates.sort(key=attrgetter('dist'))
             # Improvment assertion
