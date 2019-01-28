@@ -7,6 +7,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
+import multiprocess
 from chromosome import Chromosome
 import functions
 
@@ -130,7 +131,6 @@ class GA(object):
         # Assert population size
         self._pop_size = size
         assert size == len(self._population), "ga, gen_pop"
-
 
     # Evaluate the entire population
     def evaluate(self):
