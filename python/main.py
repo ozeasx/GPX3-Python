@@ -29,7 +29,7 @@ p.add_argument("-f2", help="Feasible 2 test", default='True',
                choices=['True', 'False'])
 p.add_argument("-f3", help="Feasible 3 test", default='False',
                choices=['True', 'False'])
-p.add_argument("-p", help="Initial population", type=int, default=100)
+p.add_argument("-p", help="Population size", type=int, default=100)
 p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random',
                help="Method to generate inicial population")

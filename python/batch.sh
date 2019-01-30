@@ -1,7 +1,8 @@
 #!/bin/bash
 
-./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpA/ ../cvrp/B-n31-k5.vrp &
-./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpB/ ../cvrp/B-n34-k5.vrp &
-./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpC/ ../cvrp/B-n35-k5.vrp &
-./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpD/ ../cvrp/B-n38-k6.vrp &
-./main.py -c 1 -M nn -R 0.5 -m 0.05 -P True -e 2 -r 0.5 -f3 True -i True -n 5 -o ../result2/vrpE/ ../cvrp/B-n41-k6.vrp &
+nohup ./test.py -p 1000 ../tsplib/ulysses16.tsp > ../reports/ulysses16.out &
+nohup ./test.py -p 1000 ../tsplib/berlin52.tsp > ../reports/berlin52.out &
+nohup ./test.py -p 1000 ../tsplib/eil101.tsp > ../reports/eil101.out &
+
+nohup ./test.py -p 1000 ../tsplib/berlin52.tsp -M 2opt > ../reports/berlin52_2opt.out &
+nohup ./test.py -p 1000 ../tsplib/eil101.tsp -M 2opt > ../reports/eil101_2opt.out &

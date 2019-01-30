@@ -16,7 +16,10 @@ class GPX(object):
     def __init__(self, data=None):
         # dataset to compute distances
         self._data = data
-        # Infeasible value compared to feasible partitions
+        # Partitions types values
+        self._f1_weight = 1
+        self._f2_weight = 1
+        self._f3_weight = 1
         self._infeasible_weight = 0.4
         # Limit fusion trys (unused)
         self._fusion_limit = False
@@ -35,6 +38,20 @@ class GPX(object):
         self._timers = defaultdict(list)
         # Measure cumulative improvement over parents
         self._improvement = 0
+
+    # Getters -----------------------------------------------------------------
+
+    @property
+    def f1_weight(self):
+        return self._f1_weight
+
+    @property
+    def f2_weight(self):
+        return self._f2_weight
+
+    @property
+    def f3_weight(self):
+        return self._f3_weight
 
     @property
     def infeasible_weight(self):
@@ -72,6 +89,23 @@ class GPX(object):
     def timers(self):
         return self._timers
 
+    # Setters -----------------------------------------------------------------
+
+    @f1_weight.setter
+    def f1_weight(self, value):
+        assert 0 < value <= 1, "f1 weight must be in ]0,1] interval"
+        self._f1_weight = value
+
+    @f2_weight.setter
+    def f2_weight(self, value):
+        assert 0 < value <= 1, "f2 weight must be in ]0,1] interval"
+        self._f2_weight = value
+
+    @f3_weight.setter
+    def f3_weight(self, value):
+        assert 0 < value <= 1, "f3 weight must be in ]0,1] interval"
+        self._f3_weight = value
+
     @infeasible_weight.setter
     def infeasible_weight(self, value):
         assert 0 < value <= 1, "Infeasible weight must be in ]0,1] interval"
@@ -96,6 +130,8 @@ class GPX(object):
     def f3_test(self, value):
         assert value in [True, False]
         self._f3_test = value
+
+    # -------------------------------------------------------------------------
 
     # Find partitions using dfs
     def _partition(self, graph_a, graph_b):
@@ -127,6 +163,8 @@ class GPX(object):
         self._timers['partitioning'].append(time.time() - start_time)
         # Return vertice set and ab_cycles
         return vertices, ab_cycles
+
+    # -------------------------------------------------------------------------
 
     # Create the simple graph for all partitions for given tour
     def _gen_simple_graph(self, tour, vertices):
@@ -179,6 +217,8 @@ class GPX(object):
         # Return constructed graphs
         return dict(simple_g)
 
+    # -------------------------------------------------------------------------
+
     # Classify partitions feasibility by inner and outter graph comparison
     def _classify(self, simple_graph_a, simple_graph_b):
         # Mark start time
@@ -186,7 +226,7 @@ class GPX(object):
 
         # Return Variables
         feasible = defaultdict(set)
-        # To len(set.union(*feasible.values())) return 0 when feasible is empty
+        # Avoid problems with set.union(*feasible.values())
         feasible[0] = set()
         infeasible = set()
 
@@ -213,6 +253,8 @@ class GPX(object):
 
         # Return classified partitions
         return feasible, infeasible
+
+    # -------------------------------------------------------------------------
 
     # Try fusion of infeasible partitions
     def _fusion(self, partitions):
@@ -285,9 +327,9 @@ class GPX(object):
                     # Update information if successfull fusion
                     if test in set.union(*feasible.values()):
                         self._counters['fusions'] += 1
-                        self._counters['fusion_1'] += len(feasible[1])
-                        self._counters['fusion_2'] += len(feasible[2])
-                        self._counters['fusion_3'] += len(feasible[3])
+                        self._counters['fusions_1'] += len(feasible[1])
+                        self._counters['fusions_2'] += len(feasible[2])
+                        self._counters['fusions_3'] += len(feasible[3])
                         fuse(test, 'feasible')
 
         # Fuse all remaining partitions in one infeasible partition to be
@@ -309,6 +351,8 @@ class GPX(object):
 
         # Store execution time
         self._timers['fusion'].append(time.time() - start_time)
+
+    # -------------------------------------------------------------------------
 
     # Build solutions
     def _build(self, partitions, common_graph, tour_dist):
@@ -423,6 +467,8 @@ class GPX(object):
         # Return created tours information
         return candidates
 
+    # -------------------------------------------------------------------------
+
     # Partition Crossover
     def recombine(self, parent_1, parent_2):
         # Mark start time
@@ -486,11 +532,15 @@ class GPX(object):
                                                   simple_graph_c_n)
 
         # Score partitions scheme
-        score_m = (len(set.union(*feasible_m.values())) + len(infeasible_m)
-                   * self._infeasible_weight)
+        score_m = (len(feasible_m[1]) * self._f1_weight
+                   + len(feasible_m[2]) * self._f2_weight
+                   + len(feasible_m[3]) * self._f3_weight
+                   + len(infeasible_m) * self._infeasible_weight)
 
-        score_n = (len(set.union(*feasible_n.values())) + len(infeasible_n)
-                   * self._infeasible_weight)
+        score_n = (len(feasible_n[1]) * self._f1_weight
+                   + len(feasible_n[2]) * self._f2_weight
+                   + len(feasible_n[3]) * self._f3_weight
+                   + len(infeasible_n) * self._infeasible_weight)
 
         # Store better partitioning scheme and update counters
         partitions = dict()
