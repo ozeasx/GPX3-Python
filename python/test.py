@@ -7,55 +7,60 @@ from itertools import combinations
 import multiprocessing
 from gpx import GPX
 
-# Snipet code to test a lot of random cases
-tsp = TSPLIB("../tsplib/berlin52.tsp")
+# TSP and GPX instances
+tsp = TSPLIB("../tsplib/ulysses16.tsp")
 gpx = GPX(tsp)
 
-# p1 = Chromosome(16)
-# p1.dist = tsp.tour_dist(p1.tour)
 
-# r1 = mut.two_opt(p1, tsp)
-
-# print p1.tour
-# print p1.dist
-# print r1.tour
-# print r1.dist
-
-gpx.f1_test = True
-gpx.f2_test = True
-gpx.f3_test = False
-
-
-def couple_formation(q, dimension, data):
+# Create solutions combinations
+def couple_formation(size, dimension, data):
     print "Creating population..."
     population = set()
-    for i in xrange(q):
+    for i in xrange(size):
         c = Chromosome(dimension, data)
         while c in population:
             c = Chromosome(dimension, data)
         c.dist = data.tour_dist(c.tour)
         population.add(c)
     print "Done"
-    print "Creating couples..."
-    couples = set()
-    for pair in combinations(population, 2):
-        couples.add(pair)
-    print "Done..."
-    return couples
+    return combinations(population, 2)
 
 
 def recombine(couple):
-    p1, p2 = tuple(couple)
+    p1, p2, f1, f2, f3 = couple
+    print p1, p2, f1, f2, f3
+    gpx = GPX(tsp)
+    gpx.f1_test = f1
+    gpx.f2_test = f2
+    gpx.f3_test = f3
     c1, c2 = gpx.recombine(p1, p2)
-    return (p1.dist + p2.dist) - (c1.dist + c2.dist)
+    return gpx.counters
 
 
-def test(pop, dimension, data):
+# Test
+def test(couples, f1, f2, f3):
+    print "Test started..."
+    pop = set()
+    for pair in couples:
+        pair = list(pair)
+        pair.extend([f1, f2, f3])
+        pair = tuple(pair)
+        pop.add(pair)
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    couples = couple_formation(pop, dimension, data)
-    print "Recombinations started..."
-    result = pool.map(recombine, couples)
-    print "Improved: ", len(result)-result.count(0), "/", len(result)
+    result = pool.map(recombine, pop)
+    print result
+    # print "Test finished..."
+    # print "Partitioning ------------------------------------------------------"
+    # print "\tFeasible type 1: ", gpx.counters['feasible_1']
+    # print "\tFeasible type 2: ", gpx.counters['feasible_2']
+    # print "\tFeasible type 3: ", gpx.counters['feasible_3']
+    # print "\tInfeasible: ", gpx.counters['infeasible']
+    # print "\tFusions: ", gpx.counters['fusions']
+    # print "\tUnsolved: ", gpx.counters['unsolved']
+    # print "\tInfeasible tour: ", gpx.counters['inf_tours']
+    # print "Improved: ", len(result)-result.count(0), "/", len(result)
 
 
-test(1000, 10, tsp)
+couples = couple_formation(10, 16, tsp)
+
+test(couples, True, False, False)

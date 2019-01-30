@@ -185,30 +185,28 @@ class GPX(object):
         start_time = time.time()
 
         # Return Variables
-        feasible = set()
+        feasible = defaultdict(set)
+        # To len(set.union(*feasible.values())) return 0 when feasible is empty
+        feasible[0] = set()
         infeasible = set()
 
         for key in simple_graph_a:
             # Inner graph test
             if self._f1_test and (simple_graph_a[key]['in']
                                   == simple_graph_b[key]['in']):
-                feasible.add(key)
-                self._counters['feasible_1'] += 1
+                feasible[1].add(key)
             # Outter graph test
             elif self._f2_test and (simple_graph_a[key]['out']
                                     == simple_graph_b[key]['out']):
-                feasible.add(key)
-                self._counters['feasible_2'] += 1
+                feasible[2].add(key)
             # All graphs test
             elif self._f3_test and (len(simple_graph_a[key]['in']
                                         & simple_graph_b[key]['out']) == 0
                                     and len(simple_graph_a[key]['out']
                                             & simple_graph_b[key]['in']) == 0):
-                feasible.add(key)
-                self._counters['feasible_3'] += 1
+                feasible[3].add(key)
             else:
                 infeasible.add(key)
-                self._counters['infeasible'] += 1
 
         # Store execution time
         self._timers['classification'].append(time.time() - start_time)
@@ -226,7 +224,7 @@ class GPX(object):
         fused = set()
 
         # Function to fuse ab_cycles
-        def fuse(fusion, dest='feasible'):
+        def fuse(fusion, dest):
             partitions['ab_cycles']['A'][fusion] = deque()
             partitions['ab_cycles']['B'][fusion] = deque()
             for i in fusion:
@@ -285,9 +283,12 @@ class GPX(object):
                     start_time = time.time() - start_time
 
                     # Update information if successfull fusion
-                    if test in feasible:
+                    if test in set.union(*feasible.values()):
                         self._counters['fusions'] += 1
-                        fuse(test)
+                        self._counters['fusion_1'] += len(feasible[1])
+                        self._counters['fusion_2'] += len(feasible[2])
+                        self._counters['fusion_3'] += len(feasible[3])
+                        fuse(test, 'feasible')
 
         # Fuse all remaining partitions in one infeasible partition to be
         # handled by build method. The last of the mohicans remains infeasible
@@ -297,7 +298,8 @@ class GPX(object):
                 self._counters['unsolved'] += len(partitions['infeasible'])
                 fuse(tuple(partitions['infeasible']), 'infeasible')
             else:
-                fuse(tuple(partitions['infeasible']))
+                # All remaining partitions after f1 and fusion are feasible
+                fuse(tuple(partitions['infeasible']), 'feasible')
         # The last of the mohicans
         elif len(partitions['infeasible']) == 1:
             if self._f2_test or self._f3_test:
@@ -345,7 +347,7 @@ class GPX(object):
                 elif diff < minor_diff:
                     minor_key = key
                     minor_diff = diff
-                # Chose best edges in each feasible partition
+                # Chose best path in each feasible partition
                 if dists['A'][key] <= dists['B'][key]:
                     solution.add(tuple(['A', key]))
                 else:
@@ -401,18 +403,21 @@ class GPX(object):
             vertices, tour = Graph.dfs(graph, 1)
             if len(vertices) == len(self._parent_1_tour):
                 candidates.append([tour, dist])
-                # self._counters['feasible_tours'] += 1
+            # An infeasible tour was created with only feasible partitions?
             elif not inf_key:
                 self._counters['inf_tours'] += 1
-                print self._parent_1_tour
-                print self._parent_2_tour
-        # For infeasible handling, two solutions should be feasible at least
-        if inf_key and not self._f3_test:
+
+        # Two constructed solutions should be feasible at least for f1 and f2
+        if self._f1_test and not (self._f3_test or self._f2_test):
             assert len(candidates) >= 2, (self._parent_1_tour,
                                           self._parent_2_tour,
-                                          "Infeasible handling")
+                                          "f1 Infeasible handling")
+        elif self._f2_test and not self._f3_test:
+            assert len(candidates) >= 1, (self._parent_1_tour,
+                                          self._parent_2_tour,
+                                          "f1 f2 Infeasible handling")
         # Sort by distance
-        candidates.sort(key=lambda s: s[1])
+        # candidates.sort(key=lambda s: s[1])
         # Store execution time
         self._timers['build'].append(time.time() - start_time)
         # Return created tours information
@@ -481,25 +486,34 @@ class GPX(object):
                                                   simple_graph_c_n)
 
         # Score partitions scheme
-        score_m = len(feasible_m) + len(infeasible_m) * self._infeasible_weight
+        score_m = (len(set.union(*feasible_m.values())) + len(infeasible_m)
+                   * self._infeasible_weight)
 
-        score_n = len(feasible_n) + len(infeasible_n) * self._infeasible_weight
+        score_n = (len(set.union(*feasible_n.values())) + len(infeasible_n)
+                   * self._infeasible_weight)
 
-        # Store better partitioning scheme
+        # Store better partitioning scheme and update counters
         partitions = dict()
+        partitions['tour_a'] = tour_a
         if score_m >= score_n:
-            partitions['tour_a'] = tour_a
             partitions['tour_b'] = tour_b
-            partitions['feasible'] = feasible_m
+            self._counters['feasible_1'] += len(feasible_m[1])
+            self._counters['feasible_2'] += len(feasible_m[2])
+            self._counters['feasible_3'] += len(feasible_m[3])
+            partitions['feasible'] = set.union(*feasible_m.values())
+            self._counters['infeasible'] += len(infeasible_m)
             partitions['infeasible'] = infeasible_m
             partitions['vertices'] = vertices_m
             partitions['ab_cycles'] = ab_cycles_m
             partitions['simple_graph_a'] = simple_graph_a_m
             partitions['simple_graph_b'] = simple_graph_b_m
         else:
-            partitions['tour_a'] = tour_a
             partitions['tour_b'] = tour_c
-            partitions['feasible'] = feasible_n
+            self._counters['feasible_1'] += len(feasible_n[1])
+            self._counters['feasible_2'] += len(feasible_n[2])
+            self._counters['feasible_3'] += len(feasible_n[3])
+            partitions['feasible'] = set.union(*feasible_n.values())
+            self._counters['infeasible'] += len(infeasible_n)
             partitions['infeasible'] = infeasible_n
             partitions['vertices'] = vertices_n
             partitions['ab_cycles'] = ab_cycles_n
@@ -525,12 +539,16 @@ class GPX(object):
                             & parent_2.undirected_graph)
             # Build solutions
             constructed = self._build(partitions, common_graph, parent_1.dist)
-            # Make sure GPX return best solutions
-            candidates = list([parent_1, parent_2])
+            # Make sure GPX return at last two solutions
+            if self._f2_test or self._f3_test:
+                candidates = list([parent_1, parent_2])
+            else:
+                candidates = list()
+            # Append constructed solutions
             for tour, dist in constructed:
                 candidates.append(Chromosome(tour, dist))
-            # Sort by distance
-            candidates.sort(key=attrgetter('dist'))
+            # Exclude duplicates and sort by distance
+            candidates = sorted(set(candidates), key=attrgetter('dist'))
             # Improvment assertion
             parents_sum = parent_1.dist + parent_2.dist
             children_sum = candidates[0].dist + candidates[1].dist

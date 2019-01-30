@@ -6,12 +6,23 @@ from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-tsp = TSPLIB("../tsplib/berlin52.tsp")
+tsp = TSPLIB("../tsplib/ulysses16.tsp")
 gpx = GPX(tsp)
 
 # Whitley2010-F1
-p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
-p2 = Chromosome([1,13,14,12,11,3,10,9,6,8,7,5,4,2])
+# p1 = Chromosome([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14])
+# p2 = Chromosome([1, 13, 14, 12, 11, 3, 10, 9, 6, 8, 7, 5, 4, 2])
+
+# Ulysses test f1, f2 problem
+# p1 = Chromosome([6, 12, 9, 13, 14, 8, 4, 16, 15, 3, 1, 7, 10, 5, 2, 11])
+# p2 = Chromosome([12, 4, 2, 1, 14, 15, 13, 6, 3, 16, 9, 5, 8, 11, 10, 7])
+
+# Ulysses test f1, f2 problem
+# p1 = Chromosome([3, 1, 13, 11, 15, 9, 16, 5, 12, 14, 2, 4, 10, 7, 6, 8])
+# p2 = Chromosome([14, 11, 3, 9, 6, 10, 13, 2, 7, 12, 1, 4, 5, 16, 8, 15])
+
+p1 = Chromosome([10, 14, 9, 6, 2, 11, 16, 1, 4, 3, 7, 8, 12, 15, 5, 13])
+p2 = Chromosome([8, 5, 4, 10, 14, 16, 3, 12, 9, 11, 15, 1, 2, 13, 7, 6])
 
 # Tinos2014-F1
 # p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11])
@@ -159,7 +170,7 @@ p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
 
 gpx.f1_test = True
-gpx.f2_test = False
+gpx.f2_test = True
 gpx.f3_test = False
 
 c1, c2 = gpx.recombine(p1, p2)
@@ -221,6 +232,6 @@ if c1:
     print
     print "Solution 1: ", c1.tour, ", Distance: ", c1.dist
     print
-    print "Solution 2: ", c1.tour, ", Distance: ", c1.dist
+    print "Solution 2: ", c2.tour, ", Distance: ", c2.dist
     print
-    print "Improvment: ", (p1.dist + p2.dist) - (c1.dist + c1.dist)
+    print "Improvment: ", (p1.dist + p2.dist) - (c1.dist + c2.dist)
