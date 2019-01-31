@@ -1,7 +1,9 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+import time
 import os
+import sys
 import argparse
 from tsp import TSPLIB
 from chromosome import Chromosome
@@ -10,6 +12,8 @@ from collections import defaultdict
 import multiprocessing
 from gpx import GPX
 import functions
+import csv
+import copy
 
 # Argument parser
 p = argparse.ArgumentParser(description="Tester")
@@ -17,17 +21,23 @@ p.add_argument("I", help="TSP instance file", type=str)
 p.add_argument("-M", choices=['random', '2opt'], default='random',
                help="Method to generate inicial population")
 p.add_argument("-p", help="Population size", type=int, default=100)
+p.add_argument("-n", help="Number of iterations",
+               type=int, default=1)
+p.add_argument("-o", help="Results output csv file", type=str)
 # Parser
 args = p.parse_args()
-# Assert instance file
+
+#  Arguments assertions
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
+assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 
 # TSP and GPX instances
 tsp = TSPLIB(args.I)
+optima = tsp.best_solution.dist
 
 
 # Create solutions combinations
-def couple_formation(size, dimension, data, method='random'):
+def gen_pop(size, dimension, data, method='random'):
     print "Creating population..."
     population = set()
     if method == 'random':
@@ -44,70 +54,94 @@ def couple_formation(size, dimension, data, method='random'):
             c.dist = data.tour_dist(c.tour)
             population.add(functions.two_opt(c, data))
     print "Done"
-    return set(combinations(population, 2))
+    return population
 
 
-def recombine(couple):
-    p1, p2, f1, f2, f3 = couple
+def recombine(pair):
     gpx = GPX(tsp)
     gpx.f1_test = f1
     gpx.f2_test = f2
     gpx.f3_test = f3
-    c1, c2 = gpx.recombine(p1, p2)
+    c1, c2 = gpx.recombine(*pair)
     return gpx.counters
 
 
 # Test
-def test(couples, f1, f2, f3):
-    print "Test started..."
-    pop = set()
-    for pair in couples:
-        pair = list(pair)
-        pair.extend([f1, f2, f3])
-        pop.add(tuple(pair))
+def test(population, out):
     # Multiprocessing
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    result = pool.map(recombine, pop)
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+    result = pool.map(recombine, combinations(population, 2))
+    pool.close()
+    pool.join()
+    # result = list()
+    # for pair in combinations(population, 2):
+    #     result.append(recombine(pair))
     # Consolidate results
-    counter = defaultdict(int)
     for c in result:
-        counter['feasible_1'] += c['feasible_1']
-        counter['feasible_2'] += c['feasible_2']
-        counter['feasible_3'] += c['feasible_3']
-        counter['infeasible'] += c['infeasible']
-        counter['fusions'] += c['fusions']
-        counter['fusions_1'] += c['fusions_1']
-        counter['fusions_2'] += c['fusions_2']
-        counter['fusions_3'] += c['fusions_3']
-        counter['unsolved'] += c['unsolved']
-        counter['inf_tours'] += c['inf_tours']
-        counter['parents_sum'] += c['parents_sum']
-        counter['children_sum'] += c['children_sum']
+        out['failed'] += c['failed']
+        out['feasible_1'] += c['feasible_1']
+        out['feasible_2'] += c['feasible_2']
+        out['feasible_3'] += c['feasible_3']
+        out['infeasible'] += c['infeasible']
+        out['fusion'] += c['fusion']
+        out['fusion_1'] += c['fusion_1']
+        out['fusion_2'] += c['fusion_2']
+        out['fusion_3'] += c['fusion_3']
+        out['unsolved'] += c['unsolved']
+        out['inf_tour'] += c['inf_tour']
+        out['bad_child'] += c['bad_child']
         if c['parents_sum'] - c['children_sum'] > 0:
-            counter['improved'] += 1
-    print "Test finished with dataset ", args.I
-    print "Partitioning ------------------------------------------------------"
-    print "\tFeasible 1: ", counter['feasible_1']
-    print "\tFeasible 2: ", counter['feasible_2']
-    print "\tFeasible 3: ", counter['feasible_3']
-    print "\tInfeasible: ", counter['infeasible']
-    print "\tFusions: ", counter['fusions']
-    print "\tFusions 1: ", counter['fusions_1']
-    print "\tFusions 2: ", counter['fusions_2']
-    print "\tFusions 3: ", counter['fusions_3']
-    print "\tUnsolved: ", counter['unsolved']
-    print "\tInfeasible tour: ", counter['inf_tours']
-    print "Improved: ", counter['improved'], "/", len(result)
-    diff = counter['parents_sum'] - counter['children_sum']
-    parents = counter['parents_sum']
-    best = tsp.best_solution.dist
-    print "Total improvement/parents: ", diff / parents * 100, "%"
-    print "Total improvement/optima: ", diff / len(result) / best * 100, "%"
+            out['improved'] += 1
+        out['parents_sum'] += c['parents_sum']
+        out['children_sum'] += c['children_sum']
+    diff = float(out['parents_sum'] - out['children_sum'])
+    parents = float(out['parents_sum'])
+    out['parents_improvement'] += diff / parents * 100
+    out['optima_improvement'] += diff / optima / len(result) * 100
+    out['recombinations'] = len(result)
 
 
-couples = couple_formation(args.p, tsp.dimension, tsp, args.M)
 
-test(couples, True, False, False)
-test(couples, True, True, False)
-test(couples, True, False, True)
-test(couples, True, True, True)
+# Counter
+counter = dict()
+for i in xrange(4):
+    counter[i] = defaultdict(int)
+
+# Tests arrange
+tests = [(True, False, False), (True, True, False),
+         (True, False, True), (True, True, True)]
+
+# Execution
+for n in xrange(args.n):
+
+    start_time = time.time()
+
+    population = gen_pop(args.p, tsp.dimension, tsp, args.M)
+
+    print "Test ", n+1, "/", args.n, "started.."
+    for i, f in enumerate(tests):
+        f1, f2, f3 = f
+        test(population, counter[i])
+    print "Done in ", time.time() - start_time
+
+
+# Calc averages
+print "Consolidanting results"
+for key in counter:
+    for field in counter[key]:
+        counter[key][field] /= float(args.n)
+
+# Write data to csv file and stdout
+if args.o:
+    with open(args.o, 'w') as csv_file:
+        writer = csv.writer(csv_file)
+        writer.writerow(counter[0].keys())
+        for key in counter:
+            writer.writerow(counter[key].values())
+    print "Results wrote to ", args.o
+# Write to stdout
+else:
+    writer = csv.writer(sys.stdout)
+    writer.writerow(counter[0].keys())
+    for key in counter:
+        writer.writerow(counter[key].values())
