@@ -13,7 +13,7 @@ from chromosome import Chromosome
 # Generalized partition crossover operator
 class GPX(object):
     # Class initialization
-    def __init__(self, data=None):
+    def __init__(self, data=None, f1=True, f2=False, f3=False):
         # dataset to compute distances
         self._data = data
         # Partitions types values
@@ -24,9 +24,9 @@ class GPX(object):
         # Limit fusion trys (unused)
         self._fusion_limit = False
         # F1, F2 and F3 tests
-        self._f1_test = True
-        self._f2_test = True
-        self._f3_test = False
+        self._f1_test = f1
+        self._f2_test = f2
+        self._f3_test = f3
         # Parents tours
         self._parent_1_tour = None
         self._parent_2_tour = None
@@ -326,7 +326,6 @@ class GPX(object):
 
                     # Update information if successfull fusion
                     if test in set.union(*feasible.values()):
-                        self._counters['fusion'] += 1
                         self._counters['fusion_1'] += len(feasible[1])
                         self._counters['fusion_2'] += len(feasible[2])
                         self._counters['fusion_3'] += len(feasible[3])
@@ -467,6 +466,9 @@ class GPX(object):
         # Mark start time
         start_time = time.time()
 
+        # Store parent sum
+        self._counters['parents_dist'] += (parent_1.dist + parent_2.dist)
+
         # Duplicated solutions
         if parent_1 == parent_2:
             return parent_1, parent_2
@@ -592,17 +594,16 @@ class GPX(object):
             # Append constructed solutions
             for tour, dist in constructed:
                 candidates.add(Chromosome(tour, dist))
-            # Exclude duplicates and sort by distance
+            # Exclude duplicates, sort by distance, get two of them
             candidates = tuple(sorted(candidates, key=attrgetter('dist'))[:2])
             # Improvement assertion
-            parents_sum = parent_1.dist + parent_2.dist
-            children_sum = candidates[0].dist + candidates[1].dist
-            assert parents_sum - children_sum >= 0, (parent_1.tour,
-                                                     parent_2.tour,
-                                                     "Improvement assertion")
+            parents_dist = self._counters['parents_dist']
+            children_dist = candidates[0].dist + candidates[1].dist
+            assert children_dist <= parents_dist, (parent_1.tour,
+                                                   parent_2.tour,
+                                                   "Improvement assertion")
             # To calc total improvement
-            self._counters['parents_sum'] += parents_sum
-            self._counters['children_sum'] += children_sum
+            self._counters['children_dist'] += children_dist
             # Measure execution time
             self._timers['recombination'].append(time.time() - start_time)
             # Return created solutions

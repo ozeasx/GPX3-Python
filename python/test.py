@@ -13,7 +13,7 @@ import multiprocessing
 from gpx import GPX
 import functions
 import csv
-import copy
+
 
 # Argument parser
 p = argparse.ArgumentParser(description="Tester")
@@ -34,6 +34,8 @@ assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 # TSP and GPX instances
 tsp = TSPLIB(args.I)
 optima = tsp.best_solution.dist
+
+all_pop = set()
 
 
 # Create solutions combinations
@@ -58,48 +60,44 @@ def gen_pop(size, dimension, data, method='random'):
 
 
 def recombine(pair):
-    gpx = GPX(tsp)
-    gpx.f1_test = f1
-    gpx.f2_test = f2
-    gpx.f3_test = f3
+    gpx = GPX(tsp, f1, f2, f3)
     c1, c2 = gpx.recombine(*pair)
     return gpx.counters
 
 
 # Test
-def test(population, out):
+def test(population):
+    # To store statistics
+    stats = dict()
     # Multiprocessing
     pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
     result = pool.map(recombine, combinations(population, 2))
     pool.close()
     pool.join()
-    # result = list()
-    # for pair in combinations(population, 2):
-    #     result.append(recombine(pair))
     # Consolidate results
-    for c in result:
-        out['failed'] += c['failed']
-        out['feasible_1'] += c['feasible_1']
-        out['feasible_2'] += c['feasible_2']
-        out['feasible_3'] += c['feasible_3']
-        out['infeasible'] += c['infeasible']
-        out['fusion'] += c['fusion']
-        out['fusion_1'] += c['fusion_1']
-        out['fusion_2'] += c['fusion_2']
-        out['fusion_3'] += c['fusion_3']
-        out['unsolved'] += c['unsolved']
-        out['inf_tour'] += c['inf_tour']
-        out['bad_child'] += c['bad_child']
-        if c['parents_sum'] - c['children_sum'] > 0:
-            out['improved'] += 1
-        out['parents_sum'] += c['parents_sum']
-        out['children_sum'] += c['children_sum']
-    diff = float(out['parents_sum'] - out['children_sum'])
-    parents = float(out['parents_sum'])
-    out['parents_improvement'] += diff / parents * 100
-    out['optima_improvement'] += diff / optima / len(result) * 100
-    out['recombinations'] = len(result)
+    for counter in result:
+        stats['feasible_1'] += counter['feasible_1']
+        stats['feasible_2'] += counter['feasible_2']
+        stats['feasible_3'] += counter['feasible_3']
+        stats['infeasible'] += counter['infeasible']
+        stats['fusion_1'] += counter['fusion_1']
+        stats['fusion_2'] += counter['fusion_2']
+        stats['fusion_3'] += counter['fusion_3']
+        stats['unsolved'] += counter['unsolved']
+        stats['inf_tour'] += counter['inf_tour']
+        stats['bad_child'] += counter['bad_child']
+        stats['failed'] += counter['failed']
+        stats['parents_dist'] += counter['parents_dist']
+        stats['children_dist'] += counter['children_dist']
+        if stats['children_dist'] < stats['parents_dist']:
+            stats['improved'] += 1
+    # Calc improvement
+    parents = float(stats['parents_dist'])
+    children = float(stats['children_dist'])
 
+    stats['parents_improvement'] += 1 - parents / children
+    # Return results
+    return stats
 
 
 # Counter
