@@ -36,8 +36,6 @@ class GPX(object):
         self._counters = defaultdict(int)
         # Dict with lists containing execution time of each step
         self._timers = defaultdict(list)
-        # Measure cumulative improvement over parents
-        self._improvement = 0
 
     # Getters -----------------------------------------------------------------
 
@@ -76,10 +74,6 @@ class GPX(object):
     @property
     def partitions(self):
         return self._partitions
-
-    @property
-    def improvement(self):
-        return self._improvement
 
     @property
     def counters(self):
@@ -471,6 +465,7 @@ class GPX(object):
 
         # Duplicated solutions
         if parent_1 == parent_2:
+            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
         # Save parents tours
@@ -510,6 +505,7 @@ class GPX(object):
         # If exists one or no partition, return parents
         if len(vertices_m) <= 1 and len(vertices_n) <= 1:
             self._counters['failed'] += 1
+            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
         # Generate simple graphs for each partitioning scheme for each tour
@@ -572,6 +568,7 @@ class GPX(object):
         # After fusion, if exists one or no partition, return parents
         if (len(partitions['feasible']) + len(partitions['infeasible']) <= 1):
             self._counters['failed'] += 1
+            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
         # Save partitioning data
@@ -588,6 +585,8 @@ class GPX(object):
             # Fail if no tour constructed
             if len(constructed) == 0:
                 self._counters['failed'] += 1
+                self._counters['children_dist'] += (parent_1.dist
+                                                    + parent_2.dist)
                 return parent_1, parent_2
             # Make sure GPX returns two solutions
             candidates = set([parent_1, parent_2])
