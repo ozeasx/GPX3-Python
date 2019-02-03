@@ -438,7 +438,8 @@ class GPX(object):
         # Builder
         for graph, dist in zip(graphs, distances):
             vertices, tour = Graph.dfs(graph, 1)
-            if len(vertices) == len(self._parent_1_tour):
+            # Feasible tour?
+            if len(vertices) == self._data.dimension:
                 if dist <= max(tour_1_dist, tour_2_dist):
                     candidates.append([tour, dist])
                 # A bad child was created with only feasible partitions?
@@ -537,24 +538,34 @@ class GPX(object):
         partitions = dict()
         partitions['tour_a'] = tour_a
         if score_m >= score_n:
-            partitions['tour_b'] = tour_b
+            # Counters
             self._counters['feasible_1'] += len(feasible_m[1])
             self._counters['feasible_2'] += len(feasible_m[2])
             self._counters['feasible_3'] += len(feasible_m[3])
-            partitions['feasible'] = set.union(*feasible_m.values())
             self._counters['infeasible'] += len(infeasible_m)
+            # Partitioning
+            partitions['tour_b'] = tour_b
+            partitions['feasible'] = set.union(*feasible_m.values())
+            partitions['feasible_1'] = feasible_m[1]
+            partitions['feasible_2'] = feasible_m[2]
+            partitions['feasible_3'] = feasible_m[3]
             partitions['infeasible'] = infeasible_m
             partitions['vertices'] = vertices_m
             partitions['ab_cycles'] = ab_cycles_m
             partitions['simple_graph_a'] = simple_graph_a_m
             partitions['simple_graph_b'] = simple_graph_b_m
         else:
-            partitions['tour_b'] = tour_c
+            # Counters
             self._counters['feasible_1'] += len(feasible_n[1])
             self._counters['feasible_2'] += len(feasible_n[2])
             self._counters['feasible_3'] += len(feasible_n[3])
-            partitions['feasible'] = set.union(*feasible_n.values())
             self._counters['infeasible'] += len(infeasible_n)
+            # Partitioning
+            partitions['tour_b'] = tour_c
+            partitions['feasible'] = set.union(*feasible_n.values())
+            partitions['feasible_1'] = feasible_n[1]
+            partitions['feasible_2'] = feasible_n[2]
+            partitions['feasible_3'] = feasible_n[3]
             partitions['infeasible'] = infeasible_n
             partitions['vertices'] = vertices_n
             partitions['ab_cycles'] = ab_cycles_n

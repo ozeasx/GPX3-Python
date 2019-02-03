@@ -6,7 +6,7 @@ from chromosome import Chromosome
 from gpx import GPX
 
 # Snipet code to test a lot of random cases
-tsp = TSPLIB("../tsplib/ulysses16.tsp")
+tsp = TSPLIB("../tsplib/berlin52.tsp")
 gpx = GPX(tsp)
 
 # Whitley2010-F1
@@ -27,8 +27,8 @@ gpx = GPX(tsp)
 # p1 = Chromosome([2, 16, 11, 6, 8, 15, 4, 3, 12, 14, 7, 5, 10, 13, 1, 9])
 # p2 = Chromosome([2, 16, 12, 10, 15, 14, 9, 6, 11, 3, 7, 4, 13, 8, 1, 5])
 
-p1 = Chromosome([5, 6, 1, 8, 2, 9, 3, 7, 4, 12, 16, 11, 15, 14, 10, 13])
-p2 = Chromosome([11, 16, 5, 9, 7, 6, 15, 3, 14, 10, 13, 2, 12, 8, 1, 4])
+# p1 = Chromosome([5, 6, 1, 8, 2, 9, 3, 7, 4, 12, 16, 11, 15, 14, 10, 13])
+# p2 = Chromosome([11, 16, 5, 9, 7, 6, 15, 3, 14, 10, 13, 2, 12, 8, 1, 4])
 
 
 # Tinos2014-F1
@@ -78,8 +78,8 @@ p2 = Chromosome([11, 16, 5, 9, 7, 6, 15, 3, 14, 10, 13, 2, 12, 8, 1, 4])
 # p2 = Chromosome([1,8,6,4,2,9,7,5,3])
 
 # F9 1f, 3i (1f, 1f2, 2i) execption
-# p1 = Chromosome([1,9,8,10,7,2,5,4,3,6])
-# p2 = Chromosome([1,8,6,2,3,10,5,9,4,7])
+p1 = Chromosome([1,9,8,10,7,2,5,4,3,6])
+p2 = Chromosome([1,8,6,2,3,10,5,9,4,7])
 
 # F10 2f2 2if
 # p1 = Chromosome([1,2,6,7,11,4,9,3,8,5,10,12])
