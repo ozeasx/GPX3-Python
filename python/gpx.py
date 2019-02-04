@@ -31,7 +31,7 @@ class GPX(object):
         self._parent_1_tour = None
         self._parent_2_tour = None
         # Partitioning information
-        self._partitions = dict()
+        self._info = dict()
         # Counters
         self._counters = defaultdict(int)
         # Dict with lists containing execution time of each step
@@ -72,8 +72,8 @@ class GPX(object):
         return self._f3_test
 
     @property
-    def partitions(self):
-        return self._partitions
+    def info(self):
+        return self._info
 
     @property
     def counters(self):
@@ -220,9 +220,9 @@ class GPX(object):
 
         # Return Variables
         feasible = defaultdict(set)
+        infeasible = set()
         # Avoid problems with set.union(*feasible.values())
         feasible[0] = set()
-        infeasible = set()
 
         for key in simple_graph_a:
             # Inner graph test
@@ -251,7 +251,7 @@ class GPX(object):
 # =============================================================================
 
     # Try fusion of infeasible partitions
-    def _fusion(self, partitions):
+    def _fusion(self, info):
 
         # Mark start time
         start_time = time.time()
@@ -261,31 +261,34 @@ class GPX(object):
 
         # Function to fuse ab_cycles
         def fuse(fusion, dest):
-            partitions['ab_cycles']['A'][fusion] = deque()
-            partitions['ab_cycles']['B'][fusion] = deque()
+            info['ab_cycles']['A'][fusion] = deque()
+            info['ab_cycles']['B'][fusion] = deque()
             for i in fusion:
-                partitions['ab_cycles']['A'][fusion].extend(
-                                   partitions['ab_cycles']['A'][i])
-                partitions['ab_cycles']['B'][fusion].extend(
-                                   partitions['ab_cycles']['B'][i])
+                info['ab_cycles']['A'][fusion].extend(
+                                                     info['ab_cycles']['A'][i])
+                info['ab_cycles']['B'][fusion].extend(
+                                                     info['ab_cycles']['B'][i])
                 fused.add(i)
-                partitions['infeasible'].remove(i)
-            partitions[dest].add(fusion)
+                info['infeasible'].remove(i)
+            if dest == 'infeasible':
+                info[dest].add(fusion)
+            else:
+                info['feasible'][dest].add(fusion)
 
         # Start fusion try with 2 partitions
         n = 2
-        while n <= len(partitions['infeasible']):
+        while n <= len(info['infeasible']):
             # Create all combinations of n size
             candidates = list()
-            for fusion in combinations(partitions['infeasible'], n):
+            for fusion in combinations(info['infeasible'], n):
                 # Count common edges
                 count = 0
                 for i, j in zip(fusion[:-1], fusion[1:]):
-                    count += len(partitions['simple_graph_a'][i]['common']
-                                 & partitions['simple_graph_a'][j]['common'])
+                    count += len(info['simple_a'][i]['common']
+                                 & info['simple_a'][j]['common'])
 
                 # Create element with (fusion, count)
-                if count:
+                if count > 1:
                     candidates.append(list(fusion) + [count])
 
             # Sort by common edges count
@@ -304,43 +307,49 @@ class GPX(object):
                 # Test to determine if partition is fused already
                 if not any(i in fused for i in test):
                     for i in test:
-                        union[test] |= partitions['vertices'][i]
+                        union[test] |= info['vertices'][i]
 
                     # Pause time count
                     start_time = time.time() - start_time
                     # Create simple graphs for fusion
-                    simple_g_a = self._gen_simple_graph(partitions['tour_a'],
-                                                        union)
-                    simple_g_b = self._gen_simple_graph(partitions['tour_b'],
-                                                        union)
+                    simple_a = self._gen_simple_graph(info['tour_a'], union)
+                    simple_b = self._gen_simple_graph(info['tour_b'], union)
                     # Classify fusion
-                    feasible, _ = self._classify(simple_g_a, simple_g_b)
+                    feasible, _ = self._classify(simple_a, simple_b)
                     # Resume time count
                     start_time = time.time() - start_time
 
                     # Update information if successfull fusion
                     if test in set.union(*feasible.values()):
+                        info['simple_a'][test] = simple_a[test]
+                        info['simple_b'][test] = simple_b[test]
+                        for key in feasible:
+                            if test in feasible[key]:
+                                fuse(test, key)
+                        # Update counters
                         self._counters['fusion_1'] += len(feasible[1])
                         self._counters['fusion_2'] += len(feasible[2])
                         self._counters['fusion_3'] += len(feasible[3])
-                        fuse(test, 'feasible')
+                        self._counters['fusion'] += (len(feasible[1])
+                                                     + len(feasible[2])
+                                                     + len(feasible[3]))
 
         # Fuse all remaining partitions in one infeasible partition to be
         # handled by build method. The last of the mohicans remains infeasible
         # to be handled as well
-        if len(partitions['infeasible']) > 1:
+        if len(info['infeasible']) > 1:
             if self._f2_test or self._f3_test:
-                self._counters['unsolved'] += len(partitions['infeasible'])
-                fuse(tuple(partitions['infeasible']), 'infeasible')
+                self._counters['unsolved'] += len(info['infeasible'])
+                fuse(tuple(info['infeasible']), 'infeasible')
             else:
-                # All remaining partitions after f1 and fusion are feasible
-                fuse(tuple(partitions['infeasible']), 'feasible')
+                # All remaining partitions after f1 and fusion are feasible 2?
+                fuse(tuple(info['infeasible']), 2)
         # The last of the mohicans
-        elif len(partitions['infeasible']) == 1:
+        elif len(info['infeasible']) == 1:
             if self._f2_test or self._f3_test:
                 self._counters['unsolved'] += 1
             else:
-                partitions['feasible'].add(partitions['infeasible'].pop())
+                info['feasible'][2].add(info['infeasible'].pop())
 
         # Store execution time
         self._timers['fusion'].append(time.time() - start_time)
@@ -348,7 +357,7 @@ class GPX(object):
 # =============================================================================
 
     # Build solutions
-    def _build(self, partitions, common_graph, tour_1_dist, tour_2_dist):
+    def _build(self, info, common_graph, tour_1_dist, tour_2_dist):
         # Mark start time
         start_time = time.time()
 
@@ -366,15 +375,15 @@ class GPX(object):
         # Infeasible partition
         inf_key = None
 
-        # Get distance of all partitions tours
-        for key in partitions['feasible'] | partitions['infeasible']:
+        # Get distance of all partitions tours (feasible and infeasible)
+        for key in info['feasible'][0] | info['infeasible']:
             dists['A'][key] += self._data.ab_cycle_dist(
-                                             partitions['ab_cycles']['A'][key])
+                                                   info['ab_cycles']['A'][key])
             dists['B'][key] += self._data.ab_cycle_dist(
-                                             partitions['ab_cycles']['B'][key])
+                                                   info['ab_cycles']['B'][key])
 
             # Feasible partitions
-            if key in partitions['feasible']:
+            if key in info['feasible'][0]:
                 # Distance diference inside AB_cycle
                 diff = abs(dists['A'][key] - dists['B'][key])
                 # Save AB_cycle with minor diference
@@ -392,8 +401,8 @@ class GPX(object):
             # Infeasible partitions
             else:
                 inf_key = key
-                inf_cycle_a = partitions['ab_cycles']['A'][key]
-                inf_cycle_b = partitions['ab_cycles']['B'][key]
+                inf_cycle_a = info['ab_cycles']['A'][key]
+                inf_cycle_b = info['ab_cycles']['B'][key]
 
         # Create base solutions without infeasible partitions
         base_1 = list()
@@ -403,14 +412,14 @@ class GPX(object):
 
         # Feasible part
         for cycle, key in solution:
-            base_1.extend(partitions['ab_cycles'][cycle][key])
+            base_1.extend(info['ab_cycles'][cycle][key])
             base_1_dist += dists[cycle][key]
             if key != minor_key:
-                base_2.extend(partitions['ab_cycles'][cycle][key])
+                base_2.extend(info['ab_cycles'][cycle][key])
             elif cycle == 'A':
-                base_2.extend(partitions['ab_cycles']['B'][minor_key])
+                base_2.extend(info['ab_cycles']['B'][minor_key])
             else:
-                base_2.extend(partitions['ab_cycles']['A'][minor_key])
+                base_2.extend(info['ab_cycles']['A'][minor_key])
 
         # Calc base2 and common edges distances
         base_2_dist = base_1_dist + minor_diff
@@ -500,90 +509,73 @@ class GPX(object):
         undirected_c = Graph.gen_undirected_graph(tour_c)
 
         # Partitioning schemes m, n
-        vertices_m, ab_cycles_m = self._partition(undirected_a, undirected_b)
-        vertices_n, ab_cycles_n = self._partition(undirected_a, undirected_c)
+        m = dict()
+        n = dict()
+
+        m['vertices'], m['ab_cycles'] = self._partition(undirected_a,
+                                                        undirected_b)
+        n['vertices'], n['ab_cycles'] = self._partition(undirected_a,
+                                                        undirected_c)
 
         # If exists one or no partition, return parents
-        if len(vertices_m) <= 1 and len(vertices_n) <= 1:
+        if len(m['vertices']) <= 1 and len(n['vertices']) <= 1:
             self._counters['failed'] += 1
             self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
         # Generate simple graphs for each partitioning scheme for each tour
-        simple_graph_a_m = self._gen_simple_graph(tour_a, vertices_m)
-        simple_graph_b_m = self._gen_simple_graph(tour_b, vertices_m)
+        m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'])
+        m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'])
 
-        simple_graph_a_n = self._gen_simple_graph(tour_a, vertices_n)
-        simple_graph_c_n = self._gen_simple_graph(tour_c, vertices_n)
+        n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'])
+        n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'])
 
         # Test simple graphs to identify feasible partitions
-        feasible_m, infeasible_m = self._classify(simple_graph_a_m,
-                                                  simple_graph_b_m)
-
-        feasible_n, infeasible_n = self._classify(simple_graph_a_n,
-                                                  simple_graph_c_n)
+        m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
+                                                        m['simple_b'])
+        n['feasible'], n['infeasible'] = self._classify(n['simple_a'],
+                                                        n['simple_b'])
 
         # Score partitions scheme
-        score_m = (len(feasible_m[1]) * self._f1_weight
-                   + len(feasible_m[2]) * self._f2_weight
-                   + len(feasible_m[3]) * self._f3_weight
-                   + len(infeasible_m) * self._infeasible_weight)
+        score_m = (len(m['feasible'][1]) * self._f1_weight
+                   + len(m['feasible'][2]) * self._f2_weight
+                   + len(m['feasible'][3]) * self._f3_weight
+                   + len(m['infeasible']) * self._infeasible_weight)
 
-        score_n = (len(feasible_n[1]) * self._f1_weight
-                   + len(feasible_n[2]) * self._f2_weight
-                   + len(feasible_n[3]) * self._f3_weight
-                   + len(infeasible_n) * self._infeasible_weight)
+        score_n = (len(n['feasible'][1]) * self._f1_weight
+                   + len(n['feasible'][2]) * self._f2_weight
+                   + len(n['feasible'][3]) * self._f3_weight
+                   + len(n['infeasible']) * self._infeasible_weight)
 
-        # Store better partitioning scheme and update counters
-        partitions = dict()
-        partitions['tour_a'] = tour_a
+        # Choose better partitioning scheme
         if score_m >= score_n:
-            # Counters
-            self._counters['feasible_1'] += len(feasible_m[1])
-            self._counters['feasible_2'] += len(feasible_m[2])
-            self._counters['feasible_3'] += len(feasible_m[3])
-            self._counters['infeasible'] += len(infeasible_m)
-            # Partitioning
-            partitions['tour_b'] = tour_b
-            partitions['feasible'] = set.union(*feasible_m.values())
-            partitions['feasible_1'] = feasible_m[1]
-            partitions['feasible_2'] = feasible_m[2]
-            partitions['feasible_3'] = feasible_m[3]
-            partitions['infeasible'] = infeasible_m
-            partitions['vertices'] = vertices_m
-            partitions['ab_cycles'] = ab_cycles_m
-            partitions['simple_graph_a'] = simple_graph_a_m
-            partitions['simple_graph_b'] = simple_graph_b_m
+            info = m
+            info['tour_b'] = tour_b
         else:
-            # Counters
-            self._counters['feasible_1'] += len(feasible_n[1])
-            self._counters['feasible_2'] += len(feasible_n[2])
-            self._counters['feasible_3'] += len(feasible_n[3])
-            self._counters['infeasible'] += len(infeasible_n)
-            # Partitioning
-            partitions['tour_b'] = tour_c
-            partitions['feasible'] = set.union(*feasible_n.values())
-            partitions['feasible_1'] = feasible_n[1]
-            partitions['feasible_2'] = feasible_n[2]
-            partitions['feasible_3'] = feasible_n[3]
-            partitions['infeasible'] = infeasible_n
-            partitions['vertices'] = vertices_n
-            partitions['ab_cycles'] = ab_cycles_n
-            partitions['simple_graph_a'] = simple_graph_a_n
-            partitions['simple_graph_b'] = simple_graph_c_n
+            info = n
+            info['tour_b'] = tour_c
+
+        info['tour_a'] = tour_a
+        info['feasible'][0] = set.union(*info['feasible'].values())
+        # Counters
+        self._counters['feasible_1'] += len(info['feasible'][1])
+        self._counters['feasible_2'] += len(info['feasible'][2])
+        self._counters['feasible_3'] += len(info['feasible'][3])
+        self._counters['infeasible'] += len(info['infeasible'])
 
         # Try to fuse infeasible partitions
-        if len(partitions['infeasible']) > 1:
-            self._fusion(partitions)
+        if len(info['infeasible']) > 1:
+            self._fusion(info)
+            info['feasible'][0] = set.union(*info['feasible'].values())
 
         # After fusion, if exists one or no partition, return parents
-        if (len(partitions['feasible']) + len(partitions['infeasible']) <= 1):
+        if len(info['feasible'][0]) + len(info['infeasible']) <= 1:
             self._counters['failed'] += 1
             self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
         # Save partitioning data
-        self._partitions = partitions
+        self._info = info
 
         # Build solutions if there is instance data
         if self._data:
@@ -591,7 +583,7 @@ class GPX(object):
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
             # Build solutions
-            constructed = self._build(partitions, common_graph, parent_1.dist,
+            constructed = self._build(info, common_graph, parent_1.dist,
                                       parent_2.dist)
             # Fail if no tour constructed
             if len(constructed) == 0:

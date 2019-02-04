@@ -94,6 +94,7 @@ def test(population, stats):
     stats['feasible_2'].append(0)
     stats['feasible_3'].append(0)
     stats['infeasible'].append(0)
+    stats['fusion'].append(0)
     stats['fusion_1'].append(0)
     stats['fusion_2'].append(0)
     stats['fusion_3'].append(0)
@@ -162,8 +163,8 @@ for key in counter:
     result[key] = defaultdict(int)
     for field in counter[key]:
         result[key][field + '_mean'] = np.mean(counter[key][field])
-        result[key][field + '_var'] = np.var(counter[key][field])
-        result[key][field + '_std'] = np.std(counter[key][field])
+        # result[key][field + '_var'] = np.var(counter[key][field])
+        # result[key][field + '_std'] = np.std(counter[key][field])
 
 # Write data to csv file and stdout
 if args.o:

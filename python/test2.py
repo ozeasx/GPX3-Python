@@ -78,8 +78,8 @@ gpx = GPX(tsp)
 # p2 = Chromosome([1,8,6,4,2,9,7,5,3])
 
 # F9 1f, 3i (1f, 1f2, 2i) execption
-p1 = Chromosome([1,9,8,10,7,2,5,4,3,6])
-p2 = Chromosome([1,8,6,2,3,10,5,9,4,7])
+p1 = Chromosome([1, 9, 8, 10, 7, 2, 5, 4, 3, 6])
+p2 = Chromosome([1, 8, 6, 2, 3, 10, 5, 9, 4, 7])
 
 # F10 2f2 2if
 # p1 = Chromosome([1,2,6,7,11,4,9,3,8,5,10,12])
@@ -177,8 +177,8 @@ p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
 
 gpx.f1_test = True
-gpx.f2_test = False
-gpx.f3_test = False
+gpx.f2_test = True
+gpx.f3_test = True
 
 c1, c2 = gpx.recombine(p1, p2)
 
@@ -187,8 +187,8 @@ print
 print "Tour 1: ", p1.tour, ", Distance: ", p1.dist
 print "Tour 2: ", p2.tour, ", Distance: ", p2.dist
 print
-print "Internal tour a: ", gpx.partitions['tour_a']
-print "Internal tour b: ", gpx.partitions['tour_b']
+print "Internal tour a: ", gpx.info['tour_a']
+print "Internal tour b: ", gpx.info['tour_b']
 print
 print "Execution Time --------------------------------------------------------"
 print
@@ -205,34 +205,34 @@ print "\tFeasible type 1: ", gpx.counters['feasible_1']
 print "\tFeasible type 2: ", gpx.counters['feasible_2']
 print "\tFeasible type 3: ", gpx.counters['feasible_3']
 print "\tInfeasible: ", gpx.counters['infeasible']
-print "\tFusions: ", gpx.counters['fusions']
+print "\tFusions: ", gpx.counters['fusion']
 print "\tUnsolved: ", gpx.counters['unsolved']
-print "\tInfeasible tour handling: ", gpx.counters['inf_tours']
+print "\tInfeasible tour: ", gpx.counters['inf_tour']
 print
 print "Partitions vertices: --------------------------------------------------"
 print
-for key, value in gpx.partitions['vertices'].items():
+for key, value in gpx.info['vertices'].items():
     print key, value
 print
 print "AB_cycles: -----------------------------------------------------------"
 print
-for key, value in gpx.partitions['ab_cycles'].items():
+for key, value in gpx.info['ab_cycles'].items():
     print key, value
 print
 print "simple graph a"
-for key in gpx.partitions['simple_graph_a']:
+for key in gpx.info['simple_a']:
     print
-    for k in gpx.partitions['simple_graph_a'][key]:
-        print key, k, gpx.partitions['simple_graph_a'][key][k]
+    for k in gpx.info['simple_a'][key]:
+        print key, k, gpx.info['simple_a'][key][k]
 print
 print "simple graph b"
-for key in gpx.partitions['simple_graph_b']:
+for key in gpx.info['simple_b']:
     print
-    for k in gpx.partitions['simple_graph_b'][key]:
-        print key, k, gpx.partitions['simple_graph_b'][key][k]
+    for k in gpx.info['simple_b'][key]:
+        print key, k, gpx.info['simple_b'][key][k]
 print
-print "Feasible: ", gpx.partitions['feasible']
-print "Infeasible: ", gpx.partitions['infeasible']
+print "Feasible: ", gpx.info['feasible']
+print "Infeasible: ", gpx.info['infeasible']
 if c1:
     print
     print "Solutions ---------------------------------------------------------"
@@ -241,4 +241,4 @@ if c1:
     print
     print "Solution 2: ", c2.tour, ", Distance: ", c2.dist
     print
-    print "Improvment: ", (p1.dist + p2.dist) - (c1.dist + c2.dist)
+    print "Improvement: ", (p1.dist + p2.dist) - (c1.dist + c2.dist)
