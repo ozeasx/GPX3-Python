@@ -12,6 +12,17 @@ from ga import GA
 from tsp import TSPLIB
 from gpx import GPX
 
+
+# https://stackoverflow.com/questions/15008758/parsing-boolean-values-with-argparse
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+
 # Argument parser
 p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
@@ -23,12 +34,12 @@ multual.add_argument("-P", help="Pairwise Recombination", default='False',
 multual.add_argument("-K", help="Ranking selection", default='False',
                      choices=['True', 'False'])
 # Optional arguments
-p.add_argument("-f1", help="Feasible 1 test", default='True',
-               choices=['True', 'False'])
-p.add_argument("-f2", help="Feasible 2 test", default='True',
-               choices=['True', 'False'])
-p.add_argument("-f3", help="Feasible 3 test", default='False',
-               choices=['True', 'False'])
+p.add_argument("-t1", help="Test 1", type=str2bool, default=True)
+p.add_argument("-t2", help="Test 2", type=str2bool, default=False)
+p.add_argument("-t3", help="Test 3", type=str2bool, default=False)
+p.add_argument("-t1f", help="Test 1 for Fusion", type=str2bool, default=True)
+p.add_argument("-t2f", help="Test 2 for Fusion", type=str2bool, default=False)
+p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
 p.add_argument("-p", help="Population size", type=int, default=100)
 p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random',
@@ -48,8 +59,7 @@ p.add_argument("-m", help="Mutation probability", type=float,
 p.add_argument("-t", help="Mutation operator", default='2opt',
                choices=['2opt', 'nn', 'nn2opt'])
 p.add_argument("-g", help="Generation limit", type=int, default=100)
-p.add_argument("-G", help="Fitness ploting", default='False',
-               choices=['True', 'False'])
+p.add_argument("-G", help="Fitness ploting", type=str2bool, default=False)
 p.add_argument("-n", help="Number of iterations (paralelism will be used)",
                type=int, default=1)
 p.add_argument("-o", help="Directory to generate file reports", type=str)
@@ -131,12 +141,13 @@ def run_ga(id):
     gpx = GPX(tsp)
 
     # Define which tests will be applied
-    if args.f1 == 'False':
-        gpx.f1_test = False
-    if args.f2 == 'False':
-        gpx.f2_test = False
-    if args.f3 == 'True':
-        gpx.f3_test = True
+    gpx.test_1 = args.t1
+    gpx.test_2 = args.t2
+    gpx.test_3 = args.t3
+
+    gpx.test_1_fusion = args.t1f
+    gpx.test_2_fusion = args.t2f
+    gpx.test_3_fusion = args.t3f
 
     # GA Instance
     ga = GA(tsp, gpx, args.e)

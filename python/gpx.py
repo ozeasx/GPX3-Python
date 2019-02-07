@@ -13,7 +13,7 @@ from chromosome import Chromosome
 # Generalized partition crossover operator
 class GPX(object):
     # Class initialization
-    def __init__(self, data=None, f1=True, f2=False, f3=False):
+    def __init__(self, data=None):
         # dataset to compute distances
         self._data = data
         # Partitions types values
@@ -21,12 +21,14 @@ class GPX(object):
         self._f2_weight = 2
         self._f3_weight = 3
         self._infeasible_weight = 0.4
-        # Limit fusion trys (unused)
-        self._fusion_limit = False
-        # F1, F2 and F3 tests
-        self._f1_test = f1
-        self._f2_test = f2
-        self._f3_test = f3
+        # Tests 1, 2 and 3 for partitioning
+        self._test_1 = True
+        self._test_2 = False
+        self._test_3 = False
+        # Tests 1, 2 and 3 for fusion
+        self._test_1_fusion = True
+        self._test_2_fusion = False
+        self._test_3_fusion = False
         # Parents tours
         self._parent_1_tour = None
         self._parent_2_tour = None
@@ -56,20 +58,28 @@ class GPX(object):
         return self.infeasible_weight
 
     @property
-    def fusion_limit(self):
-        return self._fusion_limit
+    def test_1(self):
+        return self._test_1
 
     @property
-    def f1_test(self):
-        return self._f1_test
+    def test_2(self):
+        return self._test_2
 
     @property
-    def f2_test(self):
-        return self._f2_test
+    def test_3(self):
+        return self._test_3
 
     @property
-    def f3_test(self):
-        return self._f3_test
+    def test_1_fusion(self):
+        return self._test_1_fusion
+
+    @property
+    def test_2_fusion(self):
+        return self._test_2_fusion
+
+    @property
+    def test_3_fusion(self):
+        return self._test_3_fusion
 
     @property
     def info(self):
@@ -105,25 +115,35 @@ class GPX(object):
         assert 0 < value <= 1, "Infeasible weight must be in ]0,1] interval"
         self._infeasible_weight = value
 
-    @fusion_limit.setter
-    def fusion_limit(self, value):
-        assert value in [True, False], "Fusion limit must be True/False value"
-        self._fusion_limit = value
-
-    @f1_test.setter
-    def f1_test(self, value):
+    @test_1.setter
+    def test_1(self, value):
         assert value in [True, False]
-        self._f1_test = value
+        self._test_1 = value
 
-    @f2_test.setter
-    def f2_test(self, value):
+    @test_2.setter
+    def test_2(self, value):
         assert value in [True, False]
-        self._f2_test = value
+        self._test_2 = value
 
-    @f3_test.setter
-    def f3_test(self, value):
+    @test_3.setter
+    def test_3(self, value):
         assert value in [True, False]
-        self._f3_test = value
+        self._test_3 = value
+
+    @test_1_fusion.setter
+    def test_1_fusion(self, value):
+        assert value in [True, False]
+        self._test_1_fusion = value
+
+    @test_2_fusion.setter
+    def test_2_fusion(self, value):
+        assert value in [True, False]
+        self._test_2_fusion = value
+
+    @test_3_fusion.setter
+    def test_3_fusion(self, value):
+        assert value in [True, False]
+        self._test_3_fusion = value
 
 # =============================================================================
 
@@ -214,7 +234,7 @@ class GPX(object):
 # =============================================================================
 
     # Classify partitions feasibility by inner and outter graph comparison
-    def _classify(self, simple_graph_a, simple_graph_b):
+    def _classify(self, simple_a, simple_b, fusion=False):
         # Mark start time
         start_time = time.time()
 
@@ -223,21 +243,26 @@ class GPX(object):
         infeasible = set()
         # Avoid problems with set.union(*feasible.values())
         feasible[0] = set()
+        # Tests conditions
+        if not fusion:
+            f1 = self._test_1
+            f2 = self._test_2
+            f3 = self._test_3
+        else:
+            f1 = self._test_1_fusion
+            f2 = self._test_2_fusion
+            f3 = self._test_3_fusion
 
-        for key in simple_graph_a:
-            # Inner graph test
-            if self._f1_test and (simple_graph_a[key]['in']
-                                  == simple_graph_b[key]['in']):
+        for key in simple_a:
+            # Inner graph test (Test 1)
+            if f1 and (simple_a[key]['in'] == simple_b[key]['in']):
                 feasible[1].add(key)
-            # Outter graph test
-            elif self._f2_test and (simple_graph_a[key]['out']
-                                    == simple_graph_b[key]['out']):
+            # Outter graph test (Test 2)
+            elif f2 and (simple_a[key]['out'] == simple_b[key]['out']):
                 feasible[2].add(key)
-            # All graphs test
-            elif self._f3_test and (len(simple_graph_a[key]['in']
-                                        & simple_graph_b[key]['out']) == 0
-                                    and len(simple_graph_a[key]['out']
-                                            & simple_graph_b[key]['in']) == 0):
+            # All graphs test (Test 3)
+            elif f3 and not (simple_a[key]['in'] & simple_b[key]['out']
+                             or simple_a[key]['out'] & simple_b[key]['in']):
                 feasible[3].add(key)
             else:
                 infeasible.add(key)
@@ -315,7 +340,7 @@ class GPX(object):
                     simple_a = self._gen_simple_graph(info['tour_a'], union)
                     simple_b = self._gen_simple_graph(info['tour_b'], union)
                     # Classify fusion
-                    feasible, _ = self._classify(simple_a, simple_b)
+                    feasible, _ = self._classify(simple_a, simple_b, True)
                     # Resume time count
                     start_time = time.time() - start_time
 
@@ -338,7 +363,7 @@ class GPX(object):
         # handled by build method. The last of the mohicans remains infeasible
         # to be handled as well
         if len(info['infeasible']) > 1:
-            if self._f2_test or self._f3_test:
+            if self._test_2 or self._test_3:
                 self._counters['unsolved'] += len(info['infeasible'])
                 fuse(tuple(info['infeasible']), 'infeasible')
             else:
@@ -346,9 +371,10 @@ class GPX(object):
                 fuse(tuple(info['infeasible']), 2)
         # The last of the mohicans
         elif len(info['infeasible']) == 1:
-            if self._f2_test or self._f3_test:
+            if self._test_2 or self._test_3:
                 self._counters['unsolved'] += 1
             else:
+                # All remaining partitions after f1 and fusion are feasible 2?
                 info['feasible'][2].add(info['infeasible'].pop())
 
         # Store execution time
@@ -448,7 +474,7 @@ class GPX(object):
         for graph, dist in zip(graphs, distances):
             vertices, tour = Graph.dfs(graph, 1)
             # Feasible tour?
-            if len(vertices) == self._data.dimension:
+            if len(vertices) == len(self._parent_1_tour):
                 if dist <= max(tour_1_dist, tour_2_dist):
                     candidates.append([tour, dist])
                 # A bad child was created with only feasible partitions?
@@ -457,6 +483,8 @@ class GPX(object):
             # An infeasible tour was created with only feasible partitions?
             elif not inf_key:
                 self._counters['inf_tour'] += 1
+                # print tour, self._parent_1_tour, self._parent_2_tour
+                # exit()
 
         # Store execution time
         self._timers['build'].append(time.time() - start_time)
@@ -566,6 +594,7 @@ class GPX(object):
         # Try to fuse infeasible partitions
         if len(info['infeasible']) > 1:
             self._fusion(info)
+            # Update feasible partitions
             info['feasible'][0] = set.union(*info['feasible'].values())
 
         # After fusion, if exists one or no partition, return parents

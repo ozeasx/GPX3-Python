@@ -349,7 +349,9 @@ class GA(object):
         log.info(" Feasible type 2: %i", self._xop.counters['feasible_2'])
         log.info(" Feasible type 3: %i", self._xop.counters['feasible_3'])
         log.info(" Infeasible: %i", self._xop.counters['infeasible'])
-        log.info(" Fusions: %i", self._xop.counters['fusions'])
+        log.info(" Fusions type 1: %i", self._xop.counters['fusion_1'])
+        log.info(" Fusions type 2: %i", self._xop.counters['fusion_2'])
+        log.info(" Fusions type 3: %i", self._xop.counters['fusion_3'])
         log.info(" Unsolved: %i", self._xop.counters['unsolved'])
         log.info("Infeasible tour handling: %i",
                  self._xop.counters['inf_tours'])

@@ -76,8 +76,9 @@ def gen_pop(size, dimension, data, method='random'):
 def recombine(pair):
     gpx = GPX(tsp)
     gpx.f1_test = f1
-    gpx.f2_test = f2
-    gpx.f3_test = f3
+    gpx.f2_test = True
+    gpx.f3_test = False
+    gpx.ff1_test = False
     c1, c2 = gpx.recombine(*pair)
     return gpx.counters
 
@@ -85,10 +86,13 @@ def recombine(pair):
 # Test
 def test(population, stats):
     # Multiprocessing
-    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
-    result = pool.map(recombine, combinations(population, 2))
-    pool.close()
-    pool.join()
+    # pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+    # result = pool.map(recombine, combinations(population, 2))
+    # pool.close()
+    # pool.join()
+    result = list()
+    for pair in combinations(population, 2):
+        result.append(recombine(pair))
     # Create keys and list indexes
     stats['feasible_1'].append(0)
     stats['feasible_2'].append(0)
