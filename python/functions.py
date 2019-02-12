@@ -54,8 +54,9 @@ def two_opt(chromosome, data):
         for i in xrange(dimension - 1):
             for j in xrange(i + 1, dimension):
                 # Do not invert whole tour
-                if j-i == dimension - 1:
-                    continue
+                if i == 0:
+                    if j-i == dimension - 1:
+                        continue
                 # Create edges swap in advance
                 join_a = sorted([sorted([best_tour[i-1], best_tour[i]]),
                                  sorted([best_tour[j], best_tour[(j+1) %

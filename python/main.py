@@ -28,11 +28,10 @@ p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
 # Multual exclusive arguments
 multual = p.add_mutually_exclusive_group()
-multual.add_argument("-k", help="Tournament size", type=int, default=0)
-multual.add_argument("-P", help="Pairwise Recombination", default='False',
-                     choices=['True', 'False'])
-multual.add_argument("-K", help="Ranking selection", default='False',
-                     choices=['True', 'False'])
+multual.add_argument("-k", help="Tournament size", type=int)
+multual.add_argument("-P", help="Pairwise Recombination", type=str2bool)
+multual.add_argument("-K", help="Selection pressure (Ranking selection)",
+                     type=float)
 # Optional arguments
 p.add_argument("-t1", help="Test 1", type=str2bool, default=True)
 p.add_argument("-t2", help="Test 2", type=str2bool, default=False)
@@ -71,14 +70,20 @@ p.add_argument("I", help="TSP instance file", type=str)
 args = p.parse_args()
 
 # Assert arguments
+if all(v is None for v in [args.k, args.K, args.P]):
+    print "One selection method (k, K, P) must be provided"
+    exit()
+if args.k is not None:
+    assert 2 <= args.k <= args.p, "Invalid tournament size"
+if args.K is not None:
+    assert 1 < args.K <= 2, "Selection pressure must be in ]1,2] interval"
 assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
                                       " and greater than 0"
 assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
-assert 0 < args.R <= 1, "Rratio must be in ]0,1] interval"
+assert 0 < args.R <= 1, "Ratio must be in (0,1] interval"
 assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
 assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
 assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
-assert 0 <= args.k <= args.p - args.e, "Invalid tournament size"
 assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
@@ -102,7 +107,7 @@ logger.setLevel(logging.INFO)
 logger.addHandler(stdout_handler)
 
 # Plot instance
-if args.n == 1 and args.G == 'True':
+if args.n == 1 and args.G:
     from streamplot import PlotManager
     plt_mgr = PlotManager(title="Fitness evolution")
 
@@ -121,8 +126,12 @@ def run_ga(id):
     logger.info("Initial population: %i", args.p)
     logger.info("Population restart percentage: %f", args.r)
     logger.info("Elitism: %i", args.e)
-    logger.info("Tournament size: %i", args.k)
-    logger.info("Pairwise recombination: %s", args.P)
+    if args.k is not None:
+        logger.info("Tournament selection size: %i", args.k)
+    elif args.K is not None:
+        logger.info("Selection pressure (Ranking): %f", args.K)
+    elif args.P:
+        logger.info("Pairwise selection")
     logger.info("Crossover probability: %f", args.c)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Generation limit: %i", args.g)
@@ -158,7 +167,7 @@ def run_ga(id):
     # Begin GA
     while ga.generation < args.g:
         # Update plot
-        if args.n == 1 and args.G == 'True':
+        if args.n == 1 and args.G:
             plt_mgr.add(x=ga.generation, y=ga.counters['avg_fit'][-1],
                         name='Average fitness')
             plt_mgr.add(x=ga.generation, y=ga.counters['best_fit'][-1],
@@ -173,11 +182,11 @@ def run_ga(id):
         if args.r:
             ga.restart_pop(args.r, args.S)
         # Selection
-        if args.k:
+        if args.k is not None:
             ga.tournament_selection(args.k)
-        elif args.K == 'True':
-            ga.rank_selection()
-        elif args.P == 'True':
+        elif args.K is not None:
+            ga.rank_selection(args.K)
+        elif args.P:
             ga.pairwise_selection()
         # Recombination
         if args.c:
@@ -192,7 +201,7 @@ def run_ga(id):
     # Final report
     ga.report()
     # Close ploting
-    if args.n == 1 and args.G == 'True':
+    if args.n == 1 and args.G:
         plt_mgr.close()
     # Best solution
     best_solution[id] = ga.best_solution

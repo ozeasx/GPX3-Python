@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
+import math
 import time
 import random
 import logging as log
@@ -14,13 +15,14 @@ import functions
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization
-    def __init__(self, data, xop, elitism=0):
-        # Parametrization
+    def __init__(self, data, cross_op, elitism=0):
+        # Instance data
         self._data = data
         # Crossover operator
-        self._xop = xop
-        self._elitism = elitism
+        self._cross_op = cross_op
 
+        # Number of elite population
+        self._elitism = elitism
         # Generation count
         self._generation = -1
         # Average fitness of the current generation
@@ -81,6 +83,8 @@ class GA(object):
             return c
 
         # Individuals to be inserted
+        if number < 1:
+            number = 1
         for i in xrange(int(number)):
             # Random
             if method == 'random':
@@ -129,7 +133,7 @@ class GA(object):
         self._timers['population'].append(time.time() - start_time)
         # Assert population size
         self._pop_size = size
-        assert size == len(self._population), "ga, gen_pop"
+        assert size == len(self._population), "gen_pop, pop_size"
 
     # Evaluate the entire population
     def evaluate(self):
@@ -207,15 +211,23 @@ class GA(object):
         self._population = selected
 
     # Ranking selection
-    def rank_selection(self, weight):
+    # https://dl.acm.org/citation.cfm?id=93169
+    def rank_selection(self, b=1.5):
+        def select_parent():
+            index = int(self._pop_size * (b - math.sqrt(b ** 2 - 4*(b - 1)
+                                                        * random.random()))
+                        / 2 / (b - 1))
+            return self._population[index]
+
         selected = list()
         self._population.sort(key=attrgetter('fitness'))
-        weight_list = range(0, self._pop_size, weight)
         for i in xrange(self._pop_size):
-            pass
+            selected.append(select_parent())
+
+        self._population = selected
 
     # Recombination
-    def recombine(self, p_cross, pairwise=None):
+    def recombine(self, p_cross, pairwise=False):
         # Register start time
         start_time = time.time()
 
@@ -227,14 +239,14 @@ class GA(object):
         for p1, p2 in zip(self._population[0::2], self._population[1::2]):
             # print p1.dist
             if random.random() < p_cross:
-                c1, c2 = self._xop.recombine(p1, p2)
+                c1, c2 = self._cross_op.recombine(p1, p2)
                 children.extend([c1, c2])
                 # Count cross only if there is at least one different child
                 if c1 not in [p1, p2] or c2 not in [p1, p2]:
                     cross += 1
 
         # Reduce population in case of pairwise recombination
-        if pairwise == 'True':
+        if pairwise:
             # Remove duplicates
             children = set(children)
             children = list(children)
@@ -338,23 +350,23 @@ class GA(object):
         self._timers['total'].append(time.time() - self._start_time)
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", sum(self._counters['cross']))
-        log.info("Failed: %i", self._xop.counters['failed'])
-        parents_sum = self._xop.counters['parents_sum']
-        children_sum = self._xop.counters['children_sum']
+        log.info("Failed: %i", self._cross_op.counters['failed'])
+        parents_sum = self._cross_op.counters['parents_sum']
+        children_sum = self._cross_op.counters['children_sum']
         if parents_sum != 0:
             log.info("Overall improvement: %f", (parents_sum - children_sum)
                      / float(parents_sum) * 100)
         log.info("Partitions")
-        log.info(" Feasible type 1: %i", self._xop.counters['feasible_1'])
-        log.info(" Feasible type 2: %i", self._xop.counters['feasible_2'])
-        log.info(" Feasible type 3: %i", self._xop.counters['feasible_3'])
-        log.info(" Infeasible: %i", self._xop.counters['infeasible'])
-        log.info(" Fusions type 1: %i", self._xop.counters['fusion_1'])
-        log.info(" Fusions type 2: %i", self._xop.counters['fusion_2'])
-        log.info(" Fusions type 3: %i", self._xop.counters['fusion_3'])
-        log.info(" Unsolved: %i", self._xop.counters['unsolved'])
+        log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
+        log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])
+        log.info(" Feasible type 3: %i", self._cross_op.counters['feasible_3'])
+        log.info(" Infeasible: %i", self._cross_op.counters['infeasible'])
+        log.info(" Fusions type 1: %i", self._cross_op.counters['fusion_1'])
+        log.info(" Fusions type 2: %i", self._cross_op.counters['fusion_2'])
+        log.info(" Fusions type 3: %i", self._cross_op.counters['fusion_3'])
+        log.info(" Unsolved: %i", self._cross_op.counters['unsolved'])
         log.info("Infeasible tour handling: %i",
-                 self._xop.counters['inf_tours'])
+                 self._cross_op.counters['inf_tours'])
         log.info("Total mutations: %i", sum(self._counters['mut']))
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", sum(self._timers['total']))
@@ -363,13 +375,13 @@ class GA(object):
         log.info("Selection: %f", sum(self._timers['tournament']))
         log.info("Recombination: %f", sum(self._timers['recombination']))
         log.info(" Partitioning: %f",
-                 sum(self._xop.timers['partitioning']))
+                 sum(self._cross_op.timers['partitioning']))
         log.info(" Simplified graph: %f",
-                 sum(self._xop.timers['simple_graph']))
+                 sum(self._cross_op.timers['simple_graph']))
         log.info(" Classification: %f",
-                 sum(self._xop.timers['classification']))
-        log.info(" Fusion: %f", sum(self._xop.timers['fusion']))
-        log.info(" Build: %f", sum(self._xop.timers['build']))
+                 sum(self._cross_op.timers['classification']))
+        log.info(" Fusion: %f", sum(self._cross_op.timers['fusion']))
+        log.info(" Build: %f", sum(self._cross_op.timers['build']))
         log.info("Mutation: %f", sum(self._timers['mutation']))
         log.info("Population restart: %f", sum(self._timers['restart_pop']))
         if self._data.best_solution:
