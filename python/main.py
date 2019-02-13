@@ -45,11 +45,11 @@ p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                help="Method to generate inicial population")
 p.add_argument("-R", type=float, default=1.0,
                help="Ratio o inicial popopulation to be created with method M")
+p.add_argument("-r", type=float, default=0,
+               help="Percentage of population to be restarted with method S")
 p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random',
                help="Method to restart population")
-p.add_argument("-r", type=float, default=0,
-               help="Percentage of population to be restarted with method S")
 p.add_argument("-e", help="Elitism. Number of individuals to preserve",
                type=int, default=0)
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
@@ -124,7 +124,10 @@ def run_ga(id):
     # Summary
     logger.info("------------------------------GA Settings------------------")
     logger.info("Initial population: %i", args.p)
-    logger.info("Population restart percentage: %f", args.r)
+    logger.info("Initial population method: %s", args.M)
+    logger.info("Initial population method ratio: %i", args.R)
+    logger.info("Population restart method: %s", args.S)
+    logger.info("Population restart method ratio: %f", args.r)
     logger.info("Elitism: %i", args.e)
     if args.k is not None:
         logger.info("Tournament selection size: %i", args.k)
@@ -134,6 +137,7 @@ def run_ga(id):
         logger.info("Pairwise selection")
     logger.info("Crossover probability: %f", args.c)
     logger.info("Mutation probability: %f", args.m)
+    logger.info("Mutation operator: %s", args.t)
     logger.info("Generation limit: %i", args.g)
     logger.info("TSP Instance: %s", args.I)
     logger.info("TSP dimension: %i", tsp.dimension)

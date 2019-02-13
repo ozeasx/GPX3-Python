@@ -37,7 +37,7 @@ def nn(data, method):
 # https://rawgit.com/pedrohfsd/TSP/develop/2opt.js
 
 
-def two_opt(chromosome, data):
+def two_opt(chromosome, data, limit=False):
     # Initial tour
     best_tour = list(chromosome.tour)
     # Get tour dist
@@ -90,7 +90,7 @@ def two_opt(chromosome, data):
                     new_tour.extend(best_tour[j+1:])
                     best_tour = new_tour
                     best_dist = best_dist - join_a_dist + join_b_dist
-                    improved = True
+                    improved = not limit
 
     # Make sure 2opt is doing its job
     assert best_dist <= chromosome.dist, "Something wrong..."

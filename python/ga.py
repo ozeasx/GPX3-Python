@@ -73,43 +73,53 @@ class GA(object):
 
     # Insert unique solutions into population
     def _insert_pop(self, number, method='random', eval=False):
+        # Do nothing
+        if number == 0:
+            return
+        # Individuals to be inserted
+        elif 0 < number < 1:
+            number = 1
 
-        # Sub method to generate one unique random chromosome
+        # Sub functions to generate unique chromosome
         def random():
             c = Chromosome(self._data.dimension)
             # Avoid duplicates
             while c in self._population:
                 c = Chromosome(self._data.dimension)
+            c.dist = self._data.tour_dist(c.tour)
             return c
 
-        # Individuals to be inserted
-        if number < 1:
-            number = 1
+        def two_opt():
+            c = random()
+            c = functions.two_opt(c, self._data)
+            while c in self._population:
+                c = random()
+                c = functions.two_opt(c, self._data)
+            return c
+
+        def nn():
+            c = functions.nn(self._data, method)
+            # Avoid duplicates
+            while c in self._population or c is None:
+                c = functions.nn(self._data, method)
+
+
         for i in xrange(int(number)):
             # Random
             if method == 'random':
                 c = random()
-                c.dist = self._data.tour_dist(c.tour)
             # 2opt
             elif method == '2opt':
-                c = random()
-                c.dist = self._data.tour_dist(c.tour)
-                c = functions.two_opt(c, self._data)
-                while c in self._population:
-                    c = random()
-                    c.dist = self._data.tour_dist(c.tour)
-                    c = functions.two_opt(c, self._data)
+                c = two_opt()
             # NN and NN with 2opt
-            elif method == 'nn' or 'nn2opt':
-                c = functions.nn(self._data, method)
-                # Avoid duplicates
-                while c in self._population or c is None:
-                    c = functions.nn(self._data, method)
+            elif method in ['nn', 'nn2opt']:
+                c = nn()
             # Insert c in population
-            assert c.dist is not None, "ga, _insert_pop, 'dist is none'"
+            assert c.dist is not None, "_insert_pop, 'dist is none'"
             # Avaliate before insertion
             if eval:
                 c.fitness = self._evaluate(c)
+            # Insert unique individual into population
             self._population.append(c)
 
     # Generate inicial population
@@ -132,8 +142,9 @@ class GA(object):
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
         # Assert population size
-        self._pop_size = size
-        assert size == len(self._population), "gen_pop, pop_size"
+        self._pop_size = len(self._population)
+        print self._pop_size
+        assert self._pop_size == size, "gen_pop, pop_size"
 
     # Evaluate the entire population
     def evaluate(self):
@@ -357,15 +368,15 @@ class GA(object):
             log.info("Overall improvement: %f", (parents_sum - children_sum)
                      / float(parents_sum) * 100)
         log.info("Partitions")
-        log.info(" Feasible type 1: %i", self._cross_op.counters['feasible_1'])
-        log.info(" Feasible type 2: %i", self._cross_op.counters['feasible_2'])
-        log.info(" Feasible type 3: %i", self._cross_op.counters['feasible_3'])
+        log.info(" Feasible test 1: %i", self._cross_op.counters['feasible_1'])
+        log.info(" Feasible test 2: %i", self._cross_op.counters['feasible_2'])
+        log.info(" Feasible test 3: %i", self._cross_op.counters['feasible_3'])
         log.info(" Infeasible: %i", self._cross_op.counters['infeasible'])
-        log.info(" Fusions type 1: %i", self._cross_op.counters['fusion_1'])
-        log.info(" Fusions type 2: %i", self._cross_op.counters['fusion_2'])
-        log.info(" Fusions type 3: %i", self._cross_op.counters['fusion_3'])
+        log.info(" Fusions test 1: %i", self._cross_op.counters['fusion_1'])
+        log.info(" Fusions test 2: %i", self._cross_op.counters['fusion_2'])
+        log.info(" Fusions test 3: %i", self._cross_op.counters['fusion_3'])
         log.info(" Unsolved: %i", self._cross_op.counters['unsolved'])
-        log.info("Infeasible tour handling: %i",
+        log.info("Infeasible tours: %i",
                  self._cross_op.counters['inf_tours'])
         log.info("Total mutations: %i", sum(self._counters['mut']))
         log.info("--------------------- Time statistics----------------------")
