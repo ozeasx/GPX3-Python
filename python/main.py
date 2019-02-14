@@ -210,18 +210,22 @@ def run_ga(id):
     # Best solution
     best_solution[id] = ga.best_solution
     # Calc improvement
-    parent_sum = gpx.counters['parents_sum']
-    children_sum = gpx.counters['children_sum']
+    parents_dist = float(gpx.counters['parents_dist'])
+    children_dist = float(gpx.counters['children_dist'])
     improvement = 0
-    if parent_sum != 0:
-        improvement = (parent_sum - children_sum) / float(parent_sum) * 100
+    if parents_dist != 0:
+        improvement = (1 - children_dist / parents_dist) * 100
 
     # Counters
     counters[id].extend([sum(ga.counters['cross']), gpx.counters['failed'],
-                         improvement, gpx.counters['feasible_1'],
+                         improvement, gpx.counters['feasible'],
+                         gpx.counters['feasible_1'],
                          gpx.counters['feasible_2'],
                          gpx.counters['feasible_3'],
-                         gpx.counters['infeasible'], gpx.counters['fusions'],
+                         gpx.counters['infeasible'], gpx.counters['fusion'],
+                         gpx.counters['fusion_1'],
+                         gpx.counters['fusion_2'],
+                         gpx.counters['fusion_3'],
                          gpx.counters['unsolved'], gpx.counters['inf_tours'],
                          sum(ga.counters['mut'])])
     # Timers

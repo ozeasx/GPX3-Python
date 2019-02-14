@@ -37,7 +37,7 @@ def nn(data, method):
 # https://rawgit.com/pedrohfsd/TSP/develop/2opt.js
 
 
-def two_opt(chromosome, data, limit=False):
+def two_opt(chromosome, data, limit=True):
     # Initial tour
     best_tour = list(chromosome.tour)
     # Get tour dist

@@ -103,7 +103,6 @@ class GA(object):
             while c in self._population or c is None:
                 c = functions.nn(self._data, method)
 
-
         for i in xrange(int(number)):
             # Random
             if method == 'random':
@@ -139,12 +138,11 @@ class GA(object):
             self._insert_pop(ratio * size, method)
         # Done
         print "Done..."
-        # Store execution time
-        self._timers['population'].append(time.time() - start_time)
         # Assert population size
         self._pop_size = len(self._population)
-        print self._pop_size
         assert self._pop_size == size, "gen_pop, pop_size"
+        # Store execution time
+        self._timers['population'].append(time.time() - start_time)
 
     # Evaluate the entire population
     def evaluate(self):
