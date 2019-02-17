@@ -94,6 +94,7 @@ def test(population, stats):
     for pair in combinations(population, 2):
         result.append(recombine(pair))
     # Create keys and list indexes
+    stats['feasible'].append(0)
     stats['feasible_1'].append(0)
     stats['feasible_2'].append(0)
     stats['feasible_3'].append(0)

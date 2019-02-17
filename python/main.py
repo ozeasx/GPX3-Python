@@ -115,7 +115,7 @@ if args.n == 1 and args.G:
 # Function to call each ga run
 def run_ga(id):
     # Also log to file
-    if args.o is not None:
+    if args.o:
         file_handler = logging.FileHandler(log_dir + "/report%i.log"
                                                      % (id + 1))
         file_handler.setFormatter(format)
@@ -217,17 +217,15 @@ def run_ga(id):
         improvement = (1 - children_dist / parents_dist) * 100
 
     # Counters
-    counters[id].extend([sum(ga.counters['cross']), gpx.counters['failed'],
-                         improvement, gpx.counters['feasible'],
-                         gpx.counters['feasible_1'],
+    counters[id].extend([gpx.counters['feasible_1'],
                          gpx.counters['feasible_2'],
-                         gpx.counters['feasible_3'],
-                         gpx.counters['infeasible'], gpx.counters['fusion'],
-                         gpx.counters['fusion_1'],
-                         gpx.counters['fusion_2'],
-                         gpx.counters['fusion_3'],
-                         gpx.counters['unsolved'], gpx.counters['inf_tours'],
-                         sum(ga.counters['mut'])])
+                         gpx.counters['feasible_3'], gpx.counters['feasible'],
+                         gpx.counters['infeasible'], gpx.counters['fusion_1'],
+                         gpx.counters['fusion_2'], gpx.counters['fusion_3'],
+                         gpx.counters['fusion'], gpx.counters['unsolved'],
+                         sum(ga.counters['cross']), gpx.counters['improved'],
+                         gpx.counters['failed'], gpx.counters['inf_tours'],
+                         improvement, sum(ga.counters['mut'])])
     # Timers
     timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),
                        sum(ga.timers['evaluation']),
@@ -247,7 +245,7 @@ def run_ga(id):
 if args.n > 1:
     # Execute all runs
     pool = multiprocessing.Pool(multiprocessing.cpu_count())
-    result = pool.map(run_ga, xrange(args.n))
+    result = pool.map(run_ga, range(args.n))
     pool.close()
     pool.join()
 else:
@@ -270,7 +268,8 @@ if args.n > 1:
     # Write best solution
     tsp.best_solution = best_solution
 
-    if args.o is not None:
+    # Write stats to files
+    if args.o:
 
         avg_fitness = defaultdict(list)
         best_fitness = defaultdict(list)
@@ -289,12 +288,12 @@ if args.n > 1:
                 timers[key].extend(value)
 
         # Write data
-        with open(log_dir + "/avg_fitness.out", 'w') as csv_file:
+        with open(log_dir + "/avg_fitness.csv", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(avg_fitness):
                 writer.writerow(avg_fitness[key])
 
-        with open(log_dir + "/best_fitness.out", 'w') as csv_file:
+        with open(log_dir + "/best_fitness.csv", 'w') as csv_file:
             writer = csv.writer(csv_file)
             for key in sorted(best_fitness):
                 writer.writerow(best_fitness[key])
@@ -308,12 +307,21 @@ if args.n > 1:
         with open(log_dir + "/best_known_tour.out", 'w') as file:
             print >> file, ",".join(map(str, best_solution.tour))
 
-        with open(log_dir + "/counters.out", 'w') as csv_file:
+        with open(log_dir + "/counters.csv", 'w') as csv_file:
             writer = csv.writer(csv_file)
+            writer.writerow(["Feasible_1", "Feasible_2", "Feasible_3",
+                             "Feasible", "Infeasible", "Fusion_1", "Fusion_2",
+                             "Fusion_3", "Fusion", "Unsolved", "Crossover",
+                             "Improved", "Failed", "Infeasible_tours",
+                             "Improvement", "Mutation"])
             for key in sorted(counters):
                 writer.writerow(counters[key])
 
-        with open(log_dir + "/timers.out", 'w') as csv_file:
+        with open(log_dir + "/timers.csv", 'w') as csv_file:
             writer = csv.writer(csv_file)
+            writer.writerow(["Total", "Population", "Evaluation", "Tournament",
+                             "Recombination", "Partitioning", "Simple graph",
+                             "Classification", "Fusion", "Build", "Mutation",
+                             "Pop_restart"])
             for key in sorted(timers):
                 writer.writerow(timers[key])

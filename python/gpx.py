@@ -586,6 +586,7 @@ class GPX(object):
         info['tour_a'] = tour_a
         info['feasible'][0] = set.union(*info['feasible'].values())
         # Counters
+        self._counters['feasible'] += len(info['feasible'][0])
         self._counters['feasible_1'] += len(info['feasible'][1])
         self._counters['feasible_2'] += len(info['feasible'][2])
         self._counters['feasible_3'] += len(info['feasible'][3])
@@ -622,10 +623,10 @@ class GPX(object):
                 return parent_1, parent_2
             # Make sure GPX returns two solutions
             candidates = set([parent_1, parent_2])
-            # Append constructed solutions
+            # Add constructed solutions
             for tour, dist in constructed:
                 candidates.add(Chromosome(tour, dist))
-            # Exclude duplicates, sort by distance, get two of them
+            # Sort by distance, get two of them
             candidates = tuple(sorted(candidates, key=attrgetter('dist'))[:2])
             # Improvement assertion
             parents_dist = self._counters['parents_dist']
@@ -633,6 +634,8 @@ class GPX(object):
             assert children_dist <= parents_dist, (parent_1.tour,
                                                    parent_2.tour,
                                                    "Improvement assertion")
+            if children_dist < parents_dist:
+                self._counters['improved'] += 1
             # To calc total improvement
             self._counters['children_dist'] += children_dist
             # Measure execution time
