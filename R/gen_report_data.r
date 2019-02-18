@@ -2,6 +2,7 @@
 # Load TSP package
 library(TSP)
 library(colorspace)
+library(stringr)
 
 # Get script arguments
 args = commandArgs(trailingOnly=TRUE)
@@ -57,11 +58,11 @@ plot(tsp, best_tour, asp = 1, xlab="x", ylab="y", main=tour_length(best_tour))
 dev.off()
 
 # Get parametrization
-trim <- function (x) gsub("^\\s+|\\s+$", "", x)
-default_params = c("k: None", "P: None", "K: None", "t1: None", "t2: None",
+trim <- function (x) gsub("\\s+", " ", str_trim(x))
+default_params = c("k: 3", "P: None", "K: None", "t1: None", "t2: None",
                    "t3: None", "t1f: None", "t2f: None", "t3f: None", "p: 100",
-                   "M: random", "R: 1.0", "r: 0", "S: random", "e: 0",
-                   "c: 0.0", "m: 0.0", "t: 2opt", "G: False", "o: None")
+                   "M: random", "R: 1.0", "r: 0.5", "S: random", "e: 0",
+                   "c: 1.0", "m: 0", "t: 2opt", "G: False", "o: None")
 
 params = lapply(param_files, scan, sep = ',', what = "list")
 params = lapply(params, trim)
@@ -82,7 +83,15 @@ for (i in 1:n) {
   }
 }
 
-params = lapply(params, paste, collapse = " ")
+# Remove empty elements from params
+remove <- function(x) {
+  r = c("")
+  x[! x %in% r]
+}
+
+params = lapply(params, remove)
+params = lapply(params, paste, collapse = ", ")
+
 
 # Consolidate fitness data
 fitness = lapply(fitness_files, read.csv2, sep = ',', dec = '.',
@@ -107,7 +116,8 @@ plot(fitness[[1]], type = 'n', xlab = "Generation", ylab = "Fitness",
 for (i in 1:n) {
   lines(fitness[[i]], type = 'l', lty = linetype[i], col = colors[i])
 }
-legend(10, 0.5, params, lty = linetype, col=colors)
+legend(10, -2500, params,
+       lty = linetype, col=colors)
 dev.off()
 
 # Summarize data
