@@ -70,7 +70,7 @@ p.add_argument("I", help="TSP instance file", type=str)
 args = p.parse_args()
 
 # Assert arguments
-if all(v is None for v in [args.k, args.K, args.P]):
+if all(v is None for v in (args.k, args.K, args.P)):
     print "One selection method (k, K, P) must be provided"
     exit()
 if args.k is not None:
@@ -88,7 +88,7 @@ assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
-# VRP Instance
+# Instance
 tsp = TSPLIB(args.I)
 
 # Create directory to report data

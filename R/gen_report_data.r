@@ -97,6 +97,8 @@ params = lapply(params, paste, collapse = ", ")
 fitness = lapply(fitness_files, read.csv2, sep = ',', dec = '.',
                  header = FALSE)
 fitness = lapply(fitness, rowMeans)
+# fitness = lapply(fitness, rangeMm, max(sapply(fitness, max)),
+#                                    min(sapply(fitness, min)))
 
 # Plot fitness
 # Change the palette to avoid yellow

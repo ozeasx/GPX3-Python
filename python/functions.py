@@ -91,7 +91,7 @@ def two_opt(chromosome, data, limit=True):
                     best_tour = new_tour
                     best_dist = best_dist - join_a_dist + join_b_dist
                     improved = not limit
-                    break
+                    # break
 
     # Make sure 2opt is doing its job
     assert best_dist <= chromosome.dist, "Something wrong..."
