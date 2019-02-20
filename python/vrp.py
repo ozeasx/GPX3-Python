@@ -6,7 +6,7 @@ from tsp import TSPLIB
 from shell import Shell
 
 
-class VRP(TSPLIB):
+class VRPLIB(TSPLIB):
     def __init__(self, instance_path):
         # Call super init
         TSPLIB.__init__(self, instance_path)
@@ -14,8 +14,8 @@ class VRP(TSPLIB):
         self._type = "vrp"
 
         # Set capacity
-        self._capacity = int(Shell.run("grep CAPACITY " + instance_path
-                                       + " | cut -d':' -f2").strip())
+        self._capacity = float(Shell.run("grep CAPACITY " + instance_path
+                                         + " | cut -d':' -f2").strip())
         # Mim number of vehicles
         self._trucks = int(Shell.run("grep TRUCKS " + instance_path
                                      + " | cut -d':' -f2").strip())
