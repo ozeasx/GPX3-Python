@@ -10,6 +10,7 @@ import logging
 import csv
 from ga import GA
 from tsp import TSPLIB
+from vrp import VRPLIB
 from gpx import GPX
 
 
@@ -117,7 +118,10 @@ if args.l:
     assert os.path.isfile(args.l), "File " + args.l + " doesn't exist"
 
 # Instance
-instance = TSPLIB(args.I)
+if args.I.split('.')[2].lower() == 'tsp':
+    instance = TSPLIB(args.I)
+else:
+    instance = VRPLIB(args.I)
 
 # Create directory to report data
 if args.o:
@@ -171,6 +175,9 @@ def run_ga(id):
     logger.info("Generation limit: %i", args.g)
     logger.info("Instance: %s", args.I)
     logger.info("Dimension: %i", instance.dimension)
+    if instance.type() == 'vrp':
+        logger.info("Trucks: %i", instance.trucks)
+        logger.info("Truck's capcity: %f", instance.capcity)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Stats

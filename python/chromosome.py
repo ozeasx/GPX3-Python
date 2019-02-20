@@ -8,18 +8,26 @@ from graph import Graph
 
 class Chromosome(object):
     # Constructor
-    def __init__(self, tour, dist=None):
+    def __init__(self, **kwargs):
         # Create random tour based on given dimension
-        if isinstance(tour, int):
-            self._tour = range(1, tour + 1)
+        if 'dimension' in kwargs:
+            self._tour = range(1, kwargs['dimension'] + 1)
             random.shuffle(self._tour)
         # User defined tour
-        elif isinstance(tour, (list, tuple, deque)):
-            self._tour = tuple(tour)
+        elif 'tour' in kwargs:
+            # Is it a valid hamiltonian circuit?
+            assert len(kwargs['tour']) == len(set(kwargs['tour']))
+            self._tour = tuple(kwargs['tour'])
         # Tour distance
+<<<<<<< HEAD
         if dist:
             self._dist = float(dist)
         # Number of cities
+=======
+        if 'dist' in kwargs:
+            self._dist = kwargs['dist']
+        # Set dimension
+>>>>>>> Working with kwargs
         self._dimension = len(self.tour)
         # undirected graph and edges representaition
         if self.tour:

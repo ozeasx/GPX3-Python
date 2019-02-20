@@ -4,6 +4,10 @@
 import random
 from chromosome import Chromosome
 
+def recombine(parent_1, parent_2, operator):
+    
+
+
 
 # Nearest neighbour algorithm
 def nn(data, method):
