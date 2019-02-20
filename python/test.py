@@ -86,13 +86,13 @@ def recombine(pair):
 # Test
 def test(population, stats):
     # Multiprocessing
-    # pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
-    # result = pool.map(recombine, combinations(population, 2))
-    # pool.close()
-    # pool.join()
-    result = list()
-    for pair in combinations(population, 2):
-        result.append(recombine(pair))
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
+    result = pool.map(recombine, combinations(population, 2))
+    pool.close()
+    pool.join()
+    # result = list()
+    # for pair in combinations(population, 2):
+    #     result.append(recombine(pair))
     # Create keys and list indexes
     stats['feasible'].append(0)
     stats['feasible_1'].append(0)

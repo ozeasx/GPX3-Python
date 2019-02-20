@@ -10,6 +10,7 @@ from chromosome import Chromosome
 class TSPLIB(object):
     def __init__(self, instance_path):
         # Set instance file and
+        self._type = "tsp"
         self._instance_path = instance_path
         self._instance_name = instance_path[:-4]
         self._best_solution = None
@@ -71,6 +72,11 @@ class TSPLIB(object):
             # Store best solution
             self._best_solution = Chromosome(best_tour,
                                              self.tour_dist(best_tour))
+
+    # Get instance type
+    @property
+    def type(self):
+        return self._type
 
     # Get instance dimension
     @property

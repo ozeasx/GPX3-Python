@@ -89,7 +89,7 @@ assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
 
 # Instance
-tsp = TSPLIB(args.I)
+instance = TSPLIB(args.I)
 
 # Create directory to report data
 if args.o is not None:
@@ -139,8 +139,8 @@ def run_ga(id):
     logger.info("Mutation probability: %f", args.m)
     logger.info("Mutation operator: %s", args.t)
     logger.info("Generation limit: %i", args.g)
-    logger.info("TSP Instance: %s", args.I)
-    logger.info("TSP dimension: %i", tsp.dimension)
+    logger.info("Instance: %s", args.I)
+    logger.info("Dimension: %i", instance.dimension)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
     # Statistics variables
@@ -151,7 +151,7 @@ def run_ga(id):
     timers = defaultdict(list)
 
     # Crossover operator
-    gpx = GPX(tsp)
+    gpx = GPX(instance)
 
     # Define which tests will be applied
     gpx.test_1 = args.t1
@@ -163,7 +163,7 @@ def run_ga(id):
     gpx.test_3_fusion = args.t3f
 
     # GA Instance
-    ga = GA(tsp, gpx, args.e)
+    ga = GA(instance, gpx, args.e)
     # Generate inicial population
     ga.gen_pop(args.p, args.M, args.R)
     # Fisrt population evaluation
@@ -250,7 +250,7 @@ if args.n > 1:
     pool.join()
 else:
     result = run_ga(0)
-    tsp.best_solution = result[2][0]
+    instance.best_solution = result[2][0]
 
 # Consolidate data
 if args.n > 1:
@@ -266,7 +266,7 @@ if args.n > 1:
                 best_solution = value
 
     # Write best solution
-    tsp.best_solution = best_solution
+    instance.best_solution = best_solution
 
     # Write stats to files
     if args.o:

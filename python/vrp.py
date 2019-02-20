@@ -11,6 +11,8 @@ class VRP(TSPLIB):
         # Call super init
         TSPLIB.__init__(self, instance_path)
 
+        self._type = "vrp"
+
         # Set capacity
         self._capacity = int(Shell.run("grep CAPACITY " + instance_path
                                        + " | cut -d':' -f2").strip())
