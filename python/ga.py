@@ -8,7 +8,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
-from chromosome import Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 import functions
 
 
@@ -76,7 +76,7 @@ class GA(object):
         # Do nothing
         if number == 0:
             return
-        # Individuals to be inserted
+        # Round up to 1
         elif 0 < number < 1:
             number = 1
 

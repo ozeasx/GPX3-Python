@@ -21,7 +21,7 @@ def str2bool(v):
     elif v.lower() in ('no', 'false', 'f', 'n', '0'):
         return False
     else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
+        raise argparse.ArgumentTypeError('Boolean value expected')
 
 
 # Argument parser
@@ -133,9 +133,9 @@ def run_ga(id):
     logger.info("Population restart method: %s", args.S)
     logger.info("Population restart method ratio: %f", args.r)
     logger.info("Elitism: %i", args.e)
-    if args.k is not None:
+    if args.k:
         logger.info("Tournament selection size: %i", args.k)
-    elif args.K is not None:
+    elif args.K:
         logger.info("Selection pressure (Ranking): %f", args.K)
     elif args.P:
         logger.info("Pairwise selection")
@@ -193,9 +193,9 @@ def run_ga(id):
         if args.r:
             ga.restart_pop(args.r, args.S)
         # Selection
-        if args.k is not None:
+        if args.k:
             ga.tournament_selection(args.k)
-        elif args.K is not None:
+        elif args.K:
             ga.rank_selection(args.K)
         elif args.P:
             ga.pairwise_selection()
