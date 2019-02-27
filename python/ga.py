@@ -8,7 +8,7 @@ import logging as log
 from collections import defaultdict
 from operator import attrgetter
 from itertools import combinations
-from chromosome import Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 import functions
 
 

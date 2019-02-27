@@ -2,64 +2,72 @@
 # ozeasx@gmail.com
 
 import random
-from collections import deque, defaultdict
+from collections import defaultdict
 from graph import Graph
 from chromosome import Chromosome
 
 
 class VRP_Chromosome(Chromosome):
-    def __init__(self, tour, trucks=None, dist=None):
+    def __init__(self, **kwargs):
         # Create random tour based on given dimension
-        if isinstance(tour, int):
+        if len(kwargs) == 1 and 'dimension' in kwargs:
+            Chromosome.__init__(dimension=kwargs['dimension'])
+            self._trucks = 1
+        elif all(p in kwargs for p in ('dimension', 'trucks')):
             # Assert valid truck number for tour dimension
-            assert tour - 1 >= trucks, "Invalid dimension/truck relation"
+            assert kwargs['trucks'] < kwargs['dimension']
             # Random tour
-            self._tour = range(2, tour + 1)
+            self._tour = range(2, kwargs['dimension'] + 1)
             random.shuffle(self._tour)
             # Insert first depot
             self._tour.insert(0, 1)
             # Insert depot at random
-            points = range(2, tour)  # Insert positions
-            depots = random.sample(points, trucks-1)  # Random insert positions
+            points = range(2, kwargs['dimension'])  # Insert positions
+            # Random insert positions
+            depots = random.sample(points, kwargs['trucks'] - 1)
             depots.sort()
             for index, depot in enumerate(depots):
                 self._tour.insert(depot + index, 1)
             self._tour = tuple(self._tour)
             # Truck number
-            self._trucks = trucks
+            self._trucks = kwargs['trucks']
             # Dist
             self._dist = None
         # User defined tour
-        elif isinstance(tour, (list, tuple, deque)):
+        elif all(p in kwargs for p in ('tour', 'dist')):
             # If OK, set tour and truck number
-            self._dist = dist
-            self._tour = tuple(tour)
+            self._dist = kwargs['dist']
+            self._tour = tuple(kwargs[''])
             self._trucks = self._tour.count(1)
+        else:
+            print "Dimension or tour needed"
+            exit()
 
-        # Verify if it is a valid VRP tour
-        for i, j in zip(self._tour[:-1], self._tour[1:]):
-            # Check adjacent depots
-            if i == j:
-                assert False, "Invalid VRP tour"
-        assert self._tour[0] != self._tour[-1], "Invalid VRP tour"
-        assert self._tour.count(1) == self._trucks, "Invalid VRP tour"
-        assert len(self._tour) == len(set(self._tour)) + self._trucks - 1
+        # VRP solutions assertions
+        if self._trucks > 1:
+            for i, j in zip(self._tour[:-1], self._tour[1:]):
+                # Check adjacent depots
+                if i == j:
+                    assert False, "Invalid VRP tour"
+            assert self._tour[0] != self._tour[-1], "Invalid VRP tour"
+            assert self._tour.count(1) == self._trucks, "Invalid VRP tour"
+            assert len(self._tour) == len(set(self._tour)) + self._trucks - 1
+
+            # Store routes
+            self._routes = self._tour
+            if self._trucks > 1:
+                self._routes = defaultdict(list)
+                aux = 0
+                for index, client in enumerate(self._tour):
+                    if index is not 0 and client == 1:
+                        aux += 1
+                    self._routes[aux].append(client)
 
         # Dimension
         self._dimension = len(self._tour) - self._trucks + 1
         # undirected graph and edges representaition
         self._undirected_graph = Graph.gen_undirected_graph(self._tour)
         self._undirected_edges = Graph.gen_undirected_edges(self._tour)
-
-        # Store routes
-        self._routes = self._tour
-        if self._trucks > 1:
-            self._routes = defaultdict(list)
-            aux = 0
-            for index, client in enumerate(self._tour):
-                if index is not 0 and client == 1:
-                    aux += 1
-                self._routes[aux].append(client)
 
     # Get trucks
     @property
@@ -85,32 +93,6 @@ class VRP_Chromosome(Chromosome):
     @property
     def best_solution(self):
         return self._best_solution
-
-    # Set a new best tour and write to file
-    @best_solution.setter
-    def best_solution(self, solution):
-
-        # Set best solution
-        if self._best_solution is None:
-            self._best_solution = solution
-        elif (solution.dist < self._best_solution.dist
-              and all(load <= self._capacity for load in solution.load)):
-            self._best_solution = solution
-        else:
-            return
-
-        # Write new solution to file
-        with open(self._instance_name + ".opt.tour.new", 'w') as best:
-            best.write("NAME : " + self._name + ".opt.tour.new\n")
-            best.write("COMMENT : Length " + str(solution.dist)
-                                           + ", ozeasx@gmail.com\n")
-            best.write("TYPE : TOUR\n")
-            best.write("DIMENSION : " + str(self._dimension) + "\n")
-            best.write("TOUR_SECTION\n")
-            for node in solution.tour:
-                best.write(str(node) + "\n")
-            best.write("-1\n")
-            best.write("EOF\n")
 
     # Given a VRP Chromosome, returns a TSP Chromosome
     def to_tsp(self):

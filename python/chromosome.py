@@ -2,7 +2,6 @@
 # ozeasx@gmail.com
 
 import random
-from collections import deque
 from graph import Graph
 
 
@@ -18,6 +17,9 @@ class Chromosome(object):
             # Is it a valid hamiltonian circuit?
             assert len(kwargs['tour']) == len(set(kwargs['tour']))
             self._tour = tuple(kwargs['tour'])
+        else:
+            print "dimension or tour needed"
+            exit()
         # Tour distance
 <<<<<<< HEAD
         if dist:
