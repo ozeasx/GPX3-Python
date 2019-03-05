@@ -25,6 +25,8 @@ class GPX(object):
         self._test_1 = True
         self._test_2 = False
         self._test_3 = False
+        # Fusion switch
+        self._fusion_on = True
         # Tests 1, 2 and 3 for fusion
         self._test_1_fusion = True
         self._test_2_fusion = False
@@ -68,6 +70,10 @@ class GPX(object):
     @property
     def test_3(self):
         return self._test_3
+
+    @property
+    def fusion_on(self):
+        return self._fusion_on
 
     @property
     def test_1_fusion(self):
@@ -129,6 +135,11 @@ class GPX(object):
     def test_3(self, value):
         assert value in [True, False]
         self._test_3 = value
+
+    @fusion_on.setter
+    def fusion_on(self, value):
+        assert value in [True, False]
+        self._fusion = value
 
     @test_1_fusion.setter
     def test_1_fusion(self, value):
@@ -377,6 +388,9 @@ class GPX(object):
                 # All remaining partitions after f1 and fusion are feasible 2?
                 info['feasible'][2].add(info['infeasible'].pop())
 
+        # Update feasible partitions
+        info['feasible'][0] = set.union(*info['feasible'].values())
+
         # Store execution time
         self._timers['fusion'].append(time.time() - start_time)
 
@@ -392,8 +406,8 @@ class GPX(object):
         dists['A'] = defaultdict(float)
         dists['B'] = defaultdict(float)
 
-        # Set to store partial solution (cycle, key)s
-        solution = set()
+        # Set to store best partial solution (cycle, key)s
+        partial = set()
 
         # Partition with minor inside diff
         minor_key = None
@@ -412,7 +426,7 @@ class GPX(object):
             if key in info['feasible'][0]:
                 # Distance diference inside AB_cycle
                 diff = abs(dists['A'][key] - dists['B'][key])
-                # Save AB_cycle with minor diference
+                # Save partition with minor diference (|A-B|)
                 if not minor_key:
                     minor_key = key
                     minor_diff = diff
@@ -421,9 +435,9 @@ class GPX(object):
                     minor_diff = diff
                 # Chose best path in each feasible partition
                 if dists['A'][key] <= dists['B'][key]:
-                    solution.add(tuple(['A', key]))
+                    partial.add(tuple(['A', key]))
                 else:
-                    solution.add(tuple(['B', key]))
+                    partial.add(tuple(['B', key]))
             # Infeasible partitions
             else:
                 inf_key = key
@@ -433,13 +447,15 @@ class GPX(object):
         # Create base solutions without infeasible partitions
         base_1 = list()
         base_2 = list()
-        # Add common distance
+        # Common distance
         base_1_dist = tour_1_dist - sum(dists['A'].values())
 
         # Feasible part
-        for cycle, key in solution:
+        for cycle, key in partial:
+            # Best base solution
             base_1.extend(info['ab_cycles'][cycle][key])
             base_1_dist += dists[cycle][key]
+            # Second best base solution
             if key != minor_key:
                 base_2.extend(info['ab_cycles'][cycle][key])
             elif cycle == 'A':
@@ -458,20 +474,24 @@ class GPX(object):
         graphs.append(Graph.gen_undirected_ab_graph(base_2) | common_graph)
         distances.extend([base_1_dist, base_2_dist])
 
-        # Graphs with infeasible partitions
+        # Graphs with infeasible partitions (explore 4 potencial children)
         if inf_key:
+            new_graphs = list()
+            new_distances = list()
             for graph, dist in zip(graphs, distances):
-                graphs.append(Graph.gen_undirected_ab_graph(inf_cycle_a)
-                              | graph)
-                graphs.append(Graph.gen_undirected_ab_graph(inf_cycle_b)
-                              | graph)
-                distances.extend([dist + dists['A'][inf_key],
-                                  dist + dists['B'][inf_key]])
+                new_graphs.append(Graph.gen_undirected_ab_graph(inf_cycle_a)
+                                  | graph)
+                new_graphs.append(Graph.gen_undirected_ab_graph(inf_cycle_b)
+                                  | graph)
+                new_distances.extend([dist + dists['A'][inf_key],
+                                      dist + dists['B'][inf_key]])
+            graphs = new_graphs
+            distances = new_distances
 
         # Candidates solutions
         candidates = list()
         # Builder
-        for graph, dist in zip(graphs, distances):
+        for i, (graph, dist) in enumerate(zip(graphs, distances)):
             vertices, tour = Graph.dfs(graph, 1)
             # Feasible tour?
             if len(vertices) == len(self._parent_1_tour):
@@ -483,6 +503,7 @@ class GPX(object):
             # An infeasible tour was created with only feasible partitions?
             elif not inf_key:
                 self._counters['inf_tour'] += 1
+                self._counters['inf_tour_' + i] += 1
                 # print tour, self._parent_1_tour, self._parent_2_tour
                 # exit()
 
@@ -593,10 +614,10 @@ class GPX(object):
         self._counters['infeasible'] += len(info['infeasible'])
 
         # Try to fuse infeasible partitions
-        if len(info['infeasible']) > 1:
+        if self._fusion_on and len(info['infeasible']) > 1:
             self._fusion(info)
-            # Update feasible partitions
-            info['feasible'][0] = set.union(*info['feasible'].values())
+        else:
+            pass
 
         # After fusion, if exists one or no partition, return parents
         if len(info['feasible'][0]) + len(info['infeasible']) <= 1:

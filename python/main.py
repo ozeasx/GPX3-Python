@@ -224,7 +224,7 @@ def run_ga(id):
                          gpx.counters['fusion_2'], gpx.counters['fusion_3'],
                          gpx.counters['fusion'], gpx.counters['unsolved'],
                          sum(ga.counters['cross']), gpx.counters['improved'],
-                         gpx.counters['failed'], gpx.counters['inf_tours'],
+                         gpx.counters['failed'], gpx.counters['inf_tour'],
                          improvement, sum(ga.counters['mut'])])
     # Timers
     timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),

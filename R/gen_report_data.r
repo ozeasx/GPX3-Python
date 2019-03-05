@@ -10,7 +10,8 @@ args = commandArgs(trailingOnly=TRUE)
 # Get path to TSP instance
 report_file = paste(args[1], "report1.log", sep="")
 instance_file = grep(".tsp", readLines(report_file), value=TRUE)
-instance_file = strsplit(instance_file, " ")[[1]][3]
+instance_file = strsplit(instance_file, " ")[[1]][2]
+
 
 # Args size
 n = length(args)
