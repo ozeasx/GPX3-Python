@@ -27,6 +27,8 @@ class GPX(object):
         self._test_3 = False
         # Fusion switch
         self._fusion_on = True
+        # Explore more children in case of infeasible partitions
+        self._explore = True
         # Tests 1, 2 and 3 for fusion
         self._test_1_fusion = True
         self._test_2_fusion = False
@@ -474,8 +476,13 @@ class GPX(object):
         graphs.append(Graph.gen_undirected_ab_graph(base_2) | common_graph)
         distances.extend([base_1_dist, base_2_dist])
 
-        # Graphs with infeasible partitions (explore 4 potencial children)
+        # Are there infeasible partitions?
         if inf_key:
+            # Remove base 2
+            if not self._explore:
+                graphs.pop()
+                distances.pop()
+            # Graphs with infeasible partitions (explore 4 potencial children)
             new_graphs = list()
             new_distances = list()
             for graph, dist in zip(graphs, distances):
