@@ -39,6 +39,8 @@ p.add_argument("-t3", help="Test 3", type=str2bool, default=False)
 p.add_argument("-t1f", help="Test 1 for Fusion", type=str2bool, default=True)
 p.add_argument("-t2f", help="Test 2 for Fusion", type=str2bool, default=False)
 p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
+p.add_argument("-F", help="Apply fusion step", type=str2bool, default=True)
+p.add_argument("-E", help="Explore 4 children", type=str2bool, default=True)
 p.add_argument("-p", help="Population size", type=int, default=100)
 p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random',
@@ -138,6 +140,8 @@ def run_ga(id):
     logger.info("Crossover probability: %f", args.c)
     logger.info("Mutation probability: %f", args.m)
     logger.info("Mutation operator: %s", args.t)
+    logger.info("Fusion: %s", args.F)
+    logger.info("Explore: %s", args.E)
     logger.info("Generation limit: %i", args.g)
     logger.info("Instance: %s", args.I)
     logger.info("Dimension: %i", instance.dimension)
@@ -161,6 +165,10 @@ def run_ga(id):
     gpx.test_1_fusion = args.t1f
     gpx.test_2_fusion = args.t2f
     gpx.test_3_fusion = args.t3f
+
+    # Fusion and explore switches
+    gpx.fusion_on = args.F
+    gpx.explore_on = args.E
 
     # GA Instance
     ga = GA(instance, gpx, args.e)

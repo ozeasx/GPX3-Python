@@ -71,6 +71,7 @@ class GA(object):
     def timers(self):
         return self._timers
 
+    # =========================================================================
     # Insert unique solutions into population
     def _insert_pop(self, number, method='random', eval=False):
         # Do nothing
@@ -80,6 +81,7 @@ class GA(object):
         elif 0 < number < 1:
             number = 1
 
+        # ---------------------------------------------------------------------
         # Sub functions to generate unique chromosome
         def random():
             c = Chromosome(self._data.dimension)
@@ -102,6 +104,7 @@ class GA(object):
             # Avoid duplicates
             while c in self._population or c is None:
                 c = functions.nn(self._data, method)
+        # ---------------------------------------------------------------------
 
         for i in xrange(int(number)):
             # Random
@@ -121,6 +124,7 @@ class GA(object):
             # Insert unique individual into population
             self._population.append(c)
 
+    # =========================================================================
     # Generate inicial population
     def gen_pop(self, size, method='random', ratio=1):
         # Regiter local and global start time
@@ -144,6 +148,7 @@ class GA(object):
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
 
+    # =========================================================================
     # Evaluate the entire population
     def evaluate(self):
         # Register star time
@@ -186,10 +191,12 @@ class GA(object):
         # Register execution Timers
         self._timers['evaluation'].append(time.time() - start_time)
 
+    # =========================================================================
     # Calculate the individual fitness
     def _evaluate(self, c):
         return -c.dist
 
+    # =========================================================================
     # Tournament selection
     def tournament_selection(self, k):
         # Register start time
@@ -212,6 +219,7 @@ class GA(object):
         # Assure population size remains the same
         assert len(self._population) == self._pop_size, "Tournament, pop size"
 
+    # =========================================================================
     # Pairwise selection
     def pairwise_selection(self):
         selected = list()
@@ -219,6 +227,7 @@ class GA(object):
             selected.extend([p1, p2])
         self._population = selected
 
+    # =========================================================================
     # Ranking selection
     # https://dl.acm.org/citation.cfm?id=93169
     def rank_selection(self, b=1.5):
@@ -235,6 +244,7 @@ class GA(object):
 
         self._population = selected
 
+    # =========================================================================
     # Recombination
     def recombine(self, p_cross, pairwise=False):
         # Register start time
@@ -287,6 +297,7 @@ class GA(object):
         # Register execution time
         self._timers['recombination'].append(time.time() - start_time)
 
+    # =========================================================================
     # Mutate individuals according to p_mut probability
     def mutate(self, p_mut, method):
         # Register start time
@@ -313,6 +324,7 @@ class GA(object):
         # Register execution time
         self._timers['mutation'].append(time.time() - start_time)
 
+    # =========================================================================
     # Reset population
     def restart_pop(self, ratio, method='random'):
         # Register start time
@@ -343,6 +355,7 @@ class GA(object):
         # Assure population size remains the same
         assert len(self._population) == self._pop_size, "ga, restart_pop"
 
+    # =========================================================================
     # Generation info
     def print_info(self):
 
@@ -354,28 +367,49 @@ class GA(object):
         # Reset restarted indicator
         self._pop_restarted = False
 
+    # =========================================================================
     # Final report
     def report(self):
         self._timers['total'].append(time.time() - self._start_time)
         log.info("----------------------- Statitics -------------------------")
         log.info("Total Crossover: %i", sum(self._counters['cross']))
-        log.info("Failed: %i", self._cross_op.counters['failed'])
+        log.info("Total fails: %i", self._cross_op.counters['failed'])
+        log.info(" by duplicated parents: %i",
+                 self._cross_op.counters['failed_0'])
+        log.info(" by 1 or 0 partition after partitioning: %i",
+                 self._cross_op.counters['failed_1'])
+        log.info(" by 1 or 0 partition after fusion: %i",
+                 self._cross_op.counters['failed_2'])
+        log.info(" by no constructed tours: %i",
+                 self._cross_op.counters['failed_3'])
+
         parents_sum = self._cross_op.counters['parents_sum']
         children_sum = self._cross_op.counters['children_sum']
+
         if parents_sum != 0:
             log.info("Overall improvement: %f", (parents_sum - children_sum)
                      / float(parents_sum) * 100)
-        log.info("Partitions")
+        log.info("Feasible partitions: %i",
+                 self._cross_op.counters['feasible'])
         log.info(" Feasible test 1: %i", self._cross_op.counters['feasible_1'])
         log.info(" Feasible test 2: %i", self._cross_op.counters['feasible_2'])
         log.info(" Feasible test 3: %i", self._cross_op.counters['feasible_3'])
-        log.info(" Infeasible: %i", self._cross_op.counters['infeasible'])
+        log.info("Infeasible: %i", self._cross_op.counters['infeasible'])
+        log.info("Fusions: %i", self._cross_op.counters['fusion'])
         log.info(" Fusions test 1: %i", self._cross_op.counters['fusion_1'])
         log.info(" Fusions test 2: %i", self._cross_op.counters['fusion_2'])
         log.info(" Fusions test 3: %i", self._cross_op.counters['fusion_3'])
-        log.info(" Unsolved: %i", self._cross_op.counters['unsolved'])
+        log.info("Unsolved: %i", self._cross_op.counters['unsolved'])
         log.info("Infeasible tours: %i",
-                 self._cross_op.counters['inf_tours'])
+                 self._cross_op.counters['inf_tour'])
+        log.info(" Infeasible tours 1: %i",
+                 self._cross_op.counters['inf_tour_0'])
+        log.info(" Infeasible tours 2: %i",
+                 self._cross_op.counters['inf_tour_1'])
+        log.info(" Infeasible tours 3: %i",
+                 self._cross_op.counters['inf_tour_2'])
+        log.info(" Infeasible tours 4: %i",
+                 self._cross_op.counters['inf_tour_3'])
         log.info("Total mutations: %i", sum(self._counters['mut']))
         log.info("--------------------- Time statistics----------------------")
         log.info("Total execution time: %f", sum(self._timers['total']))
@@ -387,6 +421,8 @@ class GA(object):
                  sum(self._cross_op.timers['partitioning']))
         log.info(" Simplified graph: %f",
                  sum(self._cross_op.timers['simple_graph']))
+        log.info(" Simplified graph (fusion): %f",
+                 sum(self._cross_op.timers['simple_graph_f']))
         log.info(" Classification: %f",
                  sum(self._cross_op.timers['classification']))
         log.info(" Fusion: %f", sum(self._cross_op.timers['fusion']))

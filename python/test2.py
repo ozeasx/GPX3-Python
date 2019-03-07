@@ -151,8 +151,11 @@ gpx = GPX(tsp)
 # p2 = Chromosome((11, 8, 6, 5, 4, 1, 10, 3, 2, 7, 9, 12))
 
 # F22
-p1 = Chromosome((9, 14, 2, 5, 3, 11, 6, 1, 4, 12, 15, 7, 10, 13, 16, 8))
-p2 = Chromosome([6, 1, 15, 3, 16, 2, 4, 8, 9, 11, 10, 7, 13, 14, 12, 5])
+# p1 = Chromosome((9, 14, 2, 5, 3, 11, 6, 1, 4, 12, 15, 7, 10, 13, 16, 8))
+# p2 = Chromosome([6, 1, 15, 3, 16, 2, 4, 8, 9, 11, 10, 7, 13, 14, 12, 5])
+
+p1 = Chromosome([11, 1, 3, 16, 4, 9, 14, 10, 7, 2, 13, 5, 6, 8, 12, 15])
+p2 = Chromosome([3, 1, 14, 7, 8, 2, 16, 9, 15, 5, 10, 11, 6, 13, 12, 4])
 
 # vrp1
 # p1 = Chromosome((1, 2, 3, 10, 4, 5, 6, 11, 7, 8, 9))
@@ -180,11 +183,12 @@ p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
 
 gpx.f1_test = True
-gpx.f2_test = True
-gpx.f3_test = True
-gpx.ff1_test = False
+gpx.f2_test = False
+gpx.f3_test = False
+gpx.ff1_test = True
 gpx.ff2_test = False
 gpx.ff3_test = False
+gpx.fusion_on = False
 
 c1, c2 = gpx.recombine(p1, p2)
 
