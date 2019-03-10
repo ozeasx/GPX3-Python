@@ -604,6 +604,8 @@ class GPX(object):
         undirected_b = Graph.gen_undirected_graph(tour_b)
         undirected_c = Graph.gen_undirected_graph(tour_c)
 
+        self._timers['g_star'].append(time.time() - start_time)
+
         # Partitioning schemes m, n
         m = dict()
         n = dict()

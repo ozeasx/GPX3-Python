@@ -417,6 +417,8 @@ class GA(object):
         log.info("Evaluation: %f", sum(self._timers['evaluation']))
         log.info("Selection: %f", sum(self._timers['tournament']))
         log.info("Recombination: %f", sum(self._timers['recombination']))
+        log.info(" G Star: %f",
+                 sum(self._cross_op.timers['g_star']))
         log.info(" Partitioning: %f",
                  sum(self._cross_op.timers['partitioning']))
         log.info(" Simplified graph: %f",

@@ -232,15 +232,20 @@ def run_ga(id):
                          gpx.counters['fusion_2'], gpx.counters['fusion_3'],
                          gpx.counters['fusion'], gpx.counters['unsolved'],
                          sum(ga.counters['cross']), gpx.counters['improved'],
-                         gpx.counters['failed'], gpx.counters['inf_tour'],
+                         gpx.counters['failed_0'], gpx.counters['failed_1'],
+                         gpx.counters['failed_2'], gpx.counters['failed_3'],
+                         gpx.counters['failed'], gpx.counters['inf_tour_0'],
+                         gpx.counters['inf_tour_1'], gpx.counters['inf_tour'],
                          improvement, sum(ga.counters['mut'])])
     # Timers
     timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),
                        sum(ga.timers['evaluation']),
                        sum(ga.timers['tournament']),
                        sum(ga.timers['recombination']),
+                       sum(ga.timers['g_star']),
                        sum(gpx.timers['partitioning']),
                        sum(gpx.timers['simple_graph']),
+                       sum(gpx.timers['simple_graph_f']),
                        sum(gpx.timers['classification']),
                        sum(gpx.timers['fusion']), sum(gpx.timers['build']),
                        sum(ga.timers['mutation']),
@@ -320,7 +325,9 @@ if args.n > 1:
             writer.writerow(["Feasible_1", "Feasible_2", "Feasible_3",
                              "Feasible", "Infeasible", "Fusion_1", "Fusion_2",
                              "Fusion_3", "Fusion", "Unsolved", "Crossover",
-                             "Improved", "Failed", "Infeasible_tours",
+                             "Improved", "Failed_0", "Failed_1", "Failed_2",
+                             "Failed_3", "Failed", "Infeasible_tour_1",
+                             "Infeasible_tour_2", "Infeasible_tours",
                              "Improvement", "Mutation"])
             for key in sorted(counters):
                 writer.writerow(counters[key])
@@ -328,7 +335,8 @@ if args.n > 1:
         with open(log_dir + "/timers.csv", 'w') as csv_file:
             writer = csv.writer(csv_file)
             writer.writerow(["Total", "Population", "Evaluation", "Tournament",
-                             "Recombination", "Partitioning", "Simple graph",
+                             "Recombination", "G_Star", "Partitioning",
+                             "Simple_graph", "Simple_graph_fusion",
                              "Classification", "Fusion", "Build", "Mutation",
                              "Pop_restart"])
             for key in sorted(timers):
