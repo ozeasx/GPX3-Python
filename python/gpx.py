@@ -2,6 +2,7 @@
 # ozeasx@gmail.com
 
 import time
+import math
 from collections import defaultdict
 from collections import deque
 from itertools import combinations
@@ -17,18 +18,19 @@ class GPX(object):
         # dataset to compute distances
         self._data = data
         # Partitions types values
-        self._f1_weight = 1
+        self._f1_weight = 3
         self._f2_weight = 2
-        self._f3_weight = 3
+        self._f3_weight = 1
         self._infeasible_weight = 0.4
         # Tests 1, 2 and 3 for partitioning
         self._test_1 = True
         self._test_2 = False
         self._test_3 = False
-        # Fusion switch
-        self._fusion_on = True
         # Explore more children in case of infeasible partitions
         self._explore_on = True
+        # Fusion switchs
+        self._fusion_on = True
+        self._fusion_limit = True
         # Tests 1, 2 and 3 for fusion
         self._test_1_fusion = True
         self._test_2_fusion = False
@@ -74,12 +76,16 @@ class GPX(object):
         return self._test_3
 
     @property
+    def explore_on(self):
+        return self._explore_on
+
+    @property
     def fusion_on(self):
         return self._fusion_on
 
     @property
-    def explore_on(self):
-        return self._explore_on
+    def fusion_limit(self):
+        return self._fusion_limit
 
     @property
     def test_1_fusion(self):
@@ -142,15 +148,20 @@ class GPX(object):
         assert value in [True, False]
         self._test_3 = value
 
+    @explore_on.setter
+    def explore_on(self, value):
+        assert value in [True, False]
+        self._explore_on = value
+
     @fusion_on.setter
     def fusion_on(self, value):
         assert value in [True, False]
         self._fusion_on = value
 
-    @explore_on.setter
-    def explore_on(self, value):
+    @fusion_limit.setter
+    def fusion_limit(self, value):
         assert value in [True, False]
-        self._explore_on = value
+        self._fusion_limit = value
 
     @test_1_fusion.setter
     def test_1_fusion(self, value):
@@ -339,12 +350,12 @@ class GPX(object):
                 for fusion in combinations(info['infeasible'], n):
                     # Count common edges
                     count = 0
-                    for i, j in zip(fusion[:-1], fusion[1:]):
+                    for i, j in combinations(fusion, 2):
                         count += len(info['simple_a'][i]['common']
                                      & info['simple_a'][j]['common'])
 
                     # Create element with (fusion, count)
-                    if count > 1:
+                    if count > 0:
                         candidates.append(list(fusion) + [count])
 
                 # Sort by common edges count
@@ -352,6 +363,10 @@ class GPX(object):
                 # Discard common edges count
                 for fusion in candidates:
                     fusion.pop(-1)
+                # Apply fusion limit
+                if self._fusion_limit:
+                    candidates = candidates[:int(math.log(len(
+                                                        self._parent_1_tour)))]
                 # Convert elements to tuples to be used as dict keys
                 candidates = map(tuple, candidates)
                 # Increment fusion size

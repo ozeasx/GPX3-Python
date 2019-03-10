@@ -127,9 +127,9 @@ def run_ga(id):
     logger.info("------------------------------GA Settings------------------")
     logger.info("Initial population: %i", args.p)
     logger.info("Initial population method: %s", args.M)
-    logger.info("Initial population method ratio: %i", args.R)
+    logger.info("Initial population ratio: %i", args.R)
     logger.info("Population restart method: %s", args.S)
-    logger.info("Population restart method ratio: %f", args.r)
+    logger.info("Population restart ratio: %f", args.r)
     logger.info("Elitism: %i", args.e)
     if args.k is not None:
         logger.info("Tournament selection size: %i", args.k)
