@@ -242,7 +242,7 @@ def run_ga(id):
                        sum(ga.timers['evaluation']),
                        sum(ga.timers['tournament']),
                        sum(ga.timers['recombination']),
-                       sum(ga.timers['g_star']),
+                       sum(gpx.timers['g_star']),
                        sum(gpx.timers['partitioning']),
                        sum(gpx.timers['simple_graph']),
                        sum(gpx.timers['simple_graph_f']),
