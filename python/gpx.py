@@ -3,6 +3,7 @@
 
 import time
 import math
+import copy
 from collections import defaultdict
 from collections import deque
 from itertools import combinations
@@ -578,31 +579,52 @@ class GPX(object):
         self._parent_1_tour = parent_1.tour
         self._parent_2_tour = parent_2.tour
 
+        # Graphs
+        undirected_a = copy.deepcopy(parent_1.undirected_graph)
+        undirected_b = copy.deepcopy(parent_2.undirected_graph)
+        undirected_c = copy.deepcopy(parent_2.undirected_graph)
+
         # Tours
         tour_a = list(parent_1.tour)
         tour_b = list(parent_2.tour)
         tour_c = list(parent_2.tour)
 
         # Undirected union graph (G*)
-        undirected_graph = (parent_1.undirected_graph
-                            | parent_2.undirected_graph)
+        g_star = parent_1.undirected_graph | parent_2.undirected_graph
 
-        for vertice in undirected_graph:
+        for vertice in g_star:
             # Create ghost nodes for degree 4 nodes
-            if len(undirected_graph[vertice]) == 4:
-                tour_a.insert(tour_a.index(vertice) + 1, -vertice)
-                tour_b.insert(tour_b.index(vertice) + 1, -vertice)
-                tour_c.insert(tour_c.index(vertice), -vertice)
+            if len(g_star[vertice]) == 4:
+                # Indexes
+                i_a = tour_a.index(vertice)
+                i_b = tour_b.index(vertice)
+                i_c = tour_c.index(vertice)
+                # Graph manipulation
+                undirected_a.insert(-vertice, tour_a[i_a],
+                                    tour_a[(i_a + 1) % len(tour_a)])
+                undirected_b.insert(-vertice, tour_b[i_b],
+                                    tour_b[(i_b + 1) % len(tour_b)])
+                undirected_c.insert(-vertice, tour_c[(i_c - 1) % len(tour_c)],
+                                    tour_c[i_c])
+                # Tour manipulation
+                tour_a.insert(i_a + 1, -vertice)
+                tour_b.insert(i_b + 1, -vertice)
+                tour_c.insert(i_c, -vertice)
             # Remove degree 2 nodes (surrogate edge)
-            if len(undirected_graph[vertice]) == 2:
+            if len(g_star[vertice]) == 2:
+                # Graph manipulation
+                undirected_a.remove(vertice)
+                undirected_b.remove(vertice)
+                undirected_c.remove(vertice)
+                # Tour manipulation
                 tour_a.remove(vertice)
                 tour_b.remove(vertice)
                 tour_c.remove(vertice)
 
-        # Recreate graphs
-        undirected_a = Graph.gen_undirected_graph(tour_a)
-        undirected_b = Graph.gen_undirected_graph(tour_b)
-        undirected_c = Graph.gen_undirected_graph(tour_c)
+        # Recreate graph
+        # undirected_a = Graph.gen_undirected_graph(tour_a)
+        # undirected_b = Graph.gen_undirected_graph(tour_b)
+        # undirected_c = Graph.gen_undirected_graph(tour_c)
 
         self._timers['g_star'].append(time.time() - start_time)
 

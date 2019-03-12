@@ -8,6 +8,24 @@ from collections import deque
 # Class to provide graph and edge generation and dict operators overload
 class Graph(dict):
 
+    # Insert node between nodes a and b
+    def insert(self, node, a, b):
+        self[node] = set([a, b])
+        self[a].remove(b)
+        self[b].remove(a)
+        self[a].add(node)
+        self[b].add(node)
+
+    # Remove node
+    def remove(self, node):
+        a = self[node].pop()
+        b = self[node].pop()
+        del self[node]
+        self[a].remove(node)
+        self[b].remove(node)
+        self[a].add(b)
+        self[b].add(a)
+
     # Depth first search to find connected components
     # https://eddmann.com/posts/depth-first-search-and-breadth-first-search-in-python/
     @staticmethod
@@ -80,7 +98,5 @@ class Graph(dict):
 
         for key in result:
             result[key] = self.get(key, set()) ^ other.get(key, set())
-            if not result[key]:
-                print key
 
         return Graph(result)
