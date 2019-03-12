@@ -585,9 +585,9 @@ class GPX(object):
         undirected_c = copy.deepcopy(parent_2.undirected_graph)
 
         # Tours
-        tour_a = list(parent_1.tour)
-        tour_b = list(parent_2.tour)
-        tour_c = list(parent_2.tour)
+        # tour_a = list(parent_1.tour)
+        # tour_b = list(parent_2.tour)
+        # tour_c = list(parent_2.tour)
 
         # Undirected union graph (G*)
         g_star = parent_1.undirected_graph | parent_2.undirected_graph
@@ -596,20 +596,14 @@ class GPX(object):
             # Create ghost nodes for degree 4 nodes
             if len(g_star[vertice]) == 4:
                 # Indexes
-                i_a = tour_a.index(vertice)
-                i_b = tour_b.index(vertice)
-                i_c = tour_c.index(vertice)
                 # Graph manipulation
-                undirected_a.insert(-vertice, tour_a[i_a],
-                                    tour_a[(i_a + 1) % len(tour_a)])
-                undirected_b.insert(-vertice, tour_b[i_b],
-                                    tour_b[(i_b + 1) % len(tour_b)])
-                undirected_c.insert(-vertice, tour_c[(i_c - 1) % len(tour_c)],
-                                    tour_c[i_c])
+                undirected_a.insert(-vertice)
+                undirected_b.insert(-vertice)
+                undirected_c.insert(-vertice, True)
                 # Tour manipulation
-                tour_a.insert(i_a + 1, -vertice)
-                tour_b.insert(i_b + 1, -vertice)
-                tour_c.insert(i_c, -vertice)
+                # tour_a.insert(i_a + 1, -vertice)
+                # tour_b.insert(i_b + 1, -vertice)
+                # tour_c.insert(i_c, -vertice)
             # Remove degree 2 nodes (surrogate edge)
             if len(g_star[vertice]) == 2:
                 # Graph manipulation
@@ -617,9 +611,13 @@ class GPX(object):
                 undirected_b.remove(vertice)
                 undirected_c.remove(vertice)
                 # Tour manipulation
-                tour_a.remove(vertice)
-                tour_b.remove(vertice)
-                tour_c.remove(vertice)
+                # tour_a.remove(vertice)
+                # tour_b.remove(vertice)
+                # tour_c.remove(vertice)
+
+        _, tour_a = Graph.dfs(undirected_a, next(iter(undirected_a)))
+        _, tour_b = Graph.dfs(undirected_b, next(iter(undirected_b)))
+        _, tour_c = Graph.dfs(undirected_c, next(iter(undirected_c)))
 
         # Recreate graph
         # undirected_a = Graph.gen_undirected_graph(tour_a)

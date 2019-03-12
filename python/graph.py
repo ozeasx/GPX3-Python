@@ -9,7 +9,14 @@ from collections import deque
 class Graph(dict):
 
     # Insert node between nodes a and b
-    def insert(self, node, a, b):
+    def insert(self, node, left=False):
+        if left:
+            a, _ = sorted(self[-node])
+            b = -node
+        else:
+            _, b = sorted(self[-node])
+            a = -node
+
         self[node] = set([a, b])
         self[a].remove(b)
         self[b].remove(a)
