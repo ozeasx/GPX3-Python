@@ -40,11 +40,11 @@ gpx = GPX(tsp)
 
 # Tinos2018b-F5
 p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
+                 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
 p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16,
-                14, 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
+                 14, 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
 # p2 = Chromosome([1,2,23,24,21,22,3,4,6,5,8,7,9,10,30,29,13,14,16,15,18,17,19,
-#                 20,25,26,27,28,12,11,31,32])
+#                  20,25,26,27,28,12,11,31,32])
 
 # Hains 2011F-2.3
 # p1 = Chromosome([1,2,3,4,5,6,7,8,9,10,11,12,13,14])
@@ -188,7 +188,7 @@ gpx.f3_test = False
 gpx.ff1_test = True
 gpx.ff2_test = False
 gpx.ff3_test = False
-gpx.fusion_on = False
+gpx.fusion_on = True
 
 c1, c2 = gpx.recombine(p1, p2)
 
@@ -230,6 +230,7 @@ for key, value in gpx.info['ab_cycles'].items():
     print key, value
 print
 print "simple graph a"
+print gpx.info['simple_a']
 for key in gpx.info['simple_a']:
     print
     for k in gpx.info['simple_a'][key]:

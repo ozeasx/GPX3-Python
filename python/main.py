@@ -26,47 +26,66 @@ def str2bool(v):
 # Argument parser
 p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
-# Multual exclusive arguments
+# Inicial population
+p.add_argument("-p", help="Population size", type=int, default=100)
+# p.add_argument("-i", help="Input file with inicial population", type=str,
+#                default=None)
+# p.add_argument("-s", help="Save inicial population to file", type=str,
+#                default=None)
+p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
+               default='random', help="Method to generate inicial population")
+p.add_argument("-R", type=float, default=1.0,
+               help="Ratio o inicial popopulation to be created with method M")
+
+# Population restart
+p.add_argument("-r", type=float, default=0,
+               help="Percentage of population to be restarted with method S")
+p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
+               default='random', help="Method to restart population")
+
+# Selection
 multual = p.add_mutually_exclusive_group()
 multual.add_argument("-k", help="Tournament size", type=int)
 multual.add_argument("-P", help="Pairwise Recombination", type=str2bool)
 multual.add_argument("-K", help="Selection pressure (Ranking selection)",
                      type=float)
-# Optional arguments
+p.add_argument("-e", help="Elitism number", type=int, default=0)
+
+# Crossover
+p.add_argument("-c", help="Crossover probability", type=float, default=0)
+
+# Tests
 p.add_argument("-t1", help="Test 1", type=str2bool, default=True)
 p.add_argument("-t2", help="Test 2", type=str2bool, default=False)
 p.add_argument("-t3", help="Test 3", type=str2bool, default=False)
+
+# Fusion
+p.add_argument("-F", help="Apply fusion step", type=str2bool, default=True)
 p.add_argument("-t1f", help="Test 1 for Fusion", type=str2bool, default=True)
 p.add_argument("-t2f", help="Test 2 for Fusion", type=str2bool, default=False)
 p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
-p.add_argument("-F", help="Apply fusion step", type=str2bool, default=True)
+
+# Explore
 p.add_argument("-E", help="Explore 4 children", type=str2bool, default=True)
-p.add_argument("-p", help="Population size", type=int, default=100)
-p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
-               default='random',
-               help="Method to generate inicial population")
-p.add_argument("-R", type=float, default=1.0,
-               help="Ratio o inicial popopulation to be created with method M")
-p.add_argument("-r", type=float, default=0,
-               help="Percentage of population to be restarted with method S")
-p.add_argument("-S", choices=['random', '2opt', 'nn', 'nn2opt'],
-               default='random',
-               help="Method to restart population")
-p.add_argument("-e", help="Elitism. Number of individuals to preserve",
-               type=int, default=0)
-p.add_argument("-c", help="Crossover probability", type=float, default=0)
+
+# Mutation
 p.add_argument("-m", help="Mutation probability", type=float,
                default=0)
 p.add_argument("-t", help="Mutation operator", default='2opt',
                choices=['2opt', 'nn', 'nn2opt'])
+
+# GA
 p.add_argument("-g", help="Generation limit", type=int, default=100)
 p.add_argument("-G", help="Fitness ploting", type=str2bool, default=False)
 p.add_argument("-n", help="Number of iterations (paralelism will be used)",
                type=int, default=1)
-p.add_argument("-o", help="Directory to generate file reports", type=str)
-# Mandatory argument
-p.add_argument("I", help="TSP instance file", type=str)
 
+# Report
+p.add_argument("-o", help="Directory to generate file reports", type=str,
+               default=None)
+
+# Instance
+p.add_argument("I", help="TSP instance file", type=str)
 
 # Parser
 args = p.parse_args()
@@ -78,7 +97,7 @@ if all(v is None for v in (args.k, args.K, args.P)):
 if args.k is not None:
     assert 2 <= args.k <= args.p, "Invalid tournament size"
 if args.K is not None:
-    assert 1 < args.K <= 2, "Selection pressure must be in ]1,2] interval"
+    assert 1 < args.K <= 2, "Selection pressure must be in (1,2] interval"
 assert args.p > 0 and not args.p % 2, "Invalid population size. Must be even" \
                                       " and greater than 0"
 assert 0 <= args.r <= 1, "Restart percentage must be in [0,1] interval"
@@ -87,14 +106,16 @@ assert 0 <= args.e <= args.p, "Invalid number of elite individuals"
 assert 0 <= args.c <= 1, "Crossover probability must be in [0,1] interval"
 assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
 assert args.g > 0, "Invalid generation limit"
-assert 0 < args.n <= 100, "Invalid iteration limit [0,100]"
+assert 0 < args.n, "Invalid iteration limit"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
+# if args.i:
+#     assert os.path.isfile(args.i), "File " + args.i + " doesn't exist"
 
 # Instance
 instance = TSPLIB(args.I)
 
 # Create directory to report data
-if args.o is not None:
+if args.o:
     log_dir = args.o
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
@@ -172,10 +193,13 @@ def run_ga(id):
 
     # GA Instance
     ga = GA(instance, gpx, args.e)
+
     # Generate inicial population
-    ga.gen_pop(args.p, args.M, args.R)
+    ga.gen_pop(args.p, args.M, args.R, args.i, args.s)
+
     # Fisrt population evaluation
     ga.evaluate()
+
     # Begin GA
     while ga.generation < args.g:
         # Update plot
@@ -187,12 +211,15 @@ def run_ga(id):
             plt_mgr.add(x=ga.generation, y=ga.counters['cross'][-1],
                         name='Crossover')
             plt_mgr.update()
+
         # Logging
         avg_fitness[ga.generation].append(ga.counters['avg_fit'][-1])
         best_fitness[ga.generation].append(ga.counters['best_fit'][-1])
+
         # Population restart
         if args.r:
             ga.restart_pop(args.r, args.S)
+
         # Selection
         if args.k is not None:
             ga.tournament_selection(args.k)
@@ -200,23 +227,31 @@ def run_ga(id):
             ga.rank_selection(args.K)
         elif args.P:
             ga.pairwise_selection()
+
         # Recombination
         if args.c:
             ga.recombine(args.c, args.P)
+
         # Mutation
         if args.m:
             ga.mutate(args.m, args.t)
+
         # Evaluation
         ga.evaluate()
+
         # Generation info
         ga.print_info()
+
     # Final report
     ga.report()
+
     # Close ploting
     if args.n == 1 and args.G:
         plt_mgr.close()
+
     # Best solution
     best_solution[id] = ga.best_solution
+
     # Calc improvement
     parents_dist = float(gpx.counters['parents_dist'])
     children_dist = float(gpx.counters['children_dist'])
@@ -237,6 +272,7 @@ def run_ga(id):
                          gpx.counters['failed'], gpx.counters['inf_tour_0'],
                          gpx.counters['inf_tour_1'], gpx.counters['inf_tour'],
                          improvement, sum(ga.counters['mut'])])
+
     # Timers
     timers[id].extend([sum(ga.timers['total']), sum(ga.timers['population']),
                        sum(ga.timers['evaluation']),

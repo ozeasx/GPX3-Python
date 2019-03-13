@@ -126,7 +126,7 @@ class GA(object):
 
     # =========================================================================
     # Generate inicial population
-    def gen_pop(self, size, method='random', ratio=1):
+    def gen_pop(self, size, method='random', ratio=1, input=None, output=None):
         # Regiter local and global start time
         self._start_time = start_time = time.time()
         # Need even population
