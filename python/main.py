@@ -28,10 +28,10 @@ p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
 # Inicial population
 p.add_argument("-p", help="Population size", type=int, default=100)
-# p.add_argument("-i", help="Input file with inicial population", type=str,
-#                default=None)
-# p.add_argument("-s", help="Save inicial population to file", type=str,
-#                default=None)
+p.add_argument("-i", help="Input file with inicial population", type=str,
+               default=None)
+p.add_argument("-s", help="Save inicial population to file", type=str,
+               default=None)
 p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random', help="Method to generate inicial population")
 p.add_argument("-R", type=float, default=1.0,
@@ -49,7 +49,6 @@ multual.add_argument("-k", help="Tournament size", type=int)
 multual.add_argument("-P", help="Pairwise Recombination", type=str2bool)
 multual.add_argument("-K", help="Selection pressure (Ranking selection)",
                      type=float)
-p.add_argument("-e", help="Elitism number", type=int, default=0)
 
 # Crossover
 p.add_argument("-c", help="Crossover probability", type=float, default=0)
@@ -75,6 +74,7 @@ p.add_argument("-t", help="Mutation operator", default='2opt',
                choices=['2opt', 'nn', 'nn2opt'])
 
 # GA
+p.add_argument("-e", help="Elitism number", type=int, default=0)
 p.add_argument("-g", help="Generation limit", type=int, default=100)
 p.add_argument("-G", help="Fitness ploting", type=str2bool, default=False)
 p.add_argument("-n", help="Number of iterations (paralelism will be used)",
@@ -91,9 +91,10 @@ p.add_argument("I", help="TSP instance file", type=str)
 args = p.parse_args()
 
 # Assert arguments
-if all(v is None for v in (args.k, args.K, args.P)):
-    print "One selection method (k, K, P) must be provided"
-    exit()
+if not args.s:
+    if all(v is None for v in (args.k, args.K, args.P)):
+        print "One selection method (k, K, P) must be provided"
+        exit()
 if args.k is not None:
     assert 2 <= args.k <= args.p, "Invalid tournament size"
 if args.K is not None:
@@ -108,8 +109,8 @@ assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
 assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n, "Invalid iteration limit"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
-# if args.i:
-#     assert os.path.isfile(args.i), "File " + args.i + " doesn't exist"
+if args.i:
+    assert os.path.isfile(args.i), "File " + args.i + " doesn't exist"
 
 # Instance
 instance = TSPLIB(args.I)
@@ -168,7 +169,7 @@ def run_ga(id):
     logger.info("Dimension: %i", instance.dimension)
     logger.info("Iteration: %i/%i", id + 1, args.n)
 
-    # Statistics variables
+    # Stats
     avg_fitness = defaultdict(list)
     best_fitness = defaultdict(list)
     best_solution = dict()
@@ -183,6 +184,7 @@ def run_ga(id):
     gpx.test_2 = args.t2
     gpx.test_3 = args.t3
 
+    # Fusion tests
     gpx.test_1_fusion = args.t1f
     gpx.test_2_fusion = args.t2f
     gpx.test_3_fusion = args.t3f

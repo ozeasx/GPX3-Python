@@ -18,7 +18,7 @@ class Chromosome(object):
             self._tour = tuple(tour)
         # Tour distance
         if dist:
-            self._dist = dist
+            self._dist = float(dist)
         # Number of cities
         self._dimension = len(self.tour)
         # undirected graph and edges representaition

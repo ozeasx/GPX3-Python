@@ -11,7 +11,6 @@ from itertools import combinations
 from chromosome import Chromosome
 import functions
 
-
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization
@@ -132,19 +131,39 @@ class GA(object):
         # Need even population
         assert not (size % 2), "Invalid population size. " \
                                "Must be even and greater than 0"
-        # Print step
-        print "Generating initial population..."
-        # Population generation
-        if method == 'random':
-            self._insert_pop(size, method)
+        # Load init pop from file
+        if input:
+            print "Reading inicial population from file"
+            line_counter = 0
+            for line in open(input, 'r'):
+                if line_counter < size:
+                    c = Chromosome(map(int, line.split(',')))
+                    c.dist = self._data.tour_dist(c.tour)
+                    self._population.append(c)
+                    line_counter += 1
         else:
-            self._insert_pop(size - ratio * size, 'random')
-            self._insert_pop(ratio * size, method)
-        # Done
+            # Population generation
+            print "Generating initial population..."
+            if method == 'random':
+                self._insert_pop(size, method)
+            else:
+                self._insert_pop(size - ratio * size, 'random')
+                self._insert_pop(ratio * size, method)
+            # Done
         print "Done..."
         # Assert population size
         self._pop_size = len(self._population)
         assert self._pop_size == size, "gen_pop, pop_size"
+
+        # Save init pop to file and exit
+        if output:
+            print "Saving inicial population to file"
+            with open(output, 'w') as file:
+                for c in self._population:
+                    print >> file, ",".join(map(str, c.tour))
+            print "Done..."
+            exit()
+
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
 

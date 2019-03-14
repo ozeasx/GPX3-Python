@@ -347,11 +347,6 @@ class GPX(object):
             while n <= len(info['infeasible']):
                 # Create all combinations of n size
                 candidates = list()
-                cycle = list()
-                # print "AAAAAAAAAAAAAAAA", set.union(*info['simple_a'].items())
-                for vertice in info['simple_a']:
-                    pass
-
                 for fusion in combinations(info['infeasible'], n):
                     # Count common edges
                     count = 0
