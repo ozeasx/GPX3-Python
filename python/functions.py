@@ -40,14 +40,19 @@ def nn(data, method):
 def two_opt(chromosome, data, limit=True):
     # Initial tour
     best_tour = list(chromosome.tour)
+
     # Get tour dist
     best_dist = chromosome.dist
+
     # Get dimension
     dimension = chromosome.dimension
+
     # Begin with no improvement
     improved = True
+
     # Tested inversions
     tested = set()
+
     # Stop when no improvement is made
     while improved:
         improved = False
@@ -57,6 +62,7 @@ def two_opt(chromosome, data, limit=True):
                 if i == 0:
                     if j-i == dimension - 1:
                         continue
+
                 # Create edges swap in advance
                 join_a = sorted([sorted([best_tour[i-1], best_tour[i]]),
                                  sorted([best_tour[j], best_tour[(j+1) %
@@ -95,10 +101,11 @@ def two_opt(chromosome, data, limit=True):
 
     # Make sure 2opt is doing its job
     assert best_dist <= chromosome.dist, "Something wrong..."
+
     # Rotate solution to begin with 1
-    p = best_tour.index(1)
-    best_tour = deque(best_tour)
-    best_tour.rotate(-p)
+    # p = best_tour.index(1)
+    # best_tour = deque(best_tour)
+    # best_tour.rotate(-p)
 
     # Return solution
     return Chromosome(best_tour, best_dist)
