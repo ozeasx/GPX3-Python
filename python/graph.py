@@ -47,6 +47,7 @@ class Graph(dict):
 
         return Graph(graph)
 
+    # Generates adjacency matrix
     @staticmethod
     def gen_adjacency_matrix(tour):
         matrix = np.zeros((len(tour), len(tour)))
