@@ -11,6 +11,7 @@ from itertools import combinations
 from chromosome import Chromosome
 import functions
 
+
 # Class to abstract a Genetic algorithm
 class GA(object):
     # GA initialization

@@ -33,22 +33,22 @@ for (i in 1:n) {
   best_tour_files[i] = paste(args[i], "best_tour_found.out", sep="")
 }
 
-# # Choose best tour found
-# for (i in 1:n) {
-#   tour = TOUR(scan(best_tour_files[i], sep = ','))
-#   if (!exists("best_tour")) {
-#     best_tour = tour
-#   } else if (tour_length(tour, tsp) < tour_length(best_tour, tsp)) {
-#     best_tour = tour
-#   }
-# }
-#
-# # Plot best_tour found
-# tour_plot_file = paste(args[1], "tours.png", sep = '')
-# png(tour_plot_file, width=1024, height=1024)
-# par(pty="s")
-# plot(tsp, best_tour, asp = 1, xlab="x", ylab="y", main=tour_length(best_tour))
-# dev.off()
+# Choose best tour found
+for (i in 1:n) {
+  tour = TOUR(scan(best_tour_files[i], sep = ','))
+  if (!exists("best_tour")) {
+    best_tour = tour
+  } else if (tour_length(tour, tsp) < tour_length(best_tour, tsp)) {
+    best_tour = tour
+  }
+}
+
+# Plot best_tour found
+tour_plot_file = paste(args[1], "tours.png", sep = '')
+png(tour_plot_file, width=1024, height=1024)
+par(pty="s")
+plot(tsp, best_tour, asp = 1, xlab="x", ylab="y", main=tour_length(best_tour))
+dev.off()
 
 # Get parametrization
 trim <- function (x) gsub("\\s+", " ", str_trim(x))
@@ -56,7 +56,7 @@ default_params = c("k: 3", "P: None", "K: None", "t1: None", "t2: None",
                    "t3: None", "t1f: True", "t2f: False", "t3f: False", "p: 100",
                    "M: random", "R: 1.0", "r: 0.5", "S: random", "e: 0",
                    "c: 1.0", "m: 0", "t: 2opt", "G: False", "o: None",
-                   "E: True", "F: False")
+                   "E: True", "F: False", "i: None", "s: None")
 
 params = lapply(param_files, scan, sep = ',', what = "list")
 params = lapply(params, trim)
@@ -102,15 +102,26 @@ colors = c(1:n)
 linetype = c(1:n)
 plotchar = seq(1:n)
 
+# Set y min and max
+ymin = min(sapply(fitness, min))
+ymax = max(sapply(fitness, max))
+
+# u1060
+# ymax = 224094
+# vm1084
+# ymax = 239297
+
+labels = (ymax + ymin)/2
+
+
 fitness_plot_file = paste(args[1], "fitness.png", sep = '')
 png(fitness_plot_file, width=1024, height=1024)
 plot(fitness[[1]], type = 'n', xlab = "Generation", ylab = "Fitness",
-     xlim = c(0, length(fitness[[1]])), ylim = c(min(sapply(fitness, min)),
-                                                 max(sapply(fitness, max))))
+     xlim = c(0, 20), ylim = c(ymin, ymax))
 for (i in 1:n) {
   lines(fitness[[i]], type = 'l', lty = linetype[i], col = colors[i])
 }
-legend(10, -7500000, params, lty = linetype, col=colors)
+legend(10, labels, params, lty = linetype, col=colors)
 dev.off()
 
 # Summarize data

@@ -3,6 +3,8 @@
 
 from collections import defaultdict
 from collections import deque
+import numpy as np
+import random
 
 
 # Class to provide graph and edge generation and dict operators overload
@@ -45,6 +47,17 @@ class Graph(dict):
 
         return Graph(graph)
 
+    @staticmethod
+    def gen_adjacency_matrix(tour):
+        matrix = np.zeros((len(tour), len(tour)))
+        for i, j in zip(tour[:-1], tour[1:]):
+            matrix[i-1][j-1] = 1
+            matrix[j-1][i-1] = 1
+
+        matrix[tour[-1]-1][tour[0]-1] = 1
+        matrix[tour[0]-1][tour[-1]-1] = 1
+        return matrix
+
     # Generate graph of ab_cycles
     @staticmethod
     def gen_undirected_ab_graph(ab_cycle):
@@ -82,3 +95,14 @@ class Graph(dict):
             result[key] = self.get(key, set()) ^ other.get(key, set())
 
         return Graph(result)
+
+
+# Main
+if __name__ == "__main__":
+    A = Graph.gen_adjacency_matrix(random.sample(range(1, 10001), 10000))
+    B = Graph.gen_adjacency_matrix(random.sample(range(1, 10001), 10000))
+    # A = Graph.gen_undirected_graph(random.sample(range(1, 10001), 10000))
+    # B = Graph.gen_undirected_graph(random.sample(range(1, 10001), 10000))
+
+    C = A + B
+    # C = A | B

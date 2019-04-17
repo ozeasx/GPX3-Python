@@ -295,7 +295,7 @@ def run_ga(id):
 # Execution decision
 if args.n > 1:
     # Execute all runs
-    pool = multiprocessing.Pool(multiprocessing.cpu_count())
+    pool = multiprocessing.Pool(multiprocessing.cpu_count()-1)
     result = pool.map(run_ga, range(args.n))
     pool.close()
     pool.join()
@@ -309,7 +309,7 @@ if args.n > 1:
     # Best solution found
     best_solution = None
 
-    for _, _, best, _, _ in result:
+    for __, __, best, __, __ in result:
         for key, value in best.items():
             if not best_solution:
                 best_solution = value

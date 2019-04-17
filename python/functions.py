@@ -2,7 +2,6 @@
 # ozeasx@gmail.com
 
 import random
-from collections import deque
 from chromosome import Chromosome
 
 
