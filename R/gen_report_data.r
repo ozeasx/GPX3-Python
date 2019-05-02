@@ -63,6 +63,8 @@ params = lapply(params, trim)
 params = lapply(params, setdiff, default_params)
 params = lapply(params, sort)
 
+print(params)
+
 for (i in 1:n) {
   for (j in 1:length(params[[i]])) {
     if (grepl("/", params[[i]][j], fixed=TRUE)) {
@@ -72,6 +74,21 @@ for (i in 1:n) {
       params[[i]][j] = ""
     }
     if (grepl("n:", params[[i]][j], fixed=TRUE)) {
+      params[[i]][j] = ""
+    }
+    if (params[[i]][j] == "t2: False") {
+      params[[i]][j] = ""
+    }
+    if (params[[i]][j] == "t1: True") {
+      params[[i]][j] = "Test 1"
+    }
+    if (params[[i]][j] == "t1: False") {
+      params[[i]][j] = ""
+    }
+    if (params[[i]][j] == "t3: True") {
+      params[[i]][j] = "Test 2"
+    }
+    if (params[[i]][j] == "t3: False") {
       params[[i]][j] = ""
     }
   }
@@ -84,13 +101,24 @@ remove <- function(x) {
 }
 
 params = lapply(params, remove)
-params = lapply(params, paste, collapse = ", ")
+params = lapply(params, paste, collapse = " + ")
 
 
 # Consolidate fitness data
 fitness = lapply(fitness_files, read.csv2, sep = ',', dec = '.',
                  header = FALSE)
 fitness = lapply(fitness, rowMeans)
+
+# Set y min and max
+ymin = min(sapply(fitness, min))
+ymax = max(sapply(fitness, max))
+rangeMm <- function(x, M, m){(x-m)/(M-m)}
+
+# Scale data to [0,1] interval
+fitness = lapply(fitness, rangeMm, ymax, ymin)
+
+ymin = 0
+ymax = 1
 
 # Plot fitness
 # Change the palette to avoid yellow
@@ -100,28 +128,24 @@ palette(col.pal)
 
 colors = c(1:n)
 linetype = c(1:n)
-plotchar = seq(1:n)
+plotchar = c(1:n)
 
-# Set y min and max
-ymin = min(sapply(fitness, min))
-ymax = max(sapply(fitness, max))
-
-# u1060
-# ymax = 224094
-# vm1084
-# ymax = 239297
-
-labels = (ymax + ymin)/2
-
+# labely = (ymax + ymin)/2
+labely = 1
 
 fitness_plot_file = paste(args[1], "fitness.png", sep = '')
 png(fitness_plot_file, width=1024, height=1024)
+par(mar=c(4,6,4,4))
 plot(fitness[[1]], type = 'n', xlab = "Generation", ylab = "Fitness",
-     xlim = c(0, 20), ylim = c(ymin, ymax))
+     xlim = c(0, 1000), ylim = c(ymin, ymax), cex.axis=2, cex.lab=2)
 for (i in 1:n) {
-  lines(fitness[[i]], type = 'l', lty = linetype[i], col = colors[i])
+  lines(fitness[[i]], type = 'l', lty = linetype[i], col = colors[i],
+        pch = plotchar[i])
+  lines(fitness[[i]], type = 'p', lty = linetype[i], col = colors[i],
+        pch = c(plotchar[i], rep(NA, 50)), cex = 3, lwd=3)
 }
-legend(10, labels, params, lty = linetype, col=colors)
+legend(10, labely, params, lty = linetype, col=colors, cex=3,
+       pch = plotchar)
 dev.off()
 
 # Summarize data
