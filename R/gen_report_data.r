@@ -3,6 +3,7 @@
 library(TSP)
 library(colorspace)
 library(stringr)
+library(plyr)
 
 # Get script arguments
 args = commandArgs(trailingOnly=TRUE)
@@ -62,8 +63,6 @@ params = lapply(param_files, scan, sep = ',', what = "list")
 params = lapply(params, trim)
 params = lapply(params, setdiff, default_params)
 params = lapply(params, sort)
-
-print(params)
 
 for (i in 1:n) {
   for (j in 1:length(params[[i]])) {
@@ -140,13 +139,22 @@ plot(fitness[[1]], type = 'n', xlab = "Generation", ylab = "Fitness",
      xlim = c(0, 1000), ylim = c(ymin, ymax), cex.axis=2, cex.lab=2)
 for (i in 1:n) {
   lines(fitness[[i]], type = 'l', lty = linetype[i], col = colors[i],
-        pch = plotchar[i])
+        pch = plotchar[i], lwd=2)
   lines(fitness[[i]], type = 'p', lty = linetype[i], col = colors[i],
-        pch = c(plotchar[i], rep(NA, 50)), cex = 3, lwd=3)
+        pch = c(plotchar[i], rep(NA, 50)), cex = 2, lwd=2)
 }
-legend(10, labely, params, lty = linetype, col=colors, cex=3,
+legend(10, labely, params, lty = linetype, col=colors, cex=2,
        pch = plotchar)
 dev.off()
+
+# Statistical tests
+
+ttest <- function(x) {
+  t.test(fitness[[x[1]]],fitness[[x[2]]])
+}
+
+combn(n,2, FUN= ttest, simplify = FALSE)
+
 
 # Summarize data
 
