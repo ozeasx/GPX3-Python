@@ -704,6 +704,7 @@ class GPX(object):
             assert children_dist <= parents_dist, (parent_1.tour,
                                                    parent_2.tour,
                                                    "Improvement assertion")
+            # Rounding problem ?
             if children_dist < parents_dist:
                 self._counters['improved'] += 1
             # To calc total improvement
