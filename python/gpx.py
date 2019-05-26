@@ -217,7 +217,7 @@ class GPX(object):
     # =========================================================================
 
     # Create the simple graph for all partitions for given tour
-    def _gen_simple_graph(self, tour, vertices, fusion=False):
+    def _gen_simple_graph(self, tour, vertices, tour_map, fusion=False):
         # Mark start time
         start_time = time.time()
         # Simplified graph
@@ -232,20 +232,20 @@ class GPX(object):
             last = None
             first = None
             for i, current in enumerate(tour):
+                # Outside vertice
                 if current not in vertices[key]:
-                    print "Outside vertices happens..."
-                    continue
-                if (tour[i-1] in vertices[key]
-                        or tour[(i+1) % size] in vertices[key]):
-                    print "Inside vertices happens..."
                     continue
                 previous = tour[i-1]
                 next = tour[(i+1) % size]
+                # To close inner and outer graph
                 if not first:
                     first = previous, current, next
                     last = current
                     continue
-                # Entrance vertice
+                # Inside vertice
+                if previous in vertices[key] and next in vertices[key]:
+                    continue
+                # Entry vertice
                 if previous not in vertices[key]:
                     simple_g[key]['out'].add(frozenset([last, current]))
                     simple_g[key]['common'].add(frozenset([previous, current]))
