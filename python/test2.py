@@ -201,8 +201,8 @@ p2 = Chromosome([6, 1, 15, 3, 16, 2, 4, 8, 9, 11, 10, 7, 13, 14, 12, 5])
 # p2 = Chromosome((1, 16, 4, 5, 10, 11, 6, 7, 15, 14, 2, 3, 8, 9, 12, 13))
 
 # # F27
-# p1 = Chromosome((9, 5, 3, 2, 7, 4, 1, 8, 6, 10))
-# p2 = Chromosome((4, 5, 1, 7, 9, 8, 6, 3, 2, 10))
+p1 = Chromosome((9, 5, 3, 2, 7, 4, 1, 8, 6, 10))
+p2 = Chromosome((4, 5, 1, 7, 9, 8, 6, 3, 2, 10))
 
 p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
@@ -244,7 +244,7 @@ print
 print "Partitions vertices: --------------------------------------------------"
 print
 for key, value in gpx.info['vertices'].items():
-    print key, value
+    print key, list(value)
 print
 print "AB_cycles: -----------------------------------------------------------"
 print
@@ -252,17 +252,20 @@ for key, value in gpx.info['ab_cycles'].items():
     print key, value
 print
 print "simple graph a"
-print gpx.info['simple_a']
 for key in gpx.info['simple_a']:
     print
     for k in gpx.info['simple_a'][key]:
-        print key, k, gpx.info['simple_a'][key][k]
+        print key, k,
+        for t in gpx.info['simple_a'][key][k]:
+            print tuple(t),
 print
 print "simple graph b"
 for key in gpx.info['simple_b']:
     print
     for k in gpx.info['simple_b'][key]:
-        print key, k, gpx.info['simple_b'][key][k]
+        print key, k,
+        for t in gpx.info['simple_b'][key][k]:
+            print tuple(t),
 print
 print "Feasible: ", gpx.info['feasible']
 print "Infeasible: ", gpx.info['infeasible']

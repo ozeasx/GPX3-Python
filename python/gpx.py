@@ -184,11 +184,11 @@ class GPX(object):
     def _partition(self, graph_a, graph_b):
         # Mark start time
         start_time = time.time()
-        # Vertice set and AB cycles
-        vertices, ab_cycles = dict(), defaultdict(dict)
+        # Vertice set, AB cycles and Tour mapping
+        vertices, ab_cycles, tour_map = dict(), defaultdict(dict), dict()
         # Simetric diference
         graph = graph_a ^ graph_b
-        # Loop
+        # Loop and index
         loop = set(graph)
         index = 1
         while loop:
@@ -202,6 +202,9 @@ class GPX(object):
                     ab_cycles['A'][index].rotate(1)
                 else:
                     ab_cycles['B'][index].rotate(1)
+            # Tour mapping
+            for v in vertices[index]:
+                tour_map[v] = index
             # Reduce loop
             loop -= vertices[index]
             # Increment index
@@ -209,7 +212,7 @@ class GPX(object):
         # Store execution time
         self._timers['partitioning'].append(time.time() - start_time)
         # Return vertice set and ab_cycles
-        return vertices, ab_cycles
+        return vertices, ab_cycles, tour_map
 
     # =========================================================================
 
@@ -230,6 +233,11 @@ class GPX(object):
             first = None
             for i, current in enumerate(tour):
                 if current not in vertices[key]:
+                    print "Outside vertices happens..."
+                    continue
+                if (tour[i-1] in vertices[key]
+                        or tour[(i+1) % size] in vertices[key]):
+                    print "Inside vertices happens..."
                     continue
                 previous = tour[i-1]
                 next = tour[(i+1) % size]
@@ -239,26 +247,23 @@ class GPX(object):
                     continue
                 # Entrance vertice
                 if previous not in vertices[key]:
-                    simple_g[key]['out'].add(tuple(sorted([last, current])))
-                    simple_g[key]['common'].add(tuple(sorted([previous,
-                                                              current])))
+                    simple_g[key]['out'].add(frozenset([last, current]))
+                    simple_g[key]['common'].add(frozenset([previous, current]))
                     last = current
                     continue
                 # Exit vertice
                 if next not in vertices[key]:
-                    simple_g[key]['in'].add(tuple(sorted([last, current])))
-                    simple_g[key]['common'].add(tuple(sorted([current, next])))
+                    simple_g[key]['in'].add(frozenset([last, current]))
+                    simple_g[key]['common'].add(frozenset([current, next]))
                     last = current
             # Close outter graph
             if first[0] not in vertices[key]:  # previous not in
-                simple_g[key]['out'].add(tuple(sorted([last, first[1]])))
-                simple_g[key]['common'].add(tuple(sorted([first[0],
-                                                          first[1]])))
+                simple_g[key]['out'].add(frozenset([last, first[1]]))
+                simple_g[key]['common'].add(frozenset([first[0], first[1]]))
             # Close inner graph
             if first[2] not in vertices[key]:  # next not in
-                simple_g[key]['in'].add(tuple(sorted([last, first[1]])))
-                simple_g[key]['common'].add(tuple(sorted([first[2],
-                                                          first[1]])))
+                simple_g[key]['in'].add(frozenset([last, first[1]]))
+                simple_g[key]['common'].add(frozenset([first[2], first[1]]))
         # Store execution time
         if not fusion:
             self._timers['simple_graph'].append(time.time() - start_time)
@@ -291,13 +296,13 @@ class GPX(object):
             t3 = self._test_3
 
         for key in simple_a:
-            # Inner graph test (Test 1)
+            # Inner test (Test 1)
             if t1 and (simple_a[key]['in'] == simple_b[key]['in']):
                 feasible[1].add(key)
-            # Outter graph test (Test 2)
+            # Outter test (Test 2)
             elif t2 and (simple_a[key]['out'] == simple_b[key]['out']):
                 feasible[2].add(key)
-            # All graphs test (Test 3)
+            # Mirror test (Test 3)
             elif t3 and not (simple_a[key]['in'] & simple_b[key]['out']
                              or simple_a[key]['out'] & simple_b[key]['in']):
                 feasible[3].add(key)
@@ -608,10 +613,10 @@ class GPX(object):
         m = dict()
         n = dict()
 
-        m['vertices'], m['ab_cycles'] = self._partition(undirected_a,
-                                                        undirected_b)
-        n['vertices'], n['ab_cycles'] = self._partition(undirected_a,
-                                                        undirected_c)
+        m['vertices'], m['ab_cycles'], m['tour_map'] = \
+            self._partition(undirected_a, undirected_b)
+        n['vertices'], n['ab_cycles'], n['tour_map'] = \
+            self._partition(undirected_a, undirected_c)
 
         # If exists one or no partition, return parents
         if len(m['vertices']) <= 1 and len(n['vertices']) <= 1:
@@ -621,11 +626,15 @@ class GPX(object):
             return parent_1, parent_2
 
         # Generate simple graphs for each partitioning scheme for each tour
-        m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'])
-        m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'])
+        m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'],
+                                               m['tour_map'])
+        m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'],
+                                               m['tour_map'])
 
-        n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'])
-        n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'])
+        n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'],
+                                               n['tour_map'])
+        n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'],
+                                               n['tour_map'])
 
         # Test simple graphs to identify feasible partitions
         m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
