@@ -1,8 +1,8 @@
 #!/usr/bin/python
 # ozeasx@gmail.com
 
-import time
 import math
+import time
 from collections import defaultdict
 from collections import deque
 from itertools import combinations
@@ -11,27 +11,34 @@ from graph import Graph
 from chromosome import Chromosome
 
 
+# https://www.python.org/dev/peps/pep-0485/
+def isclose(a, b, rel_tol=1e-9, abs_tol=0.0):
+    return abs(a-b) <= max(rel_tol * max(abs(a), abs(b)), abs_tol)
+
+
 # Generalized partition crossover operator
 class GPX(object):
     # Class initialization
     def __init__(self, data=None):
         # dataset to compute distances
         self._data = data
-        # Partitions types values
+        # Components type weight
         self._f1_weight = 3
         self._f2_weight = 2
         self._f3_weight = 1
         self._infeasible_weight = 0.4
-        # Tests 1, 2 and 3 for partitioning
+        # Graph tests 1, 2 and 3 for component identification
         self._test_1 = True
         self._test_2 = False
         self._test_3 = False
-        # Explore more children in case of infeasible partitions
+        # Explore more children if infeasible partitions are present
         self._explore_on = True
         # Fusion decisions variables
         self._fusion_on = True
         self._fusion_limit = True
-        # Tests 1, 2 and 3 for fusion
+        # Relaxed GPX
+        self._relax = False
+        # Graph tests 1, 2 and 3 for fusion
         self._test_1_fusion = True
         self._test_2_fusion = False
         self._test_3_fusion = False
@@ -98,6 +105,10 @@ class GPX(object):
     @property
     def test_3_fusion(self):
         return self._test_3_fusion
+
+    @property
+    def relax(self):
+        return self._relax
 
     @property
     def info(self):
@@ -178,15 +189,20 @@ class GPX(object):
         assert value in [True, False]
         self._test_3_fusion = value
 
+    @relax.setter
+    def relax(self, value):
+        assert value in [True, False]
+        self._relax = value
+
     # =========================================================================
 
-    # Find partitions using dfs
+    # Find components using dfs
     def _partition(self, graph_a, graph_b):
         # Mark start time
         start_time = time.time()
         # Vertice set, AB cycles and Tour mapping
         vertices, ab_cycles, tour_map = dict(), defaultdict(dict), dict()
-        # Simetric diference
+        # Simetric diference (common edges removal)
         graph = graph_a ^ graph_b
         # Loop and index
         loop = set(graph)
@@ -216,7 +232,7 @@ class GPX(object):
 
     # =========================================================================
 
-    # Create the simple graph for all partitions for given tour
+    # Create the simple graph for all components for given tour
     def _gen_simple_graph(self, tour, vertices, tour_map, fusion=False):
         # Mark start time
         start_time = time.time()
@@ -275,7 +291,7 @@ class GPX(object):
 
     # =========================================================================
 
-    # Classify partitions feasibility by inner and outter graph comparison
+    # Classify components by inner and outter graph comparison
     def _classify(self, simple_a, simple_b, fusion=False):
         # Mark start time
         start_time = time.time()
@@ -317,7 +333,7 @@ class GPX(object):
 
     # =========================================================================
 
-    # Try fusion of infeasible partitions
+    # Try fusion of infeasible components
     def _fusion(self, info):
 
         # ---------------------------------------------------------------------
@@ -341,13 +357,13 @@ class GPX(object):
         # Mark start time
         start_time = time.time()
 
-        # Fused partitions
+        # Fused components
         fused = set()
 
         # ---------------------------------------------------------------------
         # Fusion core
         if self._fusion_on:
-            # Start fusion try with 2 partitions
+            # Start fusion try with 2 components
             n = 2
             while n <= len(info['infeasible']):
                 # Create all combinations of n size
@@ -378,9 +394,9 @@ class GPX(object):
                 n += 1
                 # Try fusions
                 for test in candidates:
-                    # Partitions vertices union
+                    # Union of components
                     union = defaultdict(set)
-                    # Test to determine if partition is fused already
+                    # Test to determine if a component is fused already
                     if not any(i in fused for i in test):
                         for i in test:
                             union[test] |= info['vertices'][i]
@@ -410,12 +426,11 @@ class GPX(object):
 
         # ---------------------------------------------------------------------
         # Finishing
-        # Fuse all remaining partitions in one infeasible partition to be
-        # handled by build method.
+        # Fuse all remaining components in one component to be handled
+        # by build method.
         if len(info['infeasible']) > 1:
             if self._test_2 or self._test_3:
                 self._counters['unsolved'] += len(info['infeasible'])
-                # fuse(tuple(info['infeasible']), 'infeasible')
             else:
                 # All remaining partitions after f1 test are feasible 2?
                 fuse(tuple(info['infeasible']), 2)
@@ -441,7 +456,7 @@ class GPX(object):
         # Mark start time
         start_time = time.time()
 
-        # dists of each partition in each solution
+        # AB_cycles distances
         dists = dict()
         dists['A'] = defaultdict(float)
         dists['B'] = defaultdict(float)
@@ -449,11 +464,11 @@ class GPX(object):
         # Set to store best partial solution (cycle, key)s
         partial = set()
 
-        # Partition with minor inside diff
+        # Component with minor inside diff
         minor_key = None
         minor_diff = None
 
-        # Indicate if exist infeasible partitions
+        # Indicate if exist infeasible components
         inf_partitions = False
 
         # Infeasible AB cycle and distance
@@ -463,7 +478,7 @@ class GPX(object):
         inf_cycle_a_dist = 0
         inf_cycle_b_dist = 0
 
-        # Get distance of all partitions tours (feasible and infeasible)
+        # Get distance of all components tours (feasible and infeasible)
         for key in info['feasible'][0] | info['infeasible']:
             dists['A'][key] += self._data.ab_cycle_dist(
                                                    info['ab_cycles']['A'][key])
@@ -477,12 +492,12 @@ class GPX(object):
                 if not minor_key or diff < minor_diff:
                     minor_key = key
                     minor_diff = diff
-                # Chose best path in each feasible partition
+                # Chose best path in each recombining component
                 if dists['A'][key] <= dists['B'][key]:
                     partial.add(tuple(['A', key]))
                 else:
                     partial.add(tuple(['B', key]))
-            # Infeasible partitions
+            # Infeasible components
             else:
                 inf_partitions = True
                 inf_cycle_a.extend(info['ab_cycles']['A'][key])
@@ -490,7 +505,7 @@ class GPX(object):
                 inf_cycle_a_dist += dists['A'][key]
                 inf_cycle_b_dist += dists['B'][key]
 
-        # Create base solutions without infeasible partitions
+        # Create base solutions without infeasible components
         base_1 = list()
         base_2 = list()
         # Common distance
@@ -512,7 +527,7 @@ class GPX(object):
         # Calc base2 and common edges distances
         base_2_dist = base_1_dist + minor_diff
 
-        # Graphs without infeasible partitions
+        # Graphs without infeasible components
         graphs = list()
         distances = list()
 
@@ -520,13 +535,13 @@ class GPX(object):
         graphs.append(Graph.gen_undirected_ab_graph(base_2) | common_graph)
         distances.extend([base_1_dist, base_2_dist])
 
-        # Are there infeasible partitions?
+        # Are there infeasible components?
         if inf_partitions:
             # Remove base 2
             if not self._explore_on:
                 graphs.pop()
                 distances.pop()
-            # Graphs with infeasible partitions (explore 4 potencial children)
+            # Graphs with infeasible components (explore 4 potencial children)
             new_graphs = list()
             new_distances = list()
             for graph, dist in zip(graphs, distances):
@@ -548,10 +563,10 @@ class GPX(object):
             if len(vertices) == len(self._parent_1_tour):
                 if dist <= max(tour_1_dist, tour_2_dist):
                     candidates.append([tour, dist])
-                # A bad child was created with only feasible partitions?
+                # A bad child was created with only recombining components?
                 elif not inf_partitions:
                     self._counters['bad_child'] += 1
-            # An infeasible tour was created with only feasible partitions?
+            # An infeasible tour was created with only recombining components?
             elif not inf_partitions:
                 self._counters['inf_tour'] += 1
                 self._counters['inf_tour_' + str(i)] += 1
@@ -618,29 +633,39 @@ class GPX(object):
         n['vertices'], n['ab_cycles'], n['tour_map'] = \
             self._partition(undirected_a, undirected_c)
 
-        # If exists one or no partition, return parents
+        # If exists one or no component, return parents
         if len(m['vertices']) <= 1 and len(n['vertices']) <= 1:
             self._counters['failed'] += 1
             self._counters['failed_1'] += 1
             self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
             return parent_1, parent_2
 
-        # Generate simple graphs for each partitioning scheme for each tour
-        m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'],
-                                               m['tour_map'])
-        m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'],
-                                               m['tour_map'])
+        # Normal GPX
+        if not self._relax:
+            # Generate simple graphs for each partitioning scheme for each tour
+            m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'],
+                                                   m['tour_map'])
+            m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'],
+                                                   m['tour_map'])
 
-        n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'],
-                                               n['tour_map'])
-        n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'],
-                                               n['tour_map'])
+            n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'],
+                                                   n['tour_map'])
+            n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'],
+                                                   n['tour_map'])
 
-        # Test simple graphs to identify feasible partitions
-        m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
-                                                        m['simple_b'])
-        n['feasible'], n['infeasible'] = self._classify(n['simple_a'],
-                                                        n['simple_b'])
+            # Test simple graphs to identify feasible components
+            m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
+                                                            m['simple_b'])
+            n['feasible'], n['infeasible'] = self._classify(n['simple_a'],
+                                                            n['simple_b'])
+        # Relaxed GPX (All components are classified as recombining components)
+        else:
+            m['feasible'] = defaultdict(set)
+            m['infeasible'] = set()
+            n['feasible'] = defaultdict(set)
+            n['infeasible'] = set()
+            m['feasible'][1].update(m['vertices'].keys())
+            n['feasible'][1].update(n['vertices'].keys())
 
         # Score partitions scheme
         score_m = (len(m['feasible'][1]) * self._f1_weight
@@ -662,7 +687,7 @@ class GPX(object):
             info['tour_b'] = tour_c
 
         info['tour_a'] = tour_a
-        # Union of all feasible partitions
+        # Union of all feasible components
         info['feasible'][0] = set.union(*info['feasible'].values())
         # Counters
         self._counters['feasible'] += len(info['feasible'][0])
@@ -671,11 +696,11 @@ class GPX(object):
         self._counters['feasible_3'] += len(info['feasible'][3])
         self._counters['infeasible'] += len(info['infeasible'])
 
-        # Try to fuse infeasible partitions
+        # Try to fuse infeasible components
         if len(info['infeasible']):
             self._fusion(info)
 
-        # After fusion, if exists one or no partition, return parents
+        # After fusion, if exists one or no component, return parents
         if len(info['feasible'][0]) <= 1:
             self._counters['failed'] += 1
             self._counters['failed_2'] += 1
@@ -713,8 +738,8 @@ class GPX(object):
             assert children_dist <= parents_dist, (parent_1.tour,
                                                    parent_2.tour,
                                                    "Improvement assertion")
-            # Rounding problem ?
-            if children_dist < parents_dist:
+            # Do we have improvement?
+            if not isclose(children_dist, parents_dist):
                 self._counters['improved'] += 1
             # To calc total improvement
             self._counters['children_dist'] += children_dist

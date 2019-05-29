@@ -16,7 +16,7 @@ instance_file = strsplit(instance_file, " ")[[1]][2]
 n = length(args)
 
 # Load TSP instance
-tsp = read_TSPLIB(instance_file)
+tsp = read_TSPLIB(paste("../", instance_file, sep = ""))
 
 # Generate various file paths
 param_files = c()
@@ -84,7 +84,7 @@ for (i in 1:n) {
       params[[i]][j] = ""
     }
     if (params[[i]][j] == "t3: True") {
-      params[[i]][j] = "cross"
+      params[[i]][j] = "mirror"
     }
     if (params[[i]][j] == "t3: False") {
       params[[i]][j] = ""

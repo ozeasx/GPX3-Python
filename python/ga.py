@@ -134,7 +134,7 @@ class GA(object):
                                "Must be even and greater than 0"
         # Load init pop from file
         if input:
-            print "Reading inicial population from file"
+            print("Reading inicial population from file")
             line_counter = 0
             for line in open(input, 'r'):
                 if line_counter < size:
@@ -144,25 +144,25 @@ class GA(object):
                     line_counter += 1
         else:
             # Population generation
-            print "Generating initial population..."
+            print("Generating initial population...")
             if method == 'random':
                 self._insert_pop(size, method)
             else:
                 self._insert_pop(size - ratio * size, 'random')
                 self._insert_pop(ratio * size, method)
             # Done
-        print "Done..."
+        print("Done...")
         # Assert population size
         self._pop_size = len(self._population)
         assert self._pop_size == size, "gen_pop, pop_size"
 
         # Save init pop to file and exit
         if output:
-            print "Saving inicial population to file"
+            print("Saving inicial population to file")
             with open(output, 'w') as file:
                 for c in self._population:
                     print >> file, ",".join(map(str, c.tour))
-            print "Done..."
+            print("Done...")
             exit()
 
         # Store execution time

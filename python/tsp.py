@@ -23,15 +23,15 @@ class TSPLIB(object):
 
         # Condensed index mapping
         # https://stackoverflow.com/questions/13079563/how-does-condensed-distance-matrix-work-pdist/13079806
-        self._cindex = lambda i, j: i*(2*self._dimension - i - 3)/2 + j - 1
+        self._cindex = lambda i, j: i*(2*self._dimension - i - 3)//2 + j - 1
 
         # Generate distance matrix file
         if not os.path.isfile(self._instance_path + ".dm"):
-            print "Generating distance matrix..."
+            print("Generating distance matrix...")
             Shell.call("../R/create_dm.r " + instance_path)
-            print "Done..."
+            print("Done...")
         else:
-            print "Distance matrix file already exists"
+            print("Distance matrix file already exists")
 
         # Hash lockup
         self._hash = dict()

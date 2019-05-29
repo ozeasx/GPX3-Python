@@ -35,7 +35,8 @@ p.add_argument("-s", help="Save inicial population to file", type=str,
 p.add_argument("-M", choices=['random', '2opt', 'nn', 'nn2opt'],
                default='random', help="Method to generate inicial population")
 p.add_argument("-R", type=float, default=1.0,
-               help="Ratio o inicial popopulation to be created with method M")
+               help="Ratio of inicial popopulation \
+                     to be created with method M")
 
 # Population restart
 p.add_argument("-r", type=float, default=0,
@@ -67,6 +68,9 @@ p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
 # Explore
 p.add_argument("-E", help="Explore 4 children", type=str2bool, default=True)
 
+# Relaxed GPX
+p.add_argument("-L", help="Relax GPX", type=str2bool, default=False)
+
 # Mutation
 p.add_argument("-m", help="Mutation probability", type=float,
                default=0)
@@ -93,7 +97,7 @@ args = p.parse_args()
 # Assert arguments
 if not args.s:
     if all(v is None for v in (args.k, args.K, args.P)):
-        print "One selection method (k, K, P) must be provided"
+        print("One selection method (k, K, P) must be provided")
         exit()
 if args.k is not None:
     assert 2 <= args.k <= args.p, "Invalid tournament size"
@@ -184,14 +188,15 @@ def run_ga(id):
     gpx.test_2 = args.t2
     gpx.test_3 = args.t3
 
+    # Fusion, explore and relax switches
+    gpx.fusion_on = args.F
+    gpx.explore_on = args.E
+    gpx.relax = args.L
+
     # Fusion tests
     gpx.test_1_fusion = args.t1f
     gpx.test_2_fusion = args.t2f
     gpx.test_3_fusion = args.t3f
-
-    # Fusion and explore switches
-    gpx.fusion_on = args.F
-    gpx.explore_on = args.E
 
     # GA Instance
     ga = GA(instance, gpx, args.e)
