@@ -127,7 +127,7 @@ class TSPLIB(object):
         return nearest, dist
 
     # Calc AB_cycle distance using distance matrix (memory)
-    def ab_cycle_dist(self, ab_cycle):
+    def ab_dist(self, ab_cycle):
         # Convert deque to list
         aux = list(ab_cycle)
         # Distance
@@ -142,7 +142,6 @@ class TSPLIB(object):
 
     # Calc tour distance using distance matrix (memory)
     def tour_dist(self, tour):
-        # assert len(set(tour)) == len(tour), "Invalid TSP tour"
         # distance
         dist = 0
         # Distance matrix lookup

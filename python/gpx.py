@@ -6,7 +6,7 @@ import time
 from collections import defaultdict
 from collections import deque
 from itertools import combinations
-from operator import attrgetter
+from operator import attrgetter, itemgetter
 from graph import Graph
 from chromosome import Chromosome
 
@@ -474,10 +474,8 @@ class GPX(object):
 
         # Get distance of all components tours (feasible and infeasible)
         for key in info['feasible'][0] | info['infeasible']:
-            dists['A'][key] += self._data.ab_cycle_dist(
-                                                   info['ab_cycles']['A'][key])
-            dists['B'][key] += self._data.ab_cycle_dist(
-                                                   info['ab_cycles']['B'][key])
+            dists['A'][key] += self._data.ab_dist(info['ab_cycles']['A'][key])
+            dists['B'][key] += self._data.ab_dist(info['ab_cycles']['B'][key])
 
             if key in info['feasible'][0]:
                 # Distance diference inside AB_cycle
@@ -564,6 +562,89 @@ class GPX(object):
             elif not inf_partitions:
                 self._counters['inf_tour'] += 1
                 self._counters['inf_tour_' + str(i)] += 1
+
+        # Store execution time
+        self._timers['build'].append(time.time() - start_time)
+        # Return created tours information
+        return candidates
+
+    # =========================================================================
+
+    # Build solutions
+    def _build_relax(self, info, common_graph, tour_1_dist, tour_2_dist):
+        # Mark start time
+        start_time = time.time()
+
+        # AB_cycles distances
+        dists = dict()
+        dists['A'] = defaultdict(float)
+        dists['B'] = defaultdict(float)
+        dists['diff'] = defaultdict(float)
+
+        # Best solution base
+        best = dict()
+
+        # AB graphs and solutions graph
+        ab_graphs = defaultdict(dict)
+        graphs = defaultdict(Graph)
+
+        # Tours distances
+        tours_dist = defaultdict(float)
+
+        # Get distances and differences between A and B
+        for key in info['feasible'][0]:
+            dists['A'][key] += self._data.ab_dist(info['ab_cycles']['A'][key])
+            dists['B'][key] += self._data.ab_dist(info['ab_cycles']['B'][key])
+            dists['diff'][key] = abs(dists['A'][key] - dists['B'][key])
+            ab_graphs['A'][key] = Graph.gen_undirected_ab_graph(
+                                                   info['ab_cycles']['A'][key])
+            ab_graphs['B'][key] = Graph.gen_undirected_ab_graph(
+                                                   info['ab_cycles']['B'][key])
+
+            # Best tour base and graph
+            if dists['A'][key] <= dists['B'][key]:
+                best[key] = 'A'
+                graphs[0] |= ab_graphs['A'][key]
+                tours_dist[0] += dists['A'][key]
+            else:
+                best[key] = 'B'
+                graphs[0] |= ab_graphs['B'][key]
+                tours_dist[0] += dists['B'][key]
+
+        # All other solutions
+        for k, diff in sorted(dists['diff'].items(), key=itemgetter(1)):
+            for key, cycle in best.items():
+                # Revert choices
+                if key == k:
+                    if cycle == 'A':
+                        graphs[key] |= ab_graphs['B'][key]
+                        tours_dist[key] += dists['B'][key]
+                    else:
+                        graphs[key] |= ab_graphs['A'][key]
+                        tours_dist[key] += dists['A'][key]
+                elif key != 0:
+                    # Take from base solution otherwise
+                    graphs[key] |= ab_graphs[cycle][key]
+                    tours_dist[key] += dists[cycle][key]
+
+        # Candidates solutions
+        candidates = list()
+        # Common distance
+        common_dist = tour_1_dist - sum(dists['A'].values())
+        # Builder
+        for key in graphs:
+            dist = tours_dist[key] + common_dist
+            if dist <= max(tour_1_dist, tour_2_dist):
+                vertices, tour = Graph.dfs(graphs[key] | common_graph, 1)
+                # Feasible tour?
+                if len(vertices) == len(self._parent_1_tour):
+                    candidates.append([tour, dist])
+                # An infeasible tour was created?
+                else:
+                    self._counters['inf_tour'] += 1
+            # A bad child was created?
+            else:
+                self._counters['bad_child'] += 1
 
         # Store execution time
         self._timers['build'].append(time.time() - start_time)
@@ -696,10 +777,6 @@ class GPX(object):
         self._counters['feasible_3'] += len(info['feasible'][3])
         self._counters['infeasible'] += len(info['infeasible'])
 
-        # Try to fuse infeasible components
-        if len(info['infeasible']):
-            self._fusion(info)
-
         # After fusion, if exists one or no component, return parents
         if len(info['feasible'][0]) <= 1:
             self._counters['failed'] += 1
@@ -716,8 +793,12 @@ class GPX(object):
             common_graph = (parent_1.undirected_graph
                             & parent_2.undirected_graph)
             # Build solutions
-            constructed = self._build(info, common_graph, parent_1.dist,
-                                      parent_2.dist)
+            if self._relax:
+                constructed = self._build_relax(info, common_graph,
+                                                parent_1.dist, parent_2.dist)
+            else:
+                constructed = self._build(info, common_graph, parent_1.dist,
+                                          parent_2.dist)
             # Fail if no tour constructed
             if len(constructed) == 0:
                 self._counters['failed'] += 1

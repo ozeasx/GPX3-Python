@@ -87,8 +87,8 @@ def two_opt(chromosome, data, limit=True):
                 tested.add(frozenset([join_a, join_b]))
 
                 # Calc distances
-                join_a_dist = data.ab_cycle_dist(join_a)
-                join_b_dist = data.ab_cycle_dist(join_b)
+                join_a_dist = data.ab_dist(join_a)
+                join_b_dist = data.ab_dist(join_b)
 
                 # Verify if swap is shorter
                 if join_b_dist < join_a_dist:
