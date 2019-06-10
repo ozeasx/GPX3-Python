@@ -200,8 +200,8 @@ class GPX(object):
     def _partition(self, graph_a, graph_b):
         # Mark start time
         start_time = time.time()
-        # Vertice set, AB cycles and Tour mapping
-        vertices, ab_cycles, tour_map = dict(), defaultdict(dict), dict()
+        # Vertice set and AB cycles
+        vertices, ab_cycles = dict(), defaultdict(dict)
         # Simetric diference (common edges removal)
         graph = graph_a ^ graph_b
         # Loop and index
@@ -218,9 +218,6 @@ class GPX(object):
                     ab_cycles['A'][index].rotate(1)
                 else:
                     ab_cycles['B'][index].rotate(1)
-            # Tour mapping
-            for v in vertices[index]:
-                tour_map[v] = index
             # Reduce loop
             loop -= vertices[index]
             # Increment index
@@ -228,12 +225,12 @@ class GPX(object):
         # Store execution time
         self._timers['partitioning'].append(time.time() - start_time)
         # Return vertice set and ab_cycles
-        return vertices, ab_cycles, tour_map
+        return vertices, ab_cycles
 
     # =========================================================================
 
     # Create the simple graph for all components for given tour
-    def _gen_simple_graph(self, tour, vertices, tour_map, fusion=False):
+    def _gen_simple_graph(self, tour, vertices, fusion=False):
         # Mark start time
         start_time = time.time()
         # Simplified graph
@@ -628,10 +625,10 @@ class GPX(object):
         m = dict()
         n = dict()
 
-        m['vertices'], m['ab_cycles'], m['tour_map'] = \
-            self._partition(undirected_a, undirected_b)
-        n['vertices'], n['ab_cycles'], n['tour_map'] = \
-            self._partition(undirected_a, undirected_c)
+        m['vertices'], m['ab_cycles'] = self._partition(undirected_a,
+                                                        undirected_b)
+        n['vertices'], n['ab_cycles'] = self._partition(undirected_a,
+                                                        undirected_c)
 
         # If exists one or no component, return parents
         if len(m['vertices']) <= 1 and len(n['vertices']) <= 1:
@@ -643,15 +640,11 @@ class GPX(object):
         # Normal GPX
         if not self._relax:
             # Generate simple graphs for each partitioning scheme for each tour
-            m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'],
-                                                   m['tour_map'])
-            m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'],
-                                                   m['tour_map'])
+            m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'])
+            m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'])
 
-            n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'],
-                                                   n['tour_map'])
-            n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'],
-                                                   n['tour_map'])
+            n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'])
+            n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'])
 
             # Test simple graphs to identify feasible components
             m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
