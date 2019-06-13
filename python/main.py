@@ -28,7 +28,7 @@ p = argparse.ArgumentParser(description="Genetic algorithm + GPX")
 
 # Inicial population
 p.add_argument("-p", help="Population size", type=int, default=100)
-p.add_argument("-i", help="Input file with inicial population", type=str,
+p.add_argument("-l", help="Load inicial population from file", type=str,
                default=None)
 p.add_argument("-s", help="Save inicial population to file", type=str,
                default=None)
@@ -60,7 +60,7 @@ p.add_argument("-t2", help="Test 2", type=str2bool, default=False)
 p.add_argument("-t3", help="Test 3", type=str2bool, default=False)
 
 # Fusion
-p.add_argument("-F", help="Apply fusion step", type=str2bool, default=True)
+p.add_argument("-F", help="Apply fusion", type=str2bool, default=True)
 p.add_argument("-t1f", help="Test 1 for Fusion", type=str2bool, default=True)
 p.add_argument("-t2f", help="Test 2 for Fusion", type=str2bool, default=False)
 p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
@@ -69,7 +69,7 @@ p.add_argument("-t3f", help="Test 3 for Fusion", type=str2bool, default=False)
 p.add_argument("-E", help="Explore 4 children", type=str2bool, default=True)
 
 # Relaxed GPX
-p.add_argument("-L", help="Relax GPX", type=str2bool, default=False)
+p.add_argument("-L", help="Relaxed GPX", type=str2bool, default=False)
 
 # Mutation
 p.add_argument("-m", help="Mutation probability", type=float,
@@ -113,8 +113,8 @@ assert 0 <= args.m <= 1, "Mutation probability must be in [0,1] interval"
 assert args.g > 0, "Invalid generation limit"
 assert 0 < args.n, "Invalid iteration limit"
 assert os.path.isfile(args.I), "File " + args.I + " doesn't exist"
-if args.i:
-    assert os.path.isfile(args.i), "File " + args.i + " doesn't exist"
+if args.l:
+    assert os.path.isfile(args.l), "File " + args.l + " doesn't exist"
 
 # Instance
 instance = TSPLIB(args.I)
@@ -202,7 +202,7 @@ def run_ga(id):
     ga = GA(instance, gpx, args.e)
 
     # Generate inicial population
-    ga.gen_pop(args.p, args.M, args.R, args.i, args.s)
+    ga.gen_pop(args.p, args.M, args.R, args.l, args.s)
 
     # Fisrt population evaluation
     ga.evaluate()

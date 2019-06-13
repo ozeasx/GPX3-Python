@@ -7,7 +7,6 @@ from chromosome import Chromosome
 
 # Nearest neighbour algorithm
 def nn(data, method):
-
     # Tour
     tour = list()
     # Available nodes
@@ -16,16 +15,24 @@ def nn(data, method):
     tour.append(random.sample(nodes, 1)[0])
     # Remove added client from available nodes
     nodes.remove(tour[-1])
-    # Add nearest nodes
+    # Initialize distance
     dist = 0
+    # Add nearest nodes
     while nodes:
-        n, d = data.get_nearest(tour[-1], nodes)
-        tour.append(n)
+        nearest, d = data.get_nearest(tour[-1], nodes)
+        # Append tour
+        tour.append(nearest)
+        # Update distance
         dist += d
+        # Remove added client from available nodes
+        nodes.remove(tour[-1])
 
+    # NN + 2opt
     c = Chromosome(tour, dist)
     if method == 'nn2opt':
         c = two_opt(c, data)
+
+    # Return created solution
     return c
 
 
@@ -34,8 +41,6 @@ def nn(data, method):
 # https://github.com/rellermeyer/99tsp/blob/master/python/2opt/TSP2opt.py
 # http://pedrohfsd.com/2017/08/09/2opt-part1.html
 # https://rawgit.com/pedrohfsd/TSP/develop/2opt.js
-
-
 def two_opt(chromosome, data, limit=True):
     # Initial tour
     best_tour = list(chromosome.tour)
@@ -58,9 +63,8 @@ def two_opt(chromosome, data, limit=True):
         for i in xrange(dimension - 1):
             for j in xrange(i + 1, dimension):
                 # Do not invert whole tour
-                if i == 0:
-                    if j-i == dimension - 1:
-                        continue
+                if i == 0 and j == dimension - 1:
+                    continue
 
                 # Create edges swap in advance
                 join_a = sorted([sorted([best_tour[i-1], best_tour[i]]),
@@ -76,8 +80,7 @@ def two_opt(chromosome, data, limit=True):
                 join_b = tuple(v for sub in join_b for v in sub)
 
                 # Avoid duplicated tests
-                if (frozenset([join_a, join_b]) in tested
-                        or join_a == join_b):
+                if frozenset([join_a, join_b]) in tested or join_a == join_b:
                     continue
 
                 # Store cases to not be tested again
@@ -96,15 +99,9 @@ def two_opt(chromosome, data, limit=True):
                     best_tour = new_tour
                     best_dist = best_dist - join_a_dist + join_b_dist
                     improved = not limit
-                    # break
 
     # Make sure 2opt is doing its job
     assert best_dist <= chromosome.dist, "Something wrong..."
-
-    # Rotate solution to begin with 1
-    # p = best_tour.index(1)
-    # best_tour = deque(best_tour)
-    # best_tour.rotate(-p)
 
     # Return solution
     return Chromosome(best_tour, best_dist)
