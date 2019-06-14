@@ -569,7 +569,6 @@ class GPX(object):
         return candidates
 
     # =========================================================================
-
     # Build solutions
     def _build_relax(self, info, common_graph, tour_1_dist, tour_2_dist):
         # Mark start time
@@ -595,7 +594,6 @@ class GPX(object):
         for key in info['feasible'][0]:
             dists['A'][key] += self._data.ab_dist(info['ab_cycles']['A'][key])
             dists['B'][key] += self._data.ab_dist(info['ab_cycles']['B'][key])
-            dists['diff'][key] = abs(dists['A'][key] - dists['B'][key])
             ab_graphs['A'][key] = Graph.gen_undirected_ab_graph(
                                                    info['ab_cycles']['A'][key])
             ab_graphs['B'][key] = Graph.gen_undirected_ab_graph(
@@ -612,20 +610,21 @@ class GPX(object):
                 tours_dist[0] += dists['B'][key]
 
         # All other solutions
-        for k, diff in sorted(dists['diff'].items(), key=itemgetter(1)):
-            for key, cycle in best.items():
+        n = len(info['feasible'][0])
+        for i in xrange(1, n+1):
+            for j in xrange(1, n+1):
                 # Revert choices
-                if key == k:
-                    if cycle == 'A':
-                        graphs[key] |= ab_graphs['B'][key]
-                        tours_dist[key] += dists['B'][key]
+                if i == j:
+                    if best[i] == 'A':
+                        graphs[i] |= ab_graphs['B'][j]
+                        tours_dist[i] += dists['B'][j]
                     else:
-                        graphs[key] |= ab_graphs['A'][key]
-                        tours_dist[key] += dists['A'][key]
-                elif key != 0:
+                        graphs[i] |= ab_graphs['A'][j]
+                        tours_dist[i] += dists['A'][j]
+                else:
                     # Take from base solution otherwise
-                    graphs[key] |= ab_graphs[cycle][key]
-                    tours_dist[key] += dists[cycle][key]
+                    graphs[i] |= ab_graphs[best[i]][j]
+                    tours_dist[i] += dists[best[i]][j]
 
         # Candidates solutions
         candidates = list()
@@ -637,7 +636,7 @@ class GPX(object):
             if dist <= max(tour_1_dist, tour_2_dist):
                 vertices, tour = Graph.dfs(graphs[key] | common_graph, 1)
                 # Feasible tour?
-                if len(vertices) == len(self._parent_1_tour):
+                if len(vertices) == self._size:
                     candidates.append([tour, dist])
                 # An infeasible tour was created?
                 else:
@@ -652,7 +651,6 @@ class GPX(object):
         return candidates
 
     # =========================================================================
-
     # Partition Crossover
     def recombine(self, parent_1, parent_2):
         # Mark start time
