@@ -1,5 +1,5 @@
 NAME : eil101.opt.tour.new
-COMMENT : Length 646.497547624, ozeasx@gmail.com
+COMMENT : Length 646.143478818, ozeasx@gmail.com
 TYPE : TOUR
 DIMENSION : 101
 TOUR_SECTION
@@ -10,6 +10,7 @@ TOUR_SECTION
 7
 82
 48
+47
 19
 11
 62
@@ -22,7 +23,6 @@ TOUR_SECTION
 64
 49
 36
-47
 46
 8
 45
@@ -37,6 +37,8 @@ TOUR_SECTION
 6
 94
 95
+13
+87
 97
 92
 59
@@ -59,22 +61,8 @@ TOUR_SECTION
 15
 57
 2
-87
-13
-58
-40
-53
-101
-27
-28
-26
-12
-68
-80
-54
-4
-21
 73
+21
 72
 74
 22
@@ -86,6 +74,8 @@ TOUR_SECTION
 39
 25
 55
+4
+54
 24
 29
 78
@@ -102,6 +92,16 @@ TOUR_SECTION
 79
 3
 77
+68
+80
+12
+26
+40
+58
+53
+101
+27
+28
 76
 50
 -1
