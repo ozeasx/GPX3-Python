@@ -34,6 +34,24 @@ class Graph(dict):
 
         return frozenset(edges)
 
+    # Generates inner graph from simplified tour
+    @staticmethod
+    def gen_inner_graph(tour):
+        inner = set()
+        for i, j in zip(tour[0::2], tour[1::2]):
+            inner.add(frozenset([i, j]))
+        return inner
+
+    # Generates outer graph from simplified tour
+    @staticmethod
+    def gen_outer_graph(tour):
+        outer = set()
+        for i, j in zip(tour[1::2], tour[2::2]):
+            outer.add(frozenset([i, j]))
+        # Same as rotating the list
+        outer.add(frozenset([tour[-1], tour[0]]))
+        return outer
+
     # Generates undirected graph
     @staticmethod
     def gen_undirected_graph(tour):

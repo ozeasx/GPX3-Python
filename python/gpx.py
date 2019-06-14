@@ -42,9 +42,8 @@ class GPX(object):
         self._test_1_fusion = True
         self._test_2_fusion = False
         self._test_3_fusion = False
-        # Parents tours
-        self._parent_1_tour = None
-        self._parent_2_tour = None
+        # Recombination size
+        self._size = None
         # Partitioning information
         self._info = dict()
         # Counters
@@ -109,6 +108,10 @@ class GPX(object):
     @property
     def relax(self):
         return self._relax
+
+    @property
+    def size(self):
+        return self._size
 
     @property
     def info(self):
@@ -195,13 +198,12 @@ class GPX(object):
         self._relax = value
 
     # =========================================================================
-
     # Find components using dfs
     def _partition(self, graph_a, graph_b):
         # Mark start time
         start_time = time.time()
         # Vertice set and AB cycles
-        vertices, ab_cycles = dict(), defaultdict(dict)
+        vertices, ab_cycles, tour_map = dict(), defaultdict(dict), dict()
         # Simetric diference (common edges removal)
         graph = graph_a ^ graph_b
         # Loop and index
@@ -218,6 +220,10 @@ class GPX(object):
                     ab_cycles['A'][index].rotate(1)
                 else:
                     ab_cycles['B'][index].rotate(1)
+            # Tour mapping
+            if not self._relax:
+                for v in vertices[index]:
+                    tour_map[v] = index
             # Reduce loop
             loop -= vertices[index]
             # Increment index
@@ -225,69 +231,47 @@ class GPX(object):
         # Store execution time
         self._timers['partitioning'].append(time.time() - start_time)
         # Return vertice set and ab_cycles
-        return vertices, ab_cycles
+        return vertices, ab_cycles, tour_map
 
     # =========================================================================
-
     # Create the simple graph for all components for given tour
-    def _gen_simple_graph(self, tour, vertices, fusion=False):
+    def _gen_simple_graph(self, tour, vertices, tour_map, fusion=False):
         # Mark start time
         start_time = time.time()
         # Simplified graph
-        simple_g = defaultdict(dict)
+        simple_g = defaultdict(list)
+        common_g = defaultdict(set)
+        last = False
 
-        # Create inner, outter and common graphs
-        size = len(tour)
-        for key in vertices:
-            simple_g[key]['in'] = set()  # inner simplified graph
-            simple_g[key]['out'] = set()  # outter simplified graph
-            simple_g[key]['common'] = set()  # common graph
-            last = None
-            first = None
-            for i, current in enumerate(tour):
-                # Outside vertice
-                if current not in vertices[key]:
-                    continue
-                previous = tour[i-1]
-                next = tour[(i+1) % size]
-                # To close inner and outer graph
-                if not first:
-                    first = previous, current, next
-                    last = current
-                    continue
-                # Inside vertice
-                if previous in vertices[key] and next in vertices[key]:
-                    continue
-                # Entry vertice
-                if previous not in vertices[key]:
-                    simple_g[key]['out'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([previous, current]))
-                    last = current
-                    continue
-                # Exit vertice
-                if next not in vertices[key]:
-                    simple_g[key]['in'].add(frozenset([last, current]))
-                    simple_g[key]['common'].add(frozenset([current, next]))
-                    last = current
-            # Close outter graph
-            if first[0] not in vertices[key]:  # previous not in
-                simple_g[key]['out'].add(frozenset([last, first[1]]))
-                simple_g[key]['common'].add(frozenset([first[0], first[1]]))
-            # Close inner graph
-            if first[2] not in vertices[key]:  # next not in
-                simple_g[key]['in'].add(frozenset([last, first[1]]))
-                simple_g[key]['common'].add(frozenset([first[2], first[1]]))
+        for i, v in enumerate(tour):
+            prev_key = tour_map[tour[i-1]]
+            current_key = tour_map[v]
+            # print tour[i-1], v, prev_key, current_key
+            # Only entries
+            if prev_key != current_key:
+                # Common graph
+                common_g[prev_key].add(frozenset([v, tour[i-1]]))
+                common_g[current_key].add(frozenset([v, tour[i-1]]))
+                # Simplified tour
+                if not last:
+                    last = tour[i-1]
+                    simple_g[current_key].append(v)
+                else:
+                    simple_g[prev_key].append(tour[i-1])
+                    simple_g[current_key].append(v)
+        if last:
+            simple_g[tour_map[last]].append(last)
+
         # Store execution time
         if not fusion:
             self._timers['simple_graph'].append(time.time() - start_time)
         else:
             self._timers['simple_graph_f'].append(time.time() - start_time)
 
-        # Return constructed graphs
-        return dict(simple_g)
+        # Return simplified graphs
+        return simple_g, common_g
 
     # =========================================================================
-
     # Classify components by inner and outter graph comparison
     def _classify(self, simple_a, simple_b, fusion=False):
         # Mark start time
@@ -309,15 +293,25 @@ class GPX(object):
             t3 = self._test_3
 
         for key in simple_a:
-            # Inner test (Test 1)
-            if t1 and (simple_a[key]['in'] == simple_b[key]['in']):
+            # Partitions with one entry and one exit (Test 1)
+            if t1 and len(simple_a[key]) == 2:
                 feasible[1].add(key)
-            # Outter test (Test 2)
-            elif t2 and (simple_a[key]['out'] == simple_b[key]['out']):
+                continue
+            # Simplified inner graph
+            inner_a = Graph.gen_inner_graph(simple_a[key])
+            inner_b = Graph.gen_inner_graph(simple_b[key])
+            # Inner test (Test 1)
+            if t1 and inner_a == inner_b:
+                feasible[1].add(key)
+                continue
+            # Simplified outer graph
+            outer_a = Graph.gen_outer_graph(simple_a[key])
+            outer_b = Graph.gen_outer_graph(simple_b[key])
+            # Outer test (Test 2)
+            if t2 and outer_a == outer_b:
                 feasible[2].add(key)
             # Mirror test (Test 3)
-            elif t3 and not (simple_a[key]['in'] & simple_b[key]['out']
-                             or simple_a[key]['out'] & simple_b[key]['in']):
+            elif t3 and not ((inner_a & outer_b) or (outer_a & inner_b)):
                 feasible[3].add(key)
             else:
                 infeasible.add(key)
@@ -369,8 +363,7 @@ class GPX(object):
                     # Count common edges
                     count = 0
                     for i, j in combinations(fusion, 2):
-                        count += len(info['simple_a'][i]['common']
-                                     & info['simple_a'][j]['common'])
+                        count += len(info['common'][i] & info['common'][j])
 
                     # Create element with (fusion, count)
                     if count > 0:
@@ -384,7 +377,7 @@ class GPX(object):
                 # Apply fusion limit
                 if self._fusion_limit:
                     candidates = candidates[:int(math.log(len(
-                                                        self._parent_1_tour)))]
+                                                         info['infeasible'])))]
                 # Convert elements to tuples to be used as dict keys
                 candidates = map(tuple, candidates)
                 # Increment fusion size
@@ -399,12 +392,16 @@ class GPX(object):
                             union[test] |= info['vertices'][i]
 
                         # Create simple graphs for fusion
-                        simple_a = self._gen_simple_graph(info['tour_a'],
-                                                          union, True)
-                        simple_b = self._gen_simple_graph(info['tour_b'],
-                                                          union, True)
+                        simple_a, __ = self._gen_simple_graph(info['tour_a'],
+                                                              union,
+                                                              info['tour_map'],
+                                                              True)
+                        simple_b, __ = self._gen_simple_graph(info['tour_b'],
+                                                              union,
+                                                              info['tour_map'],
+                                                              True)
                         # Classify fusion
-                        feasible, _ = self._classify(simple_a, simple_b, True)
+                        feasible, __ = self._classify(simple_a, simple_b, True)
 
                         # Update information if successfull fusion
                         if test in set.union(*feasible.values()):
@@ -429,14 +426,14 @@ class GPX(object):
             if self._test_2 or self._test_3:
                 self._counters['unsolved'] += len(info['infeasible'])
             else:
-                # All remaining partitions after f1 test are feasible 2?
+                # All remaining partitions after f1 test are feasible
                 fuse(tuple(info['infeasible']), 2)
         # The last of the mohicans
         elif len(info['infeasible']) == 1:
             if self._test_2 or self._test_3:
                 self._counters['unsolved'] += 1
             else:
-                # The remaining partition after f1 test is feasible 2?
+                # The remaining partition after f1 test is feasible
                 info['feasible'][2].add(info['infeasible'].pop())
         # ---------------------------------------------------------------------
 
@@ -557,7 +554,7 @@ class GPX(object):
         for i, (graph, dist) in enumerate(zip(graphs, distances)):
             vertices, tour = Graph.dfs(graph, 1)
             # Feasible tour?
-            if len(vertices) == len(self._parent_1_tour):
+            if len(vertices) == self._size:
                 if dist <= max(tour_1_dist, tour_2_dist):
                     candidates.append([tour, dist])
                 # A bad child was created with only recombining components?
@@ -581,18 +578,19 @@ class GPX(object):
         start_time = time.time()
 
         # Store parent sum
-        self._counters['parents_dist'] += (parent_1.dist + parent_2.dist)
+        self._counters['parents_dist'] += parent_1.dist + parent_2.dist
 
         # Duplicated parents
         if parent_1 == parent_2:
             self._counters['failed'] += 1
             self._counters['failed_0'] += 1
-            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
+            self._counters['children_dist'] += parent_1.dist + parent_2.dist
             return parent_1, parent_2
 
-        # Save parents tours
-        self._parent_1_tour = parent_1.tour
-        self._parent_2_tour = parent_2.tour
+        # Save parents and set recombination size
+        self._parent_1 = parent_1
+        self._parent_2 = parent_2
+        self._size = parent_1.dimension
 
         # Tours
         tour_a = list(parent_1.tour)
@@ -603,48 +601,57 @@ class GPX(object):
         g_star = parent_1.undirected_graph | parent_2.undirected_graph
 
         for vertice in g_star:
+            # Remove degree 2 nodes
+            if len(g_star[vertice]) == 2:
+                tour_a.remove(vertice)
+                tour_b.remove(vertice)
+                tour_c.remove(vertice)
             # Create ghost nodes for degree 4 nodes
             if len(g_star[vertice]) == 4:
                 tour_a.insert(tour_a.index(vertice) + 1, -vertice)
                 tour_b.insert(tour_b.index(vertice) + 1, -vertice)
                 tour_c.insert(tour_c.index(vertice), -vertice)
-            # Remove degree 2 nodes (surrogate edge)
-            if len(g_star[vertice]) == 2:
-                tour_a.remove(vertice)
-                tour_b.remove(vertice)
-                tour_c.remove(vertice)
 
         # Recreate graphs
         undirected_a = Graph.gen_undirected_graph(tour_a)
         undirected_b = Graph.gen_undirected_graph(tour_b)
         undirected_c = Graph.gen_undirected_graph(tour_c)
 
+        # G* time
         self._timers['g_star'].append(time.time() - start_time)
 
         # Partitioning schemes m, n
         m = dict()
         n = dict()
 
-        m['vertices'], m['ab_cycles'] = self._partition(undirected_a,
-                                                        undirected_b)
-        n['vertices'], n['ab_cycles'] = self._partition(undirected_a,
-                                                        undirected_c)
+        m['vertices'], m['ab_cycles'], m['tour_map'] = self._partition(
+                                                    undirected_a, undirected_b)
+        n['vertices'], n['ab_cycles'], n['tour_map'] = self._partition(
+                                                    undirected_a, undirected_c)
 
         # If exists one or no component, return parents
         if len(m['vertices']) <= 1 and len(n['vertices']) <= 1:
             self._counters['failed'] += 1
             self._counters['failed_1'] += 1
-            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
+            self._counters['children_dist'] += parent_1.dist + parent_2.dist
             return parent_1, parent_2
 
         # Normal GPX
         if not self._relax:
             # Generate simple graphs for each partitioning scheme for each tour
-            m['simple_a'] = self._gen_simple_graph(tour_a, m['vertices'])
-            m['simple_b'] = self._gen_simple_graph(tour_b, m['vertices'])
+            m['simple_a'], m['common'] = self._gen_simple_graph(tour_a,
+                                                                m['vertices'],
+                                                                m['tour_map'])
 
-            n['simple_a'] = self._gen_simple_graph(tour_a, n['vertices'])
-            n['simple_b'] = self._gen_simple_graph(tour_c, n['vertices'])
+            m['simple_b'], __ = self._gen_simple_graph(tour_b, m['vertices'],
+                                                       m['tour_map'])
+
+            n['simple_a'], n['common'] = self._gen_simple_graph(tour_a,
+                                                                n['vertices'],
+                                                                n['tour_map'])
+
+            n['simple_b'], __ = self._gen_simple_graph(tour_c, n['vertices'],
+                                                       n['tour_map'])
 
             # Test simple graphs to identify feasible components
             m['feasible'], m['infeasible'] = self._classify(m['simple_a'],
@@ -678,8 +685,8 @@ class GPX(object):
         else:
             info = n
             info['tour_b'] = tour_c
-
         info['tour_a'] = tour_a
+
         # Union of all feasible components
         info['feasible'][0] = set.union(*info['feasible'].values())
         # Counters
@@ -697,7 +704,7 @@ class GPX(object):
         if len(info['feasible'][0]) <= 1:
             self._counters['failed'] += 1
             self._counters['failed_2'] += 1
-            self._counters['children_dist'] += (parent_1.dist + parent_2.dist)
+            self._counters['children_dist'] += parent_1.dist + parent_2.dist
             return parent_1, parent_2
 
         # Save partitioning data

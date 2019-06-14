@@ -35,6 +35,8 @@ class GA(object):
         self._counters = defaultdict(list)
         self._timers = defaultdict(list)
 
+        # Graveyard
+        self._past_pop = set()
         # Current population
         self._population = list()
         # Elite population
@@ -74,11 +76,11 @@ class GA(object):
     # =========================================================================
     # Insert unique solutions into population
     def _insert_pop(self, number, method='random', eval=False):
-        # Do nothing
+        # Insert nothing
         if number == 0:
             return
-        # Individuals to be inserted
-        elif 0 < number < 1:
+        # Less than 1?
+        elif number < 1:
             number = 1
 
         # ---------------------------------------------------------------------
@@ -104,6 +106,7 @@ class GA(object):
             # Avoid duplicates
             while c in self._population or c is None:
                 c = functions.nn(self._data, method)
+            return c
         # ---------------------------------------------------------------------
 
         for i in xrange(int(number)):
@@ -150,8 +153,7 @@ class GA(object):
             else:
                 self._insert_pop(size - ratio * size, 'random')
                 self._insert_pop(ratio * size, method)
-            # Done
-        print("Done...")
+
         # Assert population size
         self._pop_size = len(self._population)
         assert self._pop_size == size, "gen_pop, pop_size"
@@ -162,8 +164,11 @@ class GA(object):
             with open(output, 'w') as file:
                 for c in self._population:
                     print >> file, ",".join(map(str, c.tour))
-            print("Done...")
+            print("Exiting...")
             exit()
+
+        # Done
+        print("Done...")
 
         # Store execution time
         self._timers['population'].append(time.time() - start_time)
