@@ -97,6 +97,15 @@ class Graph(dict):
 
         return Graph(result)
 
+    # Graph diference
+    def __sub__(self, other):
+        result = dict.fromkeys(self.viewkeys() | other.viewkeys())
+
+        for key in result:
+            result[key] = self.get(key, set()) - other.get(key, set())
+
+        return Graph(result)
+
     # Graph intersection
     def __and__(self, other):
         result = dict.fromkeys(self.viewkeys() & other.viewkeys())

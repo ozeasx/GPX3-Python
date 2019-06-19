@@ -580,65 +580,97 @@ class GPX(object):
         dists['B'] = defaultdict(float)
         dists['diff'] = defaultdict(float)
 
+        # AB graphs
+        ab_graphs = defaultdict(Graph)
+
         # Best solution base
         best = dict()
-
-        # AB graphs and solutions graph
-        ab_graphs = defaultdict(dict)
-        graphs = defaultdict(Graph)
-
-        # Tours distances
-        tours_dist = defaultdict(float)
+        best_graph = Graph()
+        best_dist = 0
 
         # Get distances and differences between A and B
         for key in info['feasible'][0]:
             dists['A'][key] += self._data.ab_dist(info['ab_cycles']['A'][key])
             dists['B'][key] += self._data.ab_dist(info['ab_cycles']['B'][key])
+            dists['diff'][key] = abs(dists['A'][key] - dists['B'][key])
             ab_graphs['A'][key] = Graph.gen_undirected_ab_graph(
                                                    info['ab_cycles']['A'][key])
             ab_graphs['B'][key] = Graph.gen_undirected_ab_graph(
                                                    info['ab_cycles']['B'][key])
 
-            # Best tour base and graph
+            # Best tour base, graph and distance
             if dists['A'][key] <= dists['B'][key]:
                 best[key] = 'A'
-                graphs[0] |= ab_graphs['A'][key]
-                tours_dist[0] += dists['A'][key]
+                best_graph |= ab_graphs['A'][key]
+                best_dist += dists['A'][key]
             else:
                 best[key] = 'B'
-                graphs[0] |= ab_graphs['B'][key]
-                tours_dist[0] += dists['B'][key]
+                best_graph |= ab_graphs['B'][key]
+                best_dist += dists['B'][key]
 
-        # All other solutions
-        n = len(info['feasible'][0])
-        for i in xrange(1, n+1):
-            for j in xrange(1, n+1):
-                # Revert choices
-                if i == j:
-                    if best[i] == 'A':
-                        graphs[i] |= ab_graphs['B'][j]
-                        tours_dist[i] += dists['B'][j]
-                    else:
-                        graphs[i] |= ab_graphs['A'][j]
-                        tours_dist[i] += dists['A'][j]
-                else:
-                    # Take from base solution otherwise
-                    graphs[i] |= ab_graphs[best[i]][j]
-                    tours_dist[i] += dists[best[i]][j]
+        # Acceptable diff limit
+        limit = abs(best_dist - max(tour_1_dist, tour_2_dist))
+        # Set of (component, diff) bellow limit
+        comps = set((k, d) for k, d in dists['diff'].items() if d < limit)
+        pairs = combinations(best, 2)
+        for p in pairs:
+            local_diff = dists['diff'][p[0]] + dists['diff'][p[1]]
+            if local_diff < limit:
+                comps.add(tuple([p, local_diff]))
 
-        # Candidates solutions
-        candidates = list()
-        # Common distance
+        # Constructed solutions
+        constructed = list()
+
+        # Common graph and distance
         common_dist = tour_1_dist - sum(dists['A'].values())
-        # Builder
-        for key in graphs:
-            dist = tours_dist[key] + common_dist
+        best_dist += common_dist
+        best_graph |= common_graph
+
+        # Best solution
+        if best_dist <= max(tour_1_dist, tour_2_dist):
+            vertices, tour = Graph.dfs(best_graph, 1)
+            # Valid tour
+            if len(vertices) == self._size:
+                # assert isclose(self._data.tour_dist(list(tour)), best_dist)
+                constructed.append([tour, best_dist])
+            # Invalid tour
+            else:
+                self._counters['inf_tour'] += 1
+        # A bad child was created?
+        else:
+            self._counters['bad_child'] += 1
+
+        # Other solutions
+        for t in sorted(comps, key=itemgetter(1)):
+            # Update distance
+            dist = best_dist + t[1]
+            # Check if it worths
             if dist <= max(tour_1_dist, tour_2_dist):
-                vertices, tour = Graph.dfs(graphs[key] | common_graph, 1)
+                graph = Graph()
+                graph |= best_graph
+
+                if isinstance(t[0], int):
+                    key = tuple([t[0]])
+                else:
+                    key = t[0]
+
+                for k in key:
+                    if best[k] == 'A':
+                        graph -= ab_graphs['A'][k]
+                        graph |= ab_graphs['B'][k]
+                    else:
+                        graph -= ab_graphs['B'][k]
+                        graph |= ab_graphs['A'][k]
+
+                # Build tour
+                vertices, tour = Graph.dfs(graph, 1)
                 # Feasible tour?
                 if len(vertices) == self._size:
-                    candidates.append([tour, dist])
-                # An infeasible tour was created?
+                    # assert isclose(self._data.tour_dist(list(tour)), dist)
+                    constructed.append([tour, dist])
+                    if len(constructed) == 2:
+                        break
+                # Invalid tour
                 else:
                     self._counters['inf_tour'] += 1
             # A bad child was created?
@@ -648,7 +680,7 @@ class GPX(object):
         # Store execution time
         self._timers['build'].append(time.time() - start_time)
         # Return created tours information
-        return candidates
+        return constructed
 
     # =========================================================================
     # Partition Crossover

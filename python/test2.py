@@ -39,10 +39,10 @@ gpx = GPX(tsp)
 # p2 = Chromosome([1,14,11,12,10,13,9,15,8,7,5,6,3,4,2])
 
 # Tinos2018b-F5
-p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
-p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16,
-                 14, 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
+# p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
+#                  18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32))
+# p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16,
+#                  14, 13, 29, 30, 10, 9, 7, 8, 5, 6, 4, 3, 22, 21, 24, 23, 2))
 # p2 = Chromosome([1,2,23,24,21,22,3,4,6,5,8,7,9,10,30,29,13,14,16,15,18,17,19,
 #                  20,25,26,27,28,12,11,31,32])
 
@@ -204,6 +204,9 @@ p2 = Chromosome((1, 32, 31, 11, 12, 28, 27, 26, 25, 20, 19, 17, 18, 15, 16,
 # p1 = Chromosome((9, 5, 3, 2, 7, 4, 1, 8, 6, 10))
 # p2 = Chromosome((4, 5, 1, 7, 9, 8, 6, 3, 2, 10))
 
+p1 = Chromosome((1, 2, 3, 4, 5, 6, 7, 8))
+p2 = Chromosome((1, 2, 4, 3, 5, 6, 8, 7))
+
 p1.dist = tsp.tour_dist(p1.tour)
 p2.dist = tsp.tour_dist(p2.tour)
 
@@ -211,6 +214,7 @@ gpx.test_1 = True
 gpx.test_2 = False
 gpx.test_3 = True
 gpx.fusion_on = True
+gpx.relax = True
 
 c1, c2 = gpx.recombine(p1, p2)
 
@@ -251,21 +255,21 @@ print
 for key, value in gpx.info['ab_cycles'].items():
     print key, value
 print
-print "simple graph a"
-for key in gpx.info['simple_a']:
-    print
-    for k in gpx.info['simple_a'][key]:
-        print key, k,
-        for t in gpx.info['simple_a'][key][k]:
-            print tuple(t),
-print
-print "simple graph b"
-for key in gpx.info['simple_b']:
-    print
-    for k in gpx.info['simple_b'][key]:
-        print key, k,
-        for t in gpx.info['simple_b'][key][k]:
-            print tuple(t),
+# print "simple graph a"
+# for key in gpx.info['simple_a']:
+#     print
+#     for k in gpx.info['simple_a'][key]:
+#         print key, k,
+#         for t in gpx.info['simple_a'][key][k]:
+#             print tuple(t),
+# print
+# print "simple graph b"
+# for key in gpx.info['simple_b']:
+#     print
+#     for k in gpx.info['simple_b'][key]:
+#         print key, k,
+#         for t in gpx.info['simple_b'][key][k]:
+#             print tuple(t),
 print
 print "Feasible: ", gpx.info['feasible']
 print "Infeasible: ", gpx.info['infeasible']
