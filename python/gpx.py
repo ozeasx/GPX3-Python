@@ -609,7 +609,7 @@ class GPX(object):
                 best_dist += dists['B'][key]
 
         # Acceptable diff limit
-        limit = abs(best_dist - max(tour_1_dist, tour_2_dist))
+        limit = abs(min(tour_1_dist, tour_2_dist) - best_dist)
         # Set of (component, diff) bellow limit
         comps = set((k, d) for k, d in dists['diff'].items() if d < limit)
         pairs = combinations(best, 2)
@@ -641,11 +641,12 @@ class GPX(object):
             self._counters['bad_child'] += 1
 
         # Other solutions
-        for t in sorted(comps, key=itemgetter(1)):
+        for t in sorted(comps, key=itemgetter(1))[:len(best)]:
             # Update distance
             dist = best_dist + t[1]
-            # Check if it worths
+            # Check improvement
             if dist <= max(tour_1_dist, tour_2_dist):
+                # Build solutions
                 graph = Graph()
                 graph |= best_graph
 
