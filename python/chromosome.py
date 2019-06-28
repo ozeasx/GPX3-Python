@@ -3,38 +3,39 @@
 
 import random
 from graph import Graph
+from collections import deque
 
 
 class Chromosome(object):
     # Constructor
-    def __init__(self, **kwargs):
-        # Create random tour based on given dimension
-        if 'dimension' in kwargs:
-            self._tour = range(1, kwargs['dimension'] + 1)
-            random.shuffle(self._tour)
-        # User defined tour
-        elif 'tour' in kwargs:
-            # Is it a valid hamiltonian circuit?
-            assert len(kwargs['tour']) == len(set(kwargs['tour']))
-            self._tour = tuple(kwargs['tour'])
-        else:
-            print "dimension or tour needed"
+    def __init__(self, *args):
+        if len(args):
+            # Random tour
+            if isinstance(args[0], int) and len(args) == 1:
+                tour = range(2, args[0] + 1)
+                random.shuffle(tour)
+                self._tour = tuple([1] + tour)
+                self._dimension = args[0]
+            # Defined tour
+            elif isinstance(args[0], (tuple, list, deque)):
+                assert len(args[0]) == len(set(args[0]))
+                self._tour = tuple(args[0])
+                self._dimension = len(args[0])
+            # Distance
+            if len(args) == 2 and isinstance(args[1], (int, float)):
+                self._dist = args[1]
+            else:
+                self._dist = None
+
+        # Check if the needed attributes were created
+        if not all(p in self.__dict__ for p in ('_tour', '_dimension',
+                                                '_dist')):
+            print("Cannot create (Chromosome) object")
             exit()
-        # Tour distance
-<<<<<<< HEAD
-        if dist:
-            self._dist = float(dist)
-        # Number of cities
-=======
-        if 'dist' in kwargs:
-            self._dist = kwargs['dist']
-        # Set dimension
->>>>>>> Working with kwargs
-        self._dimension = len(self.tour)
+
         # undirected graph and edges representaition
-        if self.tour:
-            self._undirected_graph = Graph.gen_undirected_graph(self._tour)
-            self._undirected_edges = Graph.gen_undirected_edges(self._tour)
+        self._undirected_graph = Graph.gen_undirected_graph(self._tour)
+        self._undirected_edges = Graph.gen_undirected_edges(self._tour)
 
     # Equality (== operator)
     def __eq__(self, other):
@@ -87,3 +88,9 @@ class Chromosome(object):
     @fitness.setter
     def fitness(self, value):
         self._fitness = value
+
+
+# Test section
+if __name__ == '__main__':
+    c = Chromosome(5, 1)
+    print(c.__dict__)

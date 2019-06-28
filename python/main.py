@@ -90,7 +90,7 @@ p.add_argument("-o", help="Directory to generate file reports", type=str,
                default=None)
 
 # Instance
-p.add_argument("I", help="TSP instance file", type=str)
+p.add_argument("I", help="TSP/CVRP instance file", type=str)
 
 # Parser
 args = p.parse_args()
@@ -118,10 +118,7 @@ if args.l:
     assert os.path.isfile(args.l), "File " + args.l + " doesn't exist"
 
 # Instance
-if args.I.split('.')[2].lower() == 'tsp':
-    instance = TSPLIB(args.I)
-else:
-    instance = VRPLIB(args.I)
+instance = VRPLIB(args.I)
 
 # Create directory to report data
 if args.o:
@@ -168,14 +165,18 @@ def run_ga(id):
     elif args.P:
         logger.info("Pairwise selection")
     logger.info("Crossover probability: %f", args.c)
-    logger.info("Mutation probability: %f", args.m)
-    logger.info("Mutation operator: %s", args.t)
+    logger.info("Graph test configuration: %s%s%s,%s%s%s", args.t1, args.t2,
+                args.t3, args.t1f, args.t2f, args.t3f)
     logger.info("Fusion: %s", args.F)
     logger.info("Explore: %s", args.E)
+    logger.info("Relaxed GPX: %s", args.L)
+    logger.info("Mutation probability: %f", args.m)
+    logger.info("Mutation operator: %s", args.t)
+
     logger.info("Generation limit: %i", args.g)
     logger.info("Instance: %s", args.I)
     logger.info("Dimension: %i", instance.dimension)
-    if instance.type() == 'vrp':
+    if instance.type == 'vrp':
         logger.info("Trucks: %i", instance.trucks)
         logger.info("Truck's capcity: %f", instance.capcity)
     logger.info("Iteration: %i/%i", id + 1, args.n)
@@ -205,7 +206,7 @@ def run_ga(id):
     gpx.test_2_fusion = args.t2f
     gpx.test_3_fusion = args.t3f
 
-    # GA Instance
+    # GA
     ga = GA(instance, gpx, args.e)
 
     # Generate inicial population

@@ -20,7 +20,6 @@ class GA(object):
         self._data = data
         # Crossover operator
         self._cross_op = cross_op
-
         # Number of elite population
         self._elitism = elitism
         # Generation count
@@ -86,10 +85,10 @@ class GA(object):
         # ---------------------------------------------------------------------
         # Sub functions to generate unique chromosome
         def random():
-            c = Chromosome(self._data.dimension)
+            c = Chromosome(self._data.dimension, self._data.trucks)
             # Avoid duplicates
             while c in self._population:
-                c = Chromosome(self._data.dimension)
+                c = Chromosome(self._data.dimension, self._data.trucks)
             c.dist = self._data.tour_dist(c.tour)
             return c
 

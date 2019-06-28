@@ -8,7 +8,7 @@ from collections import deque
 from itertools import combinations
 from operator import attrgetter, itemgetter
 from graph import Graph
-from chromosome import Chromosome
+from vrp_chromosome import VRP_Chromosome as Chromosome
 
 
 # https://www.python.org/dev/peps/pep-0485/

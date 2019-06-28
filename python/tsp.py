@@ -10,10 +10,12 @@ from chromosome import Chromosome
 class TSPLIB(object):
     def __init__(self, instance_path):
         # Set instance file and
-        self._type = "tsp"
         self._instance_path = instance_path
         self._instance_name = instance_path[:-4]
         self._best_solution = None
+
+        # Instance type
+        self._type = 'tsp'
 
         # Set tsp dimension
         self._dimension = int(Shell.run("grep DIMENSION " + instance_path
