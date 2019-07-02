@@ -10,39 +10,36 @@ class VRPLIB(TSPLIB):
     def __init__(self, instance_path):
         # Call super init
         super(VRPLIB, self).__init__(instance_path)
-        self._trucks = 1
 
-        # VRPLIB
-        if instance_path.split('.')[-1].lower() == 'vrp':
-            # Instance type
-            self._type = 'vrp'
+        # Instance type
+        self._type = 'vrp'
 
-            # Set capacity
-            self._capacity = float(Shell.run("grep CAPACITY " + instance_path
-                                             + " | cut -d':' -f2").strip())
-            # Mim number of vehicles
-            self._trucks = int(Shell.run("grep TRUCKS " + instance_path
+        # Set capacity
+        self._capacity = float(Shell.run("grep CAPACITY " + instance_path
                                          + " | cut -d':' -f2").strip())
+        # Mim number of vehicles
+        self._trucks = int(Shell.run("grep TRUCKS " + instance_path
+                                     + " | cut -d':' -f2").strip())
 
-            # Load demand array
-            with open(instance_path) as instance:
-                read = False
-                self._demand = list()
-                for word in instance:
-                    # End loop if EOF
-                    if word.strip() == "DEPOT_SECTION":
-                        break
-                    # If do, store tour
-                    if read:
-                        s = word.split()
-                        self._demand.append(int(s[1]))
-                    # If DEMAND_SECTION, set 'read'
-                    if word.strip() == "DEMAND_SECTION":
-                        read = True
+        # Load demand array
+        with open(instance_path) as instance:
+            read = False
+            self._demand = list()
+            for word in instance:
+                # End loop if EOF
+                if word.strip() == "DEPOT_SECTION":
+                    break
+                # If do, store tour
+                if read:
+                    s = word.split()
+                    self._demand.append(int(s[1]))
+                # If DEMAND_SECTION, set 'read'
+                if word.strip() == "DEMAND_SECTION":
+                    read = True
 
-            if self._best_solution is not None:
-                self._best_solution.load = self.routes_load(
-                                                    self._best_solution.routes)
+        if self._best_solution is not None:
+            self._best_solution.load = self.routes_load(
+                                                self._best_solution.routes)
 
     # Get vehicles capacity
     @property
@@ -53,11 +50,6 @@ class VRPLIB(TSPLIB):
     @property
     def best_solution(self):
         return self._best_solution
-
-    # Get min number of vehicles
-    @property
-    def trucks(self):
-        return self._trucks
 
     # Set a new best tour and write to file
     @best_solution.setter
@@ -99,7 +91,7 @@ class VRPLIB(TSPLIB):
         return load
 
     # Calc AB_cycle distance using distance matrix (memory)
-    def ab_cycle_dist(self, ab_cycle):
+    def ab_dist(self, ab_cycle):
         # Convert deque to list
         aux = list(ab_cycle)
         # Distance

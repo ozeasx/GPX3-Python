@@ -118,7 +118,13 @@ if args.l:
     assert os.path.isfile(args.l), "File " + args.l + " doesn't exist"
 
 # Instance
-instance = VRPLIB(args.I)
+if args.I.split('.')[-1].lower() == 'tsp':
+    instance = TSPLIB(args.I)
+elif args.I.split('.')[-1].lower() == 'vrp':
+    instance = VRPLIB(args.I)
+else:
+    print("TSPLIB or VRPLIB file needed. Exiting...")
+    exit()
 
 # Create directory to report data
 if args.o:
@@ -165,8 +171,8 @@ def run_ga(id):
     elif args.P:
         logger.info("Pairwise selection")
     logger.info("Crossover probability: %f", args.c)
-    logger.info("Graph test configuration: %s%s%s,%s%s%s", args.t1, args.t2,
-                args.t3, args.t1f, args.t2f, args.t3f)
+    logger.info("Graph test configuration: %s/%s/%s,%s/%s/%s", args.t1,
+                args.t2, args.t3, args.t1f, args.t2f, args.t3f)
     logger.info("Fusion: %s", args.F)
     logger.info("Explore: %s", args.E)
     logger.info("Relaxed GPX: %s", args.L)

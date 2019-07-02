@@ -14,8 +14,9 @@ class TSPLIB(object):
         self._instance_name = instance_path[:-4]
         self._best_solution = None
 
-        # Instance type
+        # Instance type and trucks (1 for TSP)
         self._type = 'tsp'
+        self._trucks = 1
 
         # Set tsp dimension
         self._dimension = int(Shell.run("grep DIMENSION " + instance_path
@@ -85,6 +86,11 @@ class TSPLIB(object):
     def dimension(self):
         return self._dimension
 
+    # Get number of vehicles (1 for TSP)
+    @property
+    def trucks(self):
+        return self._trucks
+
     # Get best known tour
     @property
     def best_solution(self):
@@ -143,6 +149,7 @@ class TSPLIB(object):
         return dist
 
     # Calc tour distance using distance matrix (memory)
+    # Closed cycle distance
     def tour_dist(self, tour):
         # distance
         dist = 0
@@ -157,7 +164,7 @@ class TSPLIB(object):
 
         return dist
 
-    # Calc route distance
+    # Calc route (not a closed cycle) distance
     def route_dist(self, route):
         # distance
         dist = 0
