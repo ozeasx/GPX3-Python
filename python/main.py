@@ -204,7 +204,7 @@ def run_ga(id):
 
     # Fusion, explore and relax switches
     gpx.fusion_on = args.F
-    gpx.explore_on = args.E
+    gpx.explore = args.E
     gpx.relax = args.L
 
     # Fusion tests

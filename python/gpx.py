@@ -32,7 +32,7 @@ class GPX(object):
         self._test_2 = False
         self._test_3 = False
         # Explore more children if infeasible partitions are present
-        self._explore_on = True
+        self._explore = True
         # Fusion decisions variables
         self._fusion_on = True
         self._fusion_limit = True
@@ -82,8 +82,8 @@ class GPX(object):
         return self._test_3
 
     @property
-    def explore_on(self):
-        return self._explore_on
+    def explore(self):
+        return self._explore
 
     @property
     def fusion_on(self):
@@ -162,10 +162,10 @@ class GPX(object):
         assert value in [True, False]
         self._test_3 = value
 
-    @explore_on.setter
-    def explore_on(self, value):
+    @explore.setter
+    def explore(self, value):
         assert value in [True, False]
-        self._explore_on = value
+        self._explore = value
 
     @fusion_on.setter
     def fusion_on(self, value):
@@ -242,6 +242,18 @@ class GPX(object):
         simple_g = defaultdict(list)
         common_g = defaultdict(set)
         last = False
+
+        # Fusion map
+        if fusion:
+            component = next(iter(vertices))
+            fusion_map = dict()
+            for node in tour_map:
+                if tour_map[node] in component:
+                    fusion_map[node] = component
+                else:
+                    fusion_map[node] = tour_map[node]
+            # Reasign tour__map
+            tour_map = fusion_map
 
         for i, v in enumerate(tour):
             prev_key = tour_map[tour[i-1]]
@@ -388,6 +400,7 @@ class GPX(object):
                     union = defaultdict(set)
                     # Test to determine if a component is fused already
                     if not any(i in fused for i in test):
+                        # Merge AB_cycle
                         for i in test:
                             union[test] |= info['vertices'][i]
 
@@ -530,7 +543,7 @@ class GPX(object):
         # Are there infeasible components?
         if inf_partitions:
             # Remove base 2
-            if not self._explore_on:
+            if not self._explore:
                 graphs.pop()
                 distances.pop()
             # Graphs with infeasible components (explore 4 potencial children)
@@ -807,6 +820,10 @@ class GPX(object):
         self._counters['feasible_2'] += len(info['feasible'][2])
         self._counters['feasible_3'] += len(info['feasible'][3])
         self._counters['infeasible'] += len(info['infeasible'])
+
+        # Try to fuse infeasible partitions
+        if len(info['infeasible']):
+            self._fusion(info)
 
         # After fusion, if exists one or no component, return parents
         if len(info['feasible'][0]) <= 1:
