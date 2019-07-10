@@ -290,9 +290,9 @@ class GA(object):
 
         # Reduce population in case of pairwise recombination
         if pairwise:
-            # Remove duplicates
-            children = set(children)
-            children = list(children)
+            # Remove duplicates ?
+            # children = set(children)
+            # children = list(children)
             # Reevaluate population
             for c in children:
                 c.fitness = self._evaluate(c)

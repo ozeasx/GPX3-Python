@@ -38,6 +38,8 @@ class GPX(object):
         self._fusion_limit = True
         # Relaxed GPX
         self._relax = False
+        # Relax build limit
+        self._build_limit = True
         # Graph tests 1, 2 and 3 for fusion
         self._test_1_fusion = True
         self._test_2_fusion = False
@@ -305,26 +307,31 @@ class GPX(object):
             t3 = self._test_3
 
         for key in simple_a:
-            # Partitions with one entry and one exit (Test 1)
+            # Partitions with one entry and one exit
             if t1 and len(simple_a[key]) == 2:
                 feasible[1].add(key)
-                continue
-            # Simplified inner graph
-            inner_a = Graph.gen_inner_graph(simple_a[key])
-            inner_b = Graph.gen_inner_graph(simple_b[key])
-            # Inner test (Test 1)
-            if t1 and inner_a == inner_b:
-                feasible[1].add(key)
-                continue
-            # Simplified outer graph
-            outer_a = Graph.gen_outer_graph(simple_a[key])
-            outer_b = Graph.gen_outer_graph(simple_b[key])
-            # Outer test (Test 2)
-            if t2 and outer_a == outer_b:
-                feasible[2].add(key)
-            # Mirror test (Test 3)
-            elif t3 and not ((inner_a & outer_b) or (outer_a & inner_b)):
-                feasible[3].add(key)
+            elif t1 or t2 or t3:
+                # Simplified inner graph
+                inner_a = Graph.gen_inner_graph(simple_a[key])
+                inner_b = Graph.gen_inner_graph(simple_b[key])
+                # Inner test
+                if t1 and inner_a == inner_b:
+                    feasible[1].add(key)
+                elif t2 or t3:
+                    # Simplified outer graph
+                    outer_a = Graph.gen_outer_graph(simple_a[key])
+                    outer_b = Graph.gen_outer_graph(simple_b[key])
+                    # Outer test (Test 2)
+                    if t2 and outer_a == outer_b:
+                        feasible[2].add(key)
+                    # Mirror test (Test 3)
+                    elif t3 and not ((inner_a & outer_b)
+                                     or (outer_a & inner_b)):
+                        feasible[3].add(key)
+                    else:
+                        infeasible.add(key)
+                else:
+                    infeasible.add(key)
             else:
                 infeasible.add(key)
 
@@ -625,11 +632,13 @@ class GPX(object):
         limit = abs(min(tour_1_dist, tour_2_dist) - best_dist)
         # Set of (component, diff) bellow limit
         comps = set((k, d) for k, d in dists['diff'].items() if d < limit)
-        pairs = combinations(best, 2)
-        for p in pairs:
-            local_diff = dists['diff'][p[0]] + dists['diff'][p[1]]
-            if local_diff < limit:
-                comps.add(tuple([p, local_diff]))
+        # Extended resversal list
+        if not self._build_limit:
+            pairs = combinations(best, 2)
+            for p in pairs:
+                local_diff = dists['diff'][p[0]] + dists['diff'][p[1]]
+                if local_diff < limit:
+                    comps.add(tuple([p, local_diff]))
 
         # Constructed solutions
         constructed = list()
