@@ -1,5 +1,5 @@
 # GPX3 - Python
-Implementation of the Partition Crossover.
+Implementation of the Generalized Partition Crossover operator.
 
 Reference:
 O. Carvalho, R. Tinós, D. Whitley and D. Sipoli Sanches,
