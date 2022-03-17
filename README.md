@@ -1,5 +1,5 @@
 # GPX3 - Python
-Python 2.7 implementation of the Generalized Partition Crossover operator.
+Python 2.7 implementation of the Generalized Partition Crossover 3 (GPX3).
 
 Reference:
 O. Carvalho, R. Tinós, D. Whitley and D. Sipoli Sanches,
